@@ -1,0 +1,226 @@
+/* ==========================================================================
+   Screens & App Navigation Styles (Start, Schrank, Scan, Einstellungen)
+   ========================================================================== */
+
+/* Modern Bottom Navigation Bar */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-top: 1px solid var(--line);
+  padding: 6px 12px calc(6px + env(safe-area-inset-bottom));
+  z-index: 50;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.04);
+}
+.bottom-nav {
+  max-width: 680px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+.nav-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  padding: 5px 2px;
+  cursor: pointer;
+  color: var(--muted);
+  font-family: inherit;
+  transition: all 0.16s ease;
+}
+.nav-tab-btn .tab-icon {
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+.nav-tab-btn .tab-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  margin-top: 2px;
+  letter-spacing: 0.01em;
+}
+.nav-tab-btn:active {
+  transform: scale(0.95);
+}
+.nav-tab-btn.active {
+  color: #206845;
+  background: #eaf5ee;
+}
+.nav-tab-btn.active.tab-teen {
+  color: #0d9488;
+  background: #f0fdfa;
+}
+.nav-tab-btn.active.tab-child {
+  color: #b45309;
+  background: #fef3c7;
+}
+.nav-tab-btn.active.tab-baby {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+/* Screen Wrapper */
+.screen-container {
+  animation: fadeInScreen 0.2s ease-out;
+}
+@keyframes fadeInScreen {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Settings Screen Styling */
+.settings-section {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+.settings-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.profile-manage-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.8rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+}
+.profile-manage-card.active-profile {
+  border-color: #206845;
+  background: #f4f9f5;
+}
+
+/* Dedicated Scan & Verdict Screen Styling */
+.scan-screen-box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1.25rem 1.2rem;
+  margin-bottom: 1.2rem;
+}
+
+/* Start Screen Pills & Two-Path Action Cards */
+.start-pills-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin: 0.75rem 0 0.45rem;
+  scrollbar-width: none;
+}
+.start-pills-row::-webkit-scrollbar {
+  display: none;
+}
+.start-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.start-pill-btn:hover {
+  border-color: #cbd5e1;
+}
+.start-pill-btn.active {
+  background: #206845;
+  color: #ffffff;
+  border-color: #206845;
+}
+.start-pill-btn.active.pill-teen {
+  background: #0d9488;
+  border-color: #0d9488;
+}
+.start-pill-btn.active.pill-child {
+  background: #d97706;
+  border-color: #d97706;
+}
+.start-pill-btn.active.pill-baby {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.start-action-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #ffffff;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 1.05rem 1.15rem;
+  margin-bottom: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+.start-action-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.start-action-card.primary {
+  border-color: #206845;
+  background: linear-gradient(180deg, #ffffff 0%, #f4fbf6 100%);
+}
+.start-action-card.secondary {
+  border-color: #e2e8f0;
+  background: #ffffff;
+}
+.start-action-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.start-action-body {
+  flex: 1;
+  min-width: 0;
+}
+.start-action-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.start-action-title .arrow {
+  font-size: 1.1rem;
+  color: #206845;
+  transition: transform 0.15s ease;
+}
+.start-action-card:hover .arrow {
+  transform: translateX(3px);
+}
+.start-action-desc {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-top: 4px;
+}

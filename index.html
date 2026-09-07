@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Kosmetikschrank — Evidenzbasierter Routine- & Schrank-Wächter</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/screens.css">
+</head>
+<body>
+
+<!-- Global Toast Notification -->
+<div id="appToast" class="toast-container"></div>
+
+<header>
+  <div class="header-inner">
+    <div class="brand" onclick="switchScreen('start')" style="cursor:pointer" title="Zurück zum Start">
+      Kosmetikschrank
+      <span>Evidenzbasierter Wächter · DACH</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="katalogStatusBadge" onclick="showKatalogStatusModal()" style="font-size:0.72rem;padding:3px 9px;border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:5px;background:#fef3c7;color:#92400e;border:1px solid rgba(0,0,0,0.06)" title="Katalog-Status">
+        <span style="font-size:0.6rem">●</span> <span id="katalogStatusText">Lade Katalog…</span>
+      </div>
+      <div class="guard-badge" id="btnGuardInfo">
+        <div class="pulse-dot"></div>
+        <span id="guardBadgeText">🛡️ Begleitpflege aktiv</span>
+      </div>
+    </div>
+  </div>
+  <nav class="cat-nav-bar" id="catNavBar">
+    <!-- Dynamisch generiert durch updateCategoryNav() -->
+  </nav>
+</header>
+
+<main id="appContent" class="screen-container">
+  <!-- Dynamisch generiert durch renderCurrentScreen() -->
+</main>
+
+<!-- Bottom Navigation Bar (4 getrennte Screens: Start · Schrank · Scan · Einstellungen) -->
+<nav class="bottom-bar" aria-label="Hauptnavigation">
+  <div class="bottom-nav">
+    <button class="nav-tab-btn" id="navTab_start" onclick="switchScreen('start')" title="Startseite & Triage">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">Start</span>
+    </button>
+    <button class="nav-tab-btn active" id="navTab_cabinet" onclick="switchScreen('cabinet')" title="Mein Schrank & Routine">
+      <span class="tab-icon">🧴</span>
+      <span class="tab-label">Schrank</span>
+    </button>
+    <button class="nav-tab-btn" id="navTab_scan" onclick="switchScreen('scan')" title="Barcode-Scanner & INCI-Urteil">
+      <span class="tab-icon">📷</span>
+      <span class="tab-label">Scan</span>
+    </button>
+    <button class="nav-tab-btn" id="navTab_settings" onclick="switchScreen('settings')" title="Optionen & Profile verwalten">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label">Optionen</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Hidden compatibility elements for existing event handlers and labels -->
+<span id="btnScanLabel" style="display:none">Im dm / Laden scannen</span>
+<button id="btnManualPaste" style="display:none" aria-hidden="true"></button>
+
+<!-- Modal Sheet Container -->
+<div id="modalContainer"></div>
+
+<!-- Modular JavaScript Files -->
+<script src="js/catalog.js"></script>
+<script src="js/state.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/ideal-routines.js"></script>
+<script src="js/screens/start.js"></script>
+<script src="js/screens/cabinet.js"></script>
+<script src="js/screens/scan.js"></script>
+<script src="js/screens/settings.js"></script>
+<script src="js/screens/quiz.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

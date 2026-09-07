@@ -1,0 +1,222 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Kosmetikschrank — Evidenzbasierter Routine- & Schrank-Wächter</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/screens.css">
+</head>
+<body>
+
+<!-- Global Toast Notification -->
+<div id="appToast" class="toast-container"></div>
+
+<header>
+  <div class="header-inner">
+    <div class="brand" onclick="switchScreen('start')" style="cursor:pointer" title="Zurück zum Start">
+      Kosmetikschrank
+      <span>Evidenzbasierter Wächter · DACH</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="katalogStatusBadge" onclick="showKatalogStatusModal()" style="font-size:0.72rem;padding:3px 9px;border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:5px;background:#fef3c7;color:#92400e;border:1px solid rgba(0,0,0,0.06)" title="Katalog-Status">
+        <span style="font-size:0.6rem">●</span> <span id="katalogStatusText">Lade Katalog…</span>
+      </div>
+      <div class="guard-badge" id="btnGuardInfo">
+        <div class="pulse-dot"></div>
+        <span id="guardBadgeText">🛡️ Begleitpflege aktiv</span>
+      </div>
+    </div>
+  </div>
+  <nav class="cat-nav-bar" id="catNavBar">
+    <!-- Dynamisch generiert durch updateCategoryNav() -->
+  </nav>
+</header>
+
+<main id="appContent" class="screen-container">
+  <!-- Dynamisch generiert durch renderCurrentScreen() -->
+</main>
+
+<!-- Bottom Navigation Bar (4 getrennte Screens: Start · Schrank · Scan · Einstellungen) -->
+<nav class="bottom-bar" aria-label="Hauptnavigation">
+  <div class="bottom-nav">
+    <button class="nav-tab-btn" id="navTab_start" onclick="switchScreen('start')" title="Startseite & Triage">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">Start</span>
+    </button>
+    <button class="nav-tab-btn active" id="navTab_cabinet" onclick="switchScreen('cabinet')" title="Mein Schrank & Routine">
+      <span class="tab-icon">🧴</span>
+      <span class="tab-label">Schrank</span>
+    </button>
+    <button class="nav-tab-btn" id="navTab_scan" onclick="switchScreen('scan')" title="Barcode-Scanner & INCI-Urteil">
+      <span class="tab-icon">📷</span>
+      <span class="tab-label">Scan</span>
+    </button>
+    <button class="nav-tab-btn" id="navTab_settings" onclick="switchScreen('settings')" title="Optionen & Profile verwalten">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label">Optionen</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Hidden compatibility elements for existing event handlers and labels -->
+<span id="btnScanLabel" style="display:none">Im dm / Laden scannen</span>
+<button id="btnManualPaste" style="display:none" aria-hidden="true"></button>
+
+<!-- Modal Sheet Container -->
+<div id="modalContainer"></div>
+
+<!-- Modular JavaScript Files -->
+<script src="js/catalog.js"></script>
+<script src="js/state.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/ideal-routines.js"></script>
+<script src="js/screens/start.js"></script>
+<script src="js/screens/cabinet.js"></script>
+<script src="js/screens/scan.js"></script>
+<script src="js/screens/settings.js"></script>
+<script src="js/screens/quiz.js"></script>
+<script src="js/app.js"></script>
+
+<div id="testContainer" style="background:#1e293b;color:#f8fafc;padding:16px;margin:20px;border-radius:8px;font-family:monospace">
+  <h3>--- DYNAMIC PROFILE TEST SUITE RESULTS ---</h3>
+  <div id="testLog">Running tests...</div>
+</div>
+
+<script>
+(function() {
+  const log = [];
+  function assert(condition, message) {
+    if (condition) {
+      log.push("PASS: " + message);
+    } else {
+      log.push("FAIL: " + message);
+    }
+  }
+
+  try {
+    // 0. Reset to initial clean state
+    resetSchrank();
+
+    // ==========================================
+    // 1. INITIAL STATE: EXACTLY 1 PROFILE
+    // ==========================================
+    log.push("--- 1. INITIAL STATE ---");
+    const navBar = document.getElementById("catNavBar");
+    const profBtns = navBar.querySelectorAll(".cat-nav-btn");
+    const addBtn = navBar.querySelector(".cat-nav-add-btn");
+    
+    assert(profBtns.length === 1, "Initial profile count is exactly 1 (found: " + profBtns.length + ")");
+    assert(!!addBtn, "Add profile button (+) is present in navbar");
+    assert(profBtns[0] && profBtns[0].textContent.includes("Erwachsener"), "Initial profile is Erwachsener");
+
+    // Ensure no uncreated profiles are rendered in top bar
+    const hasTeen = Array.from(profBtns).some(b => b.textContent.includes("Teenie"));
+    const hasBaby = Array.from(profBtns).some(b => b.textContent.includes("Baby"));
+    const hasChild = Array.from(profBtns).some(b => b.textContent.includes("Kind"));
+    assert(!hasTeen && !hasBaby && !hasChild, "Only user-created profiles appear in the top bar");
+
+    // ==========================================
+    // 2. CREATE BABY PROFILE "Baby Emma"
+    // ==========================================
+    log.push("--- 2. ADD BABY PROFILE ---");
+    openNewProfileModal();
+    const modalInp = document.getElementById("newProfileNameInput");
+    assert(!!modalInp, "New profile modal is opened");
+    
+    selectNewProfileCategory("baby");
+    modalInp.value = "Baby Emma";
+    submitCreateProfile();
+
+    const btnsAfterBaby = navBar.querySelectorAll(".cat-nav-btn");
+    assert(btnsAfterBaby.length === 2, "Profile count is now exactly 2 after adding Baby Emma");
+    const babyBtn = Array.from(btnsAfterBaby).find(b => b.textContent.includes("Baby Emma"));
+    assert(!!babyBtn, "Baby Emma tab exists in top bar");
+    assert(appState.profile === "baby", "Active profile is 'baby'");
+    
+    const appContent = document.getElementById("appContent");
+    assert(!appContent.innerHTML.includes("openRenameProfileModal"), "No 'Name' button in cabinet profile bar");
+    assert(!appContent.innerHTML.includes("Baby Emma"), "No profile name label in lower cabinet profile bar");
+    assert(appContent.textContent.includes("Kleinkindpflege"), "Baby cabinet view is displayed");
+
+    // ==========================================
+    // 3. CREATE TEEN PROFILE "Lukas Teenie"
+    // ==========================================
+    log.push("--- 3. ADD TEEN PROFILE ---");
+    openNewProfileModal();
+    selectNewProfileCategory("teen");
+    const teenInp = document.getElementById("newProfileNameInput");
+    teenInp.value = "Lukas Teenie";
+    submitCreateProfile();
+
+    const btnsAfterTeen = navBar.querySelectorAll(".cat-nav-btn");
+    assert(btnsAfterTeen.length === 3, "Profile count is now 3 in top bar");
+    const teenBtn = Array.from(btnsAfterTeen).find(b => b.textContent.includes("Lukas Teenie"));
+    assert(!!teenBtn, "Lukas Teenie tab exists in top bar");
+    assert(appState.profile === "teen", "Active profile is 'teen'");
+    assert(!appContent.innerHTML.includes("openRenameProfileModal"), "No 'Name' button in teen cabinet profile bar");
+    assert(!appContent.innerHTML.includes("Lukas Teenie"), "No profile name label in lower teen cabinet profile bar");
+    assert(appContent.textContent.includes("Jugend- & Teenie-Pflege"), "Teen cabinet view is displayed");
+
+    // ==========================================
+    // 4. RENAME PROFILE "Lukas Teenie" -> "Lukas (15 J.)"
+    // ==========================================
+    log.push("--- 4. RENAME PROFILE ---");
+    const currentActive = getActiveProfile();
+    openRenameProfileModal(currentActive.id);
+    const renameInp = document.getElementById("renameProfileInput");
+    assert(!!renameInp, "Rename modal opened");
+    renameInp.value = "Lukas (15 J.)";
+    submitRenameProfile(currentActive.id);
+
+    const renamedActive = getActiveProfile();
+    assert(renamedActive.name === "Lukas (15 J.)", "Profile state renamed to 'Lukas (15 J.)'");
+    const renamedBtn = Array.from(navBar.querySelectorAll(".cat-nav-btn")).find(b => b.textContent.includes("Lukas (15 J.)"));
+    assert(!!renamedBtn, "Navbar tab updated to 'Lukas (15 J.)'");
+
+    // ==========================================
+    // 5. SWITCH BETWEEN PROFILES
+    // ==========================================
+    log.push("--- 5. SWITCH PROFILES ---");
+    const babyProfile = appState.profiles.find(p => p.name === "Baby Emma");
+    switchProfile(babyProfile.id);
+    assert(appState.profile === "baby", "Switched back to baby category");
+    assert(getActiveProfile().name === "Baby Emma", "Active profile name is Baby Emma");
+
+    // Switch to Erwachsener
+    const adultProfile = appState.profiles.find(p => p.category === "adult");
+    switchProfile(adultProfile.id);
+    assert(appState.profile === "adult", "Switched back to adult category");
+    assert(!!document.getElementById("btnEditProfile"), "Adult Quiz button is available");
+
+    // ==========================================
+    // 6. DELETE PROFILE
+    // ==========================================
+    log.push("--- 6. DELETE PROFILE ---");
+    window.confirm = () => true; // Auto-confirm
+    const lukasP = appState.profiles.find(p => p.name === "Lukas (15 J.)");
+    deleteProfile(lukasP.id);
+    
+    const btnsAfterDel = navBar.querySelectorAll(".cat-nav-btn");
+    assert(btnsAfterDel.length === 2, "Profile count returned to 2 after deleting Lukas");
+    assert(!appState.profiles.some(p => p.name.includes("Lukas")), "Lukas removed from appState.profiles");
+
+    // ==========================================
+    // 7. LOCALSTORAGE PERSISTENCE
+    // ==========================================
+    log.push("--- 7. PERSISTENCE ---");
+    saveState();
+    const stored = JSON.parse(localStorage.getItem("schrank"));
+    assert(stored && stored.profiles && stored.profiles.length === 2, "2 profiles persisted in localStorage");
+    assert(stored.profiles.some(p => p.name === "Baby Emma"), "Baby Emma persisted in localStorage");
+
+    log.push("ALL_DYNAMIC_PROFILE_TESTS_PASSED");
+  } catch(err) {
+    log.push("EXCEPTION: " + err.message + "\n" + err.stack);
+  }
+
+  document.getElementById("testLog").innerHTML = log.map(l => '<div class="test-res">' + l + '</div>').join("");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Kosmetikschrank — Evidenzbasierter Routine- & Schrank-Wächter</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/screens.css">
+</head>
+<body>
+
+<!-- Global Toast Notification -->
+<div id="appToast" class="toast-container"></div>
+
+<header>
+  <div class="header-inner">
+    <div class="brand" onclick="switchScreen('start')" style="cursor:pointer" title="Zurück zum Start">
+      Kosmetikschrank
+      <span>Evidenzbasierter Wächter · DACH</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="katalogStatusBadge" onclick="showKatalogStatusModal()" style="font-size:0.72rem;padding:3px 9px;border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:5px;background:#fef3c7;color:#92400e;border:1px solid rgba(0,0,0,0.06)" title="Katalog-Status">
+        <span style="font-size:0.6rem">●</span> <span id="katalogStatusText">Lade Katalog…</span>
+      </div>
+      <div class="guard-badge" id="btnGuardInfo">
+        <div class="pulse-dot"></div>
+        <span id="guardBadgeText">🛡️ Begleitpflege aktiv</span>
+      </div>
+    </div>
+  </div>
+  <nav class="cat-nav-bar" id="catNavBar">
+    <!-- Dynamisch generiert durch updateCategoryNav() -->
+  </nav>
+</header>
+
+<main id="appContent" class="screen-container">
+  <!-- Dynamisch generiert durch renderCurrentScreen() -->
+</main>
+
+<!-- Bottom Navigation Bar (4 getrennte Screens: Start · Schrank · Scan · Einstellungen) -->
+<nav class="bottom-bar" aria-label="Hauptnavigation">
+  <div class="bottom-nav">
+    <button class="nav-tab-btn" id="navTab_start" onclick="switchScreen('start')" title="Startseite & Triage">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">Start</span>
+    </button>
+    <button class="nav-tab-btn active" id="navTab_cabinet" onclick="switchScreen('cabinet')" title="Mein Schrank & Routine">
+      <span class="tab-icon">🧴</span>
+      <span class="tab-label">Schrank</span>
+    </button>
+    <button class="nav-tab-btn" id="navTab_scan" onclick="switchScreen('scan')" title="Barcode-Scanner & INCI-Urteil">
+      <span class="tab-icon">📷</span>
+      <span class="tab-label">Scan</span>
+    </button>
+    <button class="nav-tab-btn" id="navTab_settings" onclick="switchScreen('settings')" title="Optionen & Profile verwalten">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label">Optionen</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Hidden compatibility elements for existing event handlers and labels -->
+<span id="btnScanLabel" style="display:none">Im dm / Laden scannen</span>
+<button id="btnManualPaste" style="display:none" aria-hidden="true"></button>
+
+<!-- Modal Sheet Container -->
+<div id="modalContainer"></div>
+
+<!-- Modular JavaScript Files -->
+<script src="js/catalog.js"></script>
+<script src="js/state.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/ideal-routines.js"></script>
+<script src="js/screens/start.js"></script>
+<script src="js/screens/cabinet.js"></script>
+<script src="js/screens/scan.js"></script>
+<script src="js/screens/settings.js"></script>
+<script src="js/screens/quiz.js"></script>
+<script src="js/app.js"></script>
+
+<div id="testContainer" style="background:#1e293b;color:#f8fafc;padding:16px;margin:20px;border-radius:8px;font-family:monospace">
+  <h3>--- MODULAR APP & SCREENS TEST SUITE RESULTS ---</h3>
+  <div id="testLog">Running tests...</div>
+</div>
+
+<script>
+(function() {
+  const log = [];
+  function assert(condition, message) {
+    if (condition) {
+      log.push("PASS: " + message);
+    } else {
+      log.push("FAIL: " + message);
+    }
+  }
+
+  try {
+    // 0. Initial Reset
+    resetSchrank();
+
+    // ==========================================
+    // 1. MODULES AND GLOBALS AVAILABILITY
+    // ==========================================
+    log.push("--- 1. MODULES AND GLOBALS ---");
+    assert(typeof DB === "object", "DB is loaded from js/catalog.js");
+    assert(typeof BABY_DB === "object", "BABY_DB is loaded from js/catalog.js");
+    assert(typeof TEEN_DB === "object", "TEEN_DB is loaded from js/catalog.js");
+    assert(typeof appState === "object", "appState is initialized from js/state.js");
+    assert(typeof saveState === "function", "saveState is declared in js/state.js");
+    assert(typeof calculatePrognosis === "function", "calculatePrognosis is declared in js/rules.js");
+    assert(typeof evaluateCandidate === "function", "evaluateCandidate is declared in js/rules.js");
+    assert(typeof renderTypRegal === "function", "renderTypRegal is declared in js/ideal-routines.js");
+    assert(typeof renderStartScreen === "function", "renderStartScreen is declared in js/screens/start.js");
+    assert(typeof renderMain === "function", "renderMain is declared in js/screens/cabinet.js");
+    assert(typeof renderScanScreen === "function", "renderScanScreen is declared in js/screens/scan.js");
+    assert(typeof renderSettingsScreen === "function", "renderSettingsScreen is declared in js/screens/settings.js");
+    assert(typeof openQuizModal === "function", "openQuizModal is declared in js/screens/quiz.js");
+    assert(typeof switchScreen === "function", "switchScreen is declared in js/app.js");
+
+    // ==========================================
+    // 2. SCREEN ROUTING: START SCREEN
+    // ==========================================
+    log.push("--- 2. START SCREEN ROUTING ---");
+    switchScreen("start");
+    assert(appState.view === "start", "appState.view set to 'start'");
+    const appContent = document.getElementById("appContent");
+    assert(appContent.querySelector(".welcome-box") !== null, "Start screen welcome box rendered");
+    assert(appContent.querySelectorAll(".start-pill-btn").length === 4, "4 category pills present");
+    assert(appContent.querySelectorAll(".start-action-card").length === 2, "2 clear action cards (Schrank & Quiz) present");
+    assert(document.getElementById("navTab_start").classList.contains("active"), "navTab_start is marked active");
+
+    // ==========================================
+    // 3. SCREEN ROUTING: CABINET SCREEN
+    // ==========================================
+    log.push("--- 3. CABINET SCREEN ROUTING ---");
+    switchScreen("cabinet");
+    assert(appState.view === "cabinet", "appState.view set to 'cabinet'");
+    assert(appContent.querySelector(".profile-bar") !== null, "Cabinet profile-bar rendered");
+    assert(document.getElementById("navTab_cabinet").classList.contains("active"), "navTab_cabinet is marked active");
+    assert(!document.getElementById("navTab_start").classList.contains("active"), "navTab_start is no longer active");
+
+    // ==========================================
+    // 4. SCREEN ROUTING: SCAN & VERDICT SCREEN
+    // ==========================================
+    log.push("--- 4. SCAN SCREEN ROUTING ---");
+    switchScreen("scan");
+    assert(appState.view === "scan", "appState.view set to 'scan'");
+    assert(appContent.querySelector(".scan-screen-box") !== null, "Scan screen box rendered");
+    assert(!!document.getElementById("scanScreenEanInput"), "EAN input is present on scan screen");
+    assert(document.getElementById("navTab_scan").classList.contains("active"), "navTab_scan is marked active");
+
+    // Test EAN lookup for catalog product:
+    const foundProd = findProductByEan("3560071348069");
+    assert(!!foundProd, "findProductByEan resolved product");
+    assert(foundProd && foundProd.prod && foundProd.prod.brand.includes("Carrefour"), "Resolved product brand is Carrefour");
+
+    // Test Uniform Verdict (passt / eher nicht / Konflikt)
+    const vPasst = evaluateCandidate(DB.baleaWash || { kat: "reiniger", klassen: [], ff: true });
+    assert(vPasst.verdict === "passt" && vPasst.title.includes("passt"), "Verdict evaluates 'passt'");
+    assert(typeof vPasst.reason === "string" && vPasst.reason.length > 0, "Verdict includes concise Warum explanation");
+    assert(vPasst.disclaimer && vPasst.disclaimer.includes("Keine medizinische Therapie"), "Verdict includes standard disclaimer");
+
+    // Retinoid conflict test
+    appState.pm_a = ["adap"];
+    const vKonflikt = evaluateCandidate(DB.retinol || { klassen: ["retinoid_cos"] });
+    assert(vKonflikt.verdict === "konflikt" && vKonflikt.title.includes("Konflikt"), "Verdict evaluates 'konflikt'");
+
+    // Acid warning test
+    const vEherNicht = evaluateCandidate(DB.glycolic || { klassen: ["aha"] });
+    assert(vEherNicht.verdict === "eher_nicht" && vEherNicht.title.includes("eher nicht"), "Verdict evaluates 'eher nicht'");
+
+    // ==========================================
+    // 5. SCREEN ROUTING: SETTINGS SCREEN
+    // ==========================================
+    log.push("--- 5. SETTINGS SCREEN ROUTING ---");
+    switchScreen("settings");
+    assert(appState.view === "settings", "appState.view set to 'settings'");
+    assert(appContent.querySelectorAll(".settings-section").length >= 3, "Settings sections rendered");
+    assert(document.getElementById("navTab_settings").classList.contains("active"), "navTab_settings is marked active");
+
+    // ==========================================
+    // 6. DYNAMIC PROFILE MANAGEMENT
+    // ==========================================
+    log.push("--- 6. DYNAMIC PROFILES ---");
+    switchScreen("cabinet");
+    const navBar = document.getElementById("catNavBar");
+    assert(navBar.querySelectorAll(".cat-nav-btn").length === 1, "Initial profile count is 1");
+    
+    // Add Baby Emma
+    openNewProfileModal();
+    selectNewProfileCategory("baby");
+    const newInp = document.getElementById("newProfileNameInput");
+    newInp.value = "Baby Emma";
+    submitCreateProfile();
+
+    assert(appState.profiles.length === 2, "Profile count is 2 in state");
+    assert(navBar.querySelectorAll(".cat-nav-btn").length === 2, "Navbar renders 2 profiles");
+    assert(appState.profile === "baby", "Active profile is baby");
+    assert(appContent.querySelector(".ped-blue") !== null, "Baby cabinet badges rendered");
+
+    // Switch back to Adult
+    const adultP = appState.profiles.find(p => p.category === "adult");
+    switchProfile(adultP.id);
+    assert(appState.profile === "adult", "Switched back to adult");
+
+    // ==========================================
+    // 7. PERSISTENCE IN LOCALSTORAGE
+    // ==========================================
+    log.push("--- 7. PERSISTENCE ---");
+    saveState();
+    const stored = JSON.parse(localStorage.getItem("schrank"));
+    assert(stored && stored.profiles && stored.profiles.length === 2, "2 profiles persisted in localStorage");
+
+    log.push("ALL_MODULAR_APP_TESTS_PASSED");
+  } catch(err) {
+    log.push("EXCEPTION: " + err.message + "\n" + err.stack);
+  }
+
+  document.getElementById("testLog").innerHTML = log.map(l => '<div class="test-res">' + l + '</div>').join("");
+})();
+</script>
+</body>
+</html>
