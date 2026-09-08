@@ -1125,4 +1125,402 @@ function renderChildTypRegal() {
   `;
 }
 
+// ==========================================
+// EVIDENZBASIERTE BUDGET-ROUTINE ENGINE
+// (Zusammenstellung nach Drogerie-Budget & Hauttyp)
+// ==========================================
+
+const PRODUCT_PRICE_MAP = {
+  // Adult Drogerie- & Apotheken-Referenzen
+  baleaWash: 2.45,
+  baleaCreme: 3.95,
+  baleaSpf: 5.95,
+  isanaWash: 2.25,
+  isanaCreme: 3.95,
+  ceraveWash: 11.00,
+  ceraveMoist: 12.00,
+  mixaPanthenol: 6.95,
+  ha: 9.95,
+  noHydrator: 9.95,
+  bbomb: 8.50,
+  apad: 10.50,
+  aza: 12.00,
+  purito: 18.00,
+  bha: 13.00,
+  glycolic: 14.00,
+  retinol: 9.00,
+  nia10: 7.00,
+  adap: 0.00,
+  clienzo: 0.00,
+
+  // Teenie Heroes
+  t_item_1: 2.45,
+  t_item_2: 7.95,
+  t_item_3: 3.95,
+  t_item_4: 5.95,
+  t_item_11: 8.50,
+  t_item_24: 2.45
+};
+
+function getProductPrice(prodId) {
+  if (!prodId) return 0;
+  if (typeof PRODUCT_PRICE_MAP[prodId] === "number") {
+    return PRODUCT_PRICE_MAP[prodId];
+  }
+  const p = (typeof DB === "object" && DB[prodId]) || 
+            (typeof TEEN_DB === "object" && TEEN_DB[prodId]) || 
+            (typeof BABY_DB === "object" && BABY_DB[prodId]);
+  if (!p) return 0;
+
+  const str = (p.price || "") + " " + (p.store || "") + " " + (p.name || "");
+  const match = str.match(/(\d+[\.,]\d{2})\s*€/) || str.match(/~(\d+[\.,]?\d*)\s*€/) || str.match(/(\d+)\s*€/);
+  if (match) {
+    const val = parseFloat(match[1].replace(",", "."));
+    if (!isNaN(val) && val > 0) return val;
+  }
+  return 4.95;
+}
+
+const BUDGET_ROUTINE_TIERS = {
+  acne_barrier: {
+    id: "acne_barrier",
+    name: "Akne & Barriere-Schutz (Rx)",
+    desc: "Evidenzbasierte Routine bei unreiner Haut, Pickeln, Rötungen oder empfindlicher Barriere.",
+    badge: "Rx / Akne / Barriere",
+    items: [
+      { id: "baleaWash", slot: "reiniger", slotName: "1. Milde Reinigung", why: "Tensid-mild & parfümfrei – greift die Säureschutzschicht nicht an", essential: true, am: true, pm: true },
+      { id: "baleaCreme", slot: "creme", slotName: "2. Barriere-Creme", why: "Cica & Panthenol reparieren schälende oder brennende Stellen", essential: true, am: true, pm: true },
+      { id: "baleaSpf", slot: "spf", slotName: "3. LSF 50+ Sonnenschutz", why: "Breitband-UV-Schutz verhindert postinflammatorische Pickelmale (PIH)", essential: true, am: true, pm: false },
+      { id: "apad", slot: "active", slotName: "4. Wirkstoff-Active", why: "PAD (Azelain-Derivat): Hemmt Entzündungen & Rötungen hochverträglich", priority: 1, am: true, pm: false },
+      { id: "noHydrator", slot: "serum", slotName: "5. Tiefen-Hydrator", why: "Panthenol + Ectoin spenden intensive Feuchtigkeit ohne die Poren zu belasten", priority: 2, am: true, pm: true }
+    ]
+  },
+  oily_pores: {
+    id: "oily_pores",
+    name: "Ölig & Poren-Balance",
+    desc: "Fettlösliche Talgkontrolle & Porenverfeinerung ohne austrocknende Alkohole.",
+    badge: "Sebum / Mitesser / Glanz",
+    items: [
+      { id: "isanaWash", slot: "reiniger", slotName: "1. Porentiefe Reinigung", why: "Klärt überschüssiges Sebum porentief und reizarm", essential: true, am: true, pm: true },
+      { id: "isanaCreme", slot: "creme", slotName: "2. Leichte Feuchtigkeit", why: "Spendet Feuchtigkeit ohne Fettfilm oder Glanz", essential: true, am: true, pm: true },
+      { id: "baleaSpf", slot: "spf", slotName: "3. Mattierender LSF 50+", why: "Leichtes Sonnenfluid, klebt nicht und verstopft keine Poren", essential: true, am: true, pm: false },
+      { id: "bbomb", slot: "active", slotName: "4. Talg-Regulator", why: "10% Niacinamid + Zink: Reguliert Sebumproduktion & verfeinert Poren", priority: 1, am: true, pm: false },
+      { id: "bha", slot: "serum", slotName: "5. BHA Porenpeeling", why: "2% Salicylsäure dringt fettlöslich in die Pore ein (1–2× wöchentlich)", priority: 2, am: false, pm: true }
+    ]
+  },
+  dry_fragile: {
+    id: "dry_fragile",
+    name: "Trocken & Sensibel",
+    desc: "Intensive Barriere-Erholung mit Ceramiden und Panthenol gegen Spannungsgefühl.",
+    badge: "Spannung / Trockenheit",
+    items: [
+      { id: "baleaWash", slot: "reiniger", slotName: "1. Milde Reinigung", why: "Reizarm & rückfettend, verhindert Spannungsgefühl nach dem Waschen", essential: true, am: true, pm: true },
+      { id: "mixaPanthenol", slot: "creme", slotName: "2. Intensive SOS-Creme", why: "13% Glycerin + Panthenol zur schnellen Barriere-Regeneration", essential: true, am: true, pm: true },
+      { id: "baleaSpf", slot: "spf", slotName: "3. Schutz-LSF 50+", why: "Schützt trockene Haut vor UV-bedingtem Feuchtigkeitsverlust", essential: true, am: true, pm: false },
+      { id: "noHydrator", slot: "serum", slotName: "4. Ectoin-Hydrator", why: "Tiefenwirksame Hydratation bei rauen Stellen und Schuppung", priority: 1, am: true, pm: true },
+      { id: "purito", slot: "active", slotName: "5. Barriere-Balsam", why: "Reichhaltiger Panthenol-Schutz vor transepidermalem Wasserverlust", priority: 2, am: false, pm: true }
+    ]
+  },
+  healthy_glow: {
+    id: "healthy_glow",
+    name: "Gesund & Prävention",
+    desc: "Ausgewogene Gesunderhaltung: Feuchtigkeits-Balance und #1 Anti-Aging-Schutz.",
+    badge: "Glow / Prävention",
+    items: [
+      { id: "baleaWash", slot: "reiniger", slotName: "1. Milde Reinigung", why: "Befreit sanft von Schmutz und Talg, ohne die Haut auszutrocknen", essential: true, am: true, pm: true },
+      { id: "baleaCreme", slot: "creme", slotName: "2. Ausgleichende Creme", why: "Hält die Hautbarriere geschmeidig und hydratisiert", essential: true, am: true, pm: true },
+      { id: "baleaSpf", slot: "spf", slotName: "3. Breitband-LSF 50+", why: "#1 evidenzbasierter Schutz gegen vorzeitige Hautalterung & Zellschäden", essential: true, am: true, pm: false },
+      { id: "bbomb", slot: "active", slotName: "4. Niacinamid-Booster", why: "Niacinamid stärkt die Ceramid-Synthese und sorgt für ebenmäßigen Teint", priority: 1, am: true, pm: false },
+      { id: "noHydrator", slot: "serum", slotName: "5. Feuchtigkeits-Hydrator", why: "Sorgt für pralle Feuchtigkeit und frischen Glow", priority: 2, am: true, pm: true }
+    ]
+  },
+  teen: {
+    id: "teen",
+    name: "Teenie (12–19 Jahre)",
+    desc: "Leitliniengerechte AAD-Basispflege: Schutz vor aggressiven Trends & Sanfte Klärung.",
+    badge: "AAD Teenie-Leitlinie",
+    items: [
+      { id: "t_item_1", slot: "reiniger", slotName: "1. Milde Teenie-Reinigung", why: "Tensid-mild, schützt die junge Hautbarriere vor Irritationen", essential: true, am: true, pm: true },
+      { id: "t_item_3", slot: "creme", slotName: "2. Leichte Feuchtigkeitscreme", why: "Spendet Feuchtigkeit ohne Poren mit schweren Ölen zu belasten", essential: true, am: true, pm: true },
+      { id: "t_item_4", slot: "spf", slotName: "3. Tägliches Sonnenfluid LSF 50+", why: "Leichte Textur für Schule & Sport, klebt nicht", essential: true, am: true, pm: false },
+      { id: "t_item_2", slot: "active", slotName: "4. Klärendes BHA-Tonic", why: "Sanftes Peeling gegen Mitesser und pubertäre Unreinheiten", priority: 1, am: false, pm: true }
+    ]
+  }
+};
+
+function calculateBudgetRoutine(budget, skinTypeId = "acne_barrier") {
+  const numBudget = Math.max(5, parseFloat(budget) || 20);
+  const tier = BUDGET_ROUTINE_TIERS[skinTypeId] || BUDGET_ROUTINE_TIERS.acne_barrier;
+  const allItems = tier.items;
+
+  const essentials = allItems.filter(x => x.essential);
+  const upgrades = allItems.filter(x => !x.essential).sort((a, b) => (a.priority || 99) - (b.priority || 99));
+
+  // Essentials cost
+  const essentialsCost = essentials.reduce((sum, item) => sum + getProductPrice(item.id), 0);
+
+  let selected = [];
+  let currentCost = 0;
+
+  if (numBudget >= essentialsCost) {
+    selected = [...essentials];
+    currentCost = essentialsCost;
+
+    for (const up of upgrades) {
+      const p = getProductPrice(up.id);
+      if (currentCost + p <= numBudget) {
+        selected.push(up);
+        currentCost += p;
+      }
+    }
+  } else {
+    // Budget very tight: take top 2 essentials (Reiniger + Creme)
+    const top2 = essentials.slice(0, 2);
+    const top2Cost = top2.reduce((sum, item) => sum + getProductPrice(item.id), 0);
+    if (numBudget >= top2Cost) {
+      selected = top2;
+      currentCost = top2Cost;
+    } else {
+      selected = [essentials[0]];
+      currentCost = getProductPrice(essentials[0].id);
+    }
+  }
+
+  const roundedCost = Math.round(currentCost * 100) / 100;
+  const savings = Math.round(Math.max(0, numBudget - roundedCost) * 100) / 100;
+
+  return {
+    budget: numBudget,
+    skinTypeId: tier.id,
+    skinTypeName: tier.name,
+    badge: tier.badge,
+    totalCost: roundedCost,
+    savings: savings,
+    products: selected.map(it => {
+      const prod = (typeof DB === "object" && DB[it.id]) || 
+                   (typeof TEEN_DB === "object" && TEEN_DB[it.id]) || 
+                   { name: it.slotName, brand: "Drogerie" };
+      return {
+        id: it.id,
+        slot: it.slot,
+        slotName: it.slotName,
+        why: it.why,
+        am: it.am,
+        pm: it.pm,
+        brand: prod.brand || "Drogerie",
+        name: prod.name || it.slotName,
+        price: getProductPrice(it.id),
+        store: prod.store || "dm / Drogerie",
+        ff: prod.ff,
+        nc: prod.nc,
+        cf: prod.cf
+      };
+    })
+  };
+}
+
+let currentBudgetSkinType = "acne_barrier";
+let currentBudgetAmount = 20;
+
+function openBudgetRoutineModal(preselectedSkinType, preselectedBudget) {
+  if (preselectedSkinType) currentBudgetSkinType = preselectedSkinType;
+  else if (appState.profile === "teen") currentBudgetSkinType = "teen";
+  else if (appState.tags && appState.tags.includes("Ölige Haut")) currentBudgetSkinType = "oily_pores";
+  else if (appState.tags && appState.tags.includes("Trockene Haut")) currentBudgetSkinType = "dry_fragile";
+  else if (appState.tags && appState.tags.includes("Gesunde Haut")) currentBudgetSkinType = "healthy_glow";
+
+  if (preselectedBudget) currentBudgetAmount = parseFloat(preselectedBudget) || 20;
+
+  renderBudgetRoutineModalContent();
+}
+
+function setBudgetRoutineBudget(amount) {
+  currentBudgetAmount = Math.max(5, parseFloat(amount) || 20);
+  renderBudgetRoutineModalContent();
+}
+
+function setBudgetRoutineSkinType(skinType) {
+  currentBudgetSkinType = skinType;
+  renderBudgetRoutineModalContent();
+}
+
+function renderBudgetRoutineModalContent() {
+  const result = calculateBudgetRoutine(currentBudgetAmount, currentBudgetSkinType);
+  const pct = Math.min(100, Math.round((result.totalCost / result.budget) * 100));
+
+  const budgetPills = [
+    { amount: 20, label: "💶 20 € (Drogerie-Spar)" },
+    { amount: 30, label: "💶 30 € (Basis + Active)" },
+    { amount: 40, label: "💶 40 € (Erweitert)" },
+    { amount: 50, label: "💶 50 € (Apotheken-Kombi)" }
+  ];
+
+  const skinTypePills = [
+    { id: "acne_barrier", label: "Akne & Barriere (Rx)" },
+    { id: "oily_pores", label: "Ölig & Poren" },
+    { id: "dry_fragile", label: "Trocken & Sensibel" },
+    { id: "healthy_glow", label: "Gesund & Prävention" },
+    { id: "teen", label: "Teenie (12–19J)" }
+  ];
+
+  const content = `
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+      <span style="font-size:1.3rem">💰</span>
+      <h2 style="margin:0;font-family:'Iowan Old Style', Palatino, Georgia, serif;font-size:1.35rem">Evidenzbasierte Budget-Routine</h2>
+    </div>
+    <p style="font-size:0.83rem;color:var(--muted);margin:3px 0 10px;line-height:1.4">
+      Lege dein maximales Budget fest. Die App stellt dir die wirksamste, verträglichste Drogerie-Routine zusammen — evidenzbasiert ohne Reiz-Stacking.
+    </p>
+
+    <!-- 1. Hauttyp-Wahl -->
+    <div style="margin-bottom:10px">
+      <div style="font-size:0.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px">
+        1. Hauttyp wählen:
+      </div>
+      <div class="budget-pills" style="margin-top:2px">
+        ${skinTypePills.map(st => `
+          <button type="button" class="budget-pill ${st.id === currentBudgetSkinType ? 'active' : ''}" onclick="setBudgetRoutineSkinType('${st.id}')">
+            ${st.label}
+          </button>
+        `).join("")}
+      </div>
+    </div>
+
+    <!-- 2. Budget-Wahl -->
+    <div style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+        <span style="font-size:0.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">
+          2. Maximales Budget:
+        </span>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:0.78rem;color:var(--muted)">Individuell:</span>
+          <input type="number" id="budgetCustomInput" min="5" max="200" step="5" value="${result.budget}" 
+            style="width:65px;padding:3px 7px;border-radius:6px;border:1px solid #d4c4b0;font-size:0.82rem;font-weight:700;text-align:right"
+            onchange="setBudgetRoutineBudget(this.value)">
+          <span style="font-size:0.82rem;font-weight:700">€</span>
+        </div>
+      </div>
+      <div class="budget-pills" style="margin-top:2px">
+        ${budgetPills.map(bp => `
+          <button type="button" class="budget-pill ${Math.abs(bp.amount - result.budget) < 0.1 ? 'active' : ''}" onclick="setBudgetRoutineBudget(${bp.amount})">
+            ${bp.label}
+          </button>
+        `).join("")}
+      </div>
+    </div>
+
+    <!-- 3. Budget-Balken & Korb-Status -->
+    <div style="background:#fdfaf5;border:1px solid #e7dcce;border-radius:10px;padding:10px 12px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.88rem;font-weight:700">
+        <span>Korb-Summe: <strong style="color:#166534;font-size:1.02rem">${result.totalCost.toFixed(2).replace('.', ',')} €</strong></span>
+        <span style="color:var(--muted);font-size:0.82rem">Budget: ${result.budget.toFixed(2).replace('.', ',')} €</span>
+      </div>
+      <div class="budget-progress-container">
+        <div class="budget-progress-fill" style="width:${pct}%;background:${pct <= 100 ? '#16a34a' : '#b91c1c'}"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.76rem;margin-top:4px">
+        <span style="color:#166534;font-weight:700">✓ ${result.products.length} Schritte abgedeckt (Morgen & Abend)</span>
+        <span style="color:${result.savings > 0 ? '#0f766e' : '#6b7280'};font-weight:600">
+          ${result.savings > 0 ? `💶 ${result.savings.toFixed(2).replace('.', ',')} € Restbudget übrig` : 'Exakt im Budget'}
+        </span>
+      </div>
+    </div>
+
+    <!-- 4. Produkt-Liste -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:0.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px">
+        Zusammengestellte Drogerie-Produkte:
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        ${result.products.map(p => `
+          <div class="budget-item-card">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--gold);letter-spacing:0.03em">
+                ${p.slotName} ${p.am && p.pm ? '· Morgens & Abends' : (p.am ? '· Morgens' : '· Abends')}
+              </div>
+              <div style="font-size:0.88rem;font-weight:700;color:var(--ink);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                ${p.brand} ${p.name}
+              </div>
+              <div style="font-size:0.75rem;color:var(--muted);line-height:1.3;margin-top:3px">
+                💡 ${p.why}
+              </div>
+              <div style="display:flex;gap:4px;margin-top:4px">
+                ${p.ff === true ? '<span class="tag ff" style="font-size:0.62rem;padding:0 4px">🌸 Parfümfrei</span>' : ''}
+                ${p.nc === true ? '<span class="tag nc" style="font-size:0.62rem;padding:0 4px">🛡️ NC</span>' : ''}
+                ${p.cf === true ? '<span class="tag cf" style="font-size:0.62rem;padding:0 4px">🐰 CF</span>' : ''}
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <span class="budget-price-tag">${p.price.toFixed(2).replace('.', ',')} €</span>
+              <div style="font-size:0.68rem;color:var(--muted);margin-top:3px">${p.store.split(/[\(\)]/)[0].trim()}</div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <!-- 5. Aktions-Buttons -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button type="button" class="primary" id="btnApplyBudgetRoutine" onclick="applyBudgetRoutineToCabinet(calculateBudgetRoutine(currentBudgetAmount, currentBudgetSkinType))">
+        🎯 Diese Routine in den Schrank übernehmen (${result.totalCost.toFixed(2).replace('.', ',')} €)
+      </button>
+      <button type="button" class="ghost-btn" onclick="closeModal()">
+        Schließen
+      </button>
+    </div>
+  `;
+
+  showModalSheet(content);
+}
+
+function applyBudgetRoutineToCabinet(routineResult) {
+  if (!routineResult || !routineResult.products) return;
+
+  if (routineResult.skinTypeId === "teen" || appState.profile === "teen") {
+    // Apply to teen slots
+    if (!appState.teen) appState.teen = { reiniger: [], active: [], creme: [], spf: [] };
+    routineResult.products.forEach(p => {
+      const slot = p.slot;
+      if (appState.teen[slot]) {
+        appState.teen[slot] = [p.id];
+      }
+    });
+    const profile = getActiveProfile();
+    if (profile && profile.category === "teen") {
+      profile.data = JSON.parse(JSON.stringify(appState.teen));
+    }
+  } else {
+    // Apply to adult AM and PM
+    const amProds = [];
+    const pmProds = [];
+
+    routineResult.products.forEach(p => {
+      if (p.am && !amProds.includes(p.id)) amProds.push(p.id);
+      if (p.pm && !pmProds.includes(p.id)) pmProds.push(p.id);
+    });
+
+    appState.am = sortRoutine(amProds, true);
+    appState.pm_a = sortRoutine(pmProds, false);
+    appState.tab = "am";
+
+    const profile = getActiveProfile();
+    if (profile && profile.category === "adult") {
+      profile.data.am = [...appState.am];
+      profile.data.pm_a = [...appState.pm_a];
+    }
+  }
+
+  saveState();
+  closeModal();
+  renderMain();
+  showToast(`💰 Budget-Routine (${routineResult.totalCost.toFixed(2).replace('.', ',')} €) in deinen Schrank übernommen!`);
+}
+
+// Global window bindings
+window.openBudgetRoutineModal = openBudgetRoutineModal;
+window.setBudgetRoutineBudget = setBudgetRoutineBudget;
+window.setBudgetRoutineSkinType = setBudgetRoutineSkinType;
+window.applyBudgetRoutineToCabinet = applyBudgetRoutineToCabinet;
+window.calculateBudgetRoutine = calculateBudgetRoutine;
+window.getProductPrice = getProductPrice;
 

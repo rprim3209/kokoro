@@ -500,6 +500,33 @@ function renderTeenCabinet(container) {
     `;
   }
 
+  // Budget-Hero Card für Teenies
+  html += `
+    <div class="budget-hero-card" style="border-color:#99f6e4;background:linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%)">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:1.5rem;background:#ccfbf1;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid #99f6e4">
+            💰
+          </div>
+          <div>
+            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#0f766e;letter-spacing:0.04em">
+              Teenie-Budget-Planer
+            </div>
+            <div style="font-family:'Iowan Old Style', Palatino, Georgia, serif;font-size:1.05rem;font-weight:700;color:#134e4a">
+              Routine nach Budget zusammenstellen (z. B. 15 €, 20 €, 30 €)
+            </div>
+            <div style="font-size:0.78rem;color:#0f766e;margin-top:1px">
+              Sichere AAD-Leitlinienprodukte — ohne Hype und im Taschengeld-Budget.
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-adopt" style="background:#0d9488;color:#fff;font-size:0.82rem;padding:8px 14px" onclick="openBudgetRoutineModal('teen')">
+          Budget festlegen ➔
+        </button>
+      </div>
+    </div>
+  `;
+
   // Teenie-Typ-Regal / AAD-Ideal-Vergleich
   html += renderTeenTypRegal();
   container.innerHTML = html;
@@ -906,7 +933,34 @@ function renderMain(autoSave = true) {
   }
 
 
-    // Typ-Regal / Ideal-Vergleich direkt unter dem Schrank rendern
+  // Budget-Hero Card direkt vor dem Typ-Regal
+  html += `
+    <div class="budget-hero-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:1.6rem;background:#fef3c7;width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid #fde68a">
+            💰
+          </div>
+          <div>
+            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--gold);letter-spacing:0.04em">
+              Budget-Optimierer
+            </div>
+            <div style="font-family:'Iowan Old Style', Palatino, Georgia, serif;font-size:1.08rem;font-weight:700;color:var(--ink)">
+              Routine nach Budget zusammenstellen (z. B. 20 €, 30 €, 50 €)
+            </div>
+            <div style="font-size:0.79rem;color:var(--muted);margin-top:1px">
+              Maximale Evidenz für deinen Hauttyp — strikt innerhalb deines Einkaufs-Limits.
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-adopt" style="background:#206845;color:#fff;font-size:0.82rem;padding:8px 14px" onclick="openBudgetRoutineModal()">
+          Budget festlegen ➔
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Typ-Regal / Ideal-Vergleich direkt unter dem Schrank rendern
   html += renderTypRegal(appState.tab, currentList);
 
   container.innerHTML = html;
@@ -1091,6 +1145,8 @@ function openMarketGuideModal() {
   const profileTags = appState.tags.join(", ") || "Individuell";
   const isAcne = appState.tags.includes("Akne-prone");
   const isRx = appState.tags.includes("Rx-Begleitpflege");
+  // Arzt-Thema: keine Serum-/Active-Upsell-Liste im Markt-Navigator
+  const isArztThema = (typeof hasArztThema === "function") ? hasArztThema() : (appState.tags || []).some(t => String(t).includes("Arzt-Thema") || String(t).toLowerCase().includes("arzt-thema") || String(t).toLowerCase().includes("zystisch"));
 
   showModalSheet(`
     <div style="font-size:0.75rem;text-transform:uppercase;color:var(--gold);font-weight:700;letter-spacing:0.05em">Einkaufs-Kompass</div>
@@ -1147,9 +1203,30 @@ function openMarketGuideModal() {
 
     <!-- Category 2: Gezieltes Wirkstoff-Serum -->
     <div style="margin-bottom:1rem">
-      <div style="font-weight:700;font-size:0.86rem;color:var(--muted);text-transform:uppercase;margin-bottom:6px">2. Gezieltes Wirkstoff-Serum (Evidenz)</div>
+      <div style="font-weight:700;font-size:0.86rem;color:var(--muted);text-transform:uppercase;margin-bottom:6px">${isArztThema ? "2. Support / Feuchte (kein Active-Upsell bei Arzt-Thema)" : "2. Gezieltes Wirkstoff-Serum (Evidenz)"}</div>
       <div style="display:flex;flex-direction:column;gap:7px">
-        ${isAcne || isRx ? `
+        ${isArztThema ? `
+          <div class="alt-card" style="padding:0.7rem 0.85rem;background:#f8fafc">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:0.9rem">Arzt-Thema – kein Serum-Upgrade</div>
+              <div style="font-size:0.78rem;color:var(--muted)">Keine stärkeren Actives als Shop-Vorschlag. Nur milder Support / Basis.</div>
+            </div>
+          </div>
+          <div class="alt-card" style="padding:0.7rem 0.85rem">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:0.9rem">Good Molecules Hyaluronic Acid Serum</div>
+              <div style="font-size:0.78rem;color:var(--muted)">Support-Feuchte, kein Active-Upsell – <strong style="color:var(--ok)">Online / Handel (~12 €)</strong></div>
+            </div>
+            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('ha', 'am'); openMarketGuideModal();">+ In Schrank</button>
+          </div>
+          <div class="alt-card" style="padding:0.7rem 0.85rem">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:0.9rem">Nø Cosmetics 120h Liquid Hydrator</div>
+              <div style="font-size:0.78rem;color:var(--muted)">Panthenol + Ectoin Barriere-Feuchte – <strong style="color:var(--ok)">dm / Rossmann (~9,95 €)</strong></div>
+            </div>
+            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('noHydrator', 'am'); openMarketGuideModal();">+ In Schrank</button>
+          </div>
+` : isAcne || isRx ? `
           <div class="alt-card" style="padding:0.7rem 0.85rem">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:0.9rem">Geek & Gorgeous aPAD (Azelain-Derivat)</div>

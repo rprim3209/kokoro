@@ -40,6 +40,7 @@ Die Demo ist modular in vier klare Kern-Bereiche aufgeteilt:
    - **Routinen-Übersicht:** Klare Trennung in Morgen- und Abend-Routine.
    - **Reiz-Stacking-Wächter:** Automatische Erkennung problematischer Wirkstoff-Kombinationen (z. B. Adapalen/Retinoide + Säuren).
    - **Typ-Regal & Begleitpflege:** Evidenzbasierte Empfehlungen für den gewählten Hauttyp — Produkte vergleichen und mit einem Klick in die eigene Routine übernehmen.
+   - **Budget-Optimierer:** Routine nach vorgegebenem Drogerie-Budget (z. B. 20 €, 30 €, 50 €) evidenzbasiert zusammenstellen und per 1-Klick übernehmen.
 
 3. **Scan & Verdict (`Scan`)**:
    - **Eingabe-Möglichkeiten:** Barcode per Kamera scannen oder EAN-Code/Produktname manuell suchen (inkl. Live-dm-Suche).
@@ -99,4 +100,25 @@ Kosmetikschrank/
 - **Lokal & Persistent:** Alle Änderungen am Schrank und Profil werden sofort und dauerhaft im Browser (`localStorage`) gespeichert. Kein Account, keine Cloud, kein Tracking.
 - **Saubere Codierung:** 100% reines UTF-8 ohne externe Framework-Abhängigkeiten.
 
+---
 
+## Theory 2026-09-08 — verdrahtet in der Demo
+
+Specs (Quelle der Wahrheit, unverändert): `constraints-v1.md`, `verdict-glossar.md`, `scan-ohne-schrank.md`, `reiz-budget.md`, `arzt-thema-scan.md`, `inci-klassifikator.md`.
+
+**In Code (`js/rules.js` + Quiz/Scan):**
+- Kanonische Ampel **passt | eher nicht | Konflikt** + Worst-wins über Zu dir / Zum Schrank / Slot
+- Soft-Prefs: bei `Sensibel` → Chip **Parfümfrei**, bei `Akne-prone` → Chip **NC-Preference** (abwählbar per Tippen ×)
+- Parfüm × sensibel = **eher nicht**; Baby + Parfüm = **Konflikt**; fehlendes NC ≠ Konflikt
+- Leerer Schrank: Scan ok; Zum Schrank „noch nicht prüfbar“; keine Fake-Layering-Konflikte
+- Reiz-Budget: Nacht-Stack ≥ Schwelle → Konflikt; Tag Clienzo AM + Adapalen PM → eher nicht (bei Begleitpflege+Barriere schärfer); **Adapalen×BPO ist nicht inactivate**
+- Arzt-Thema: kein Active-Upsell (bereits vorhanden, verifiziert)
+- INCI: nur Lightweight-Hooks auf `klassen`/`kat`/`ff`/`nc` — **voller CosIng-Parser STUB**
+
+### Kurz testen (Prim)
+1. `start-server.bat` → http://127.0.0.1:8787/demo.html
+2. Quiz Adult: Sensibel + Akne-prone → Chips Parfümfrei & NC-Preference; × entfernt Soft-Pref
+3. Schrank leeren → Scan Support-Produkt → passt/Zu dir, Zum Schrank „noch nicht prüfbar“
+4. Baby-Profil + parfümiertes Produkt (`ff: false`) → Konflikt
+5. Adapalen PM + Clienzo AM im Schrank → Prognose/Scan „eher nicht“ Tageslast; gleicher PM-Abend → Konflikt; nie „inactivate“-Copy für Adapalen×BPO
+6. Arzt-Thema-Tag + Serum-Scan → Konflikt, keine Active-Alternativenliste

@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // Triage & Quiz Questionnaire Module
 // ==========================================
 
@@ -462,6 +462,14 @@ function finishQuiz() {
     activeP.subtitle = sub;
     activeP.complexity = chosenComplexity;
 
+    // Soft-Prefs auch Teen (constraints-v1)
+    let teenTags = Array.isArray(activeP.tags) ? activeP.tags.slice() : [];
+    if (hasAcne) teenTags.push("Akne-prone");
+    if (isSensibel) teenTags.push("Sensibel");
+    if (typeof applySoftPrefsToTagList === "function") teenTags = applySoftPrefsToTagList(teenTags);
+    activeP.tags = teenTags;
+    appState.tags = teenTags;
+
     saveState();
     closeModal();
     updateCategoryNav();
@@ -471,7 +479,7 @@ function finishQuiz() {
   }
 
   // Adult scoring
-  const newTags = [];
+  let newTags = [];
 
   // Feuchte / Sebum-Achse:
   const isDry = (scores.trocken || 0) >= 2;
@@ -510,6 +518,14 @@ function finishQuiz() {
   // Begleitpflege / Rx:
   const isBegleit = (scores.begleitpflege || 0) > 0 || (scores.rx || 0) > 0;
   if (isBegleit) newTags.push("Rx-Begleitpflege");
+
+  // Soft-Prefs (constraints-v1 Entscheidungen 2026-09-08): abwählbar
+  if (typeof applySoftPrefsToTagList === "function") {
+    const before = newTags.slice();
+    newTags = applySoftPrefsToTagList(newTags);
+    // Merker für UI-Chips
+    quizSoftPrefsAdded = newTags.filter(t => !before.includes(t));
+  }
 
   // Routine-Komplexität (Aufwand):
   if (chosenComplexity === "minimal") {
@@ -558,8 +574,17 @@ function finishQuiz() {
     <p style="font-size:0.92rem;color:var(--muted)">Dein Kosmetikschrank hat deine Voraussetzungen ermittelt:</p>
     
     <div class="tags-list" style="margin:0.8rem 0">
-      ${newTags.map(t => `<span class="tag ${t === 'Rx-Begleitpflege' ? 'rx' : (t === 'Gesunde Haut' ? 'ok' : '')}">${t}</span>`).join("")}
+      ${newTags.map(t => {
+        const soft = (t === 'Parfümfrei' || t === 'NC-Preference');
+        const auto = (typeof quizSoftPrefsAdded !== 'undefined') && quizSoftPrefsAdded.includes(t);
+        const cls = t === 'Rx-Begleitpflege' ? 'rx' : (t === 'Gesunde Haut' ? 'ok' : '');
+        if (soft && auto) {
+          return `<span class="tag ${cls}" title="Soft-Preference (abwählbar)" style="cursor:pointer" onclick="removeSoftPrefTag('${t}'); this.remove();">${t} ×</span>`;
+        }
+        return `<span class="tag ${cls}">${t}</span>`;
+      }).join("")}
     </div>
+    ${(quizSoftPrefsAdded && quizSoftPrefsAdded.length) ? `<div style="font-size:0.78rem;color:var(--muted);margin:-0.4rem 0 0.8rem">Soft-Prefs (Tippen zum Abwählen): ${quizSoftPrefsAdded.join(', ')}</div>` : ''}
 
     <div style="background:#f4ece0;border-radius:10px;padding:8px 12px;font-size:0.84rem;font-weight:600;color:#5a4328;margin-bottom:0.9rem">
       🎯 Gewählter Umfang: <strong>${compLabel}</strong>
@@ -590,6 +615,9 @@ function finishQuiz() {
     <div style="display:flex;flex-direction:column;gap:9px">
       <button class="primary" onclick="applyStarterRoutine()">
         🎯 Empfohlene Starter-Routine laden (${compLabel})
+      </button>
+      <button class="ghost-btn" style="margin-top:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openBudgetRoutineModal()">
+        💰 Routine nach Budget zusammenstellen (z. B. 20 €, 30 €, 50 €)
       </button>
       <button class="ghost-btn" style="margin-top:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openMarketGuideModal()">
         🛒 Markt-Navigator: Beste Produkte für dein Profil

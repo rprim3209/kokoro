@@ -20,3 +20,11 @@ Stand: 2026-09-08
 ## Nicht jetzt
 Fotos-Marathon, Cloud, App-Store, Skin-Bliss nachbauen
 
+## Theory verdrahtet (2026-09-08)
+- [x] `verdict-glossar` Helpers: normalizeOutcome, formatVerdictOneLook, worstWins, hasTag
+- [x] Soft-Prefs pref_nc / duftstofffrei auto + abwählbar
+- [x] Zu-dir Constraints (Parfüm×sensibel, Baby-Parfüm, Feuchte soft, Arzt-Upsell)
+- [x] Scan ohne Schrank (noch nicht prüfbar, kein Fake-Konflikt)
+- [x] Reiz-Budget Nacht/Tag; Adapalen×BPO ≠ inactivate
+- [x] Arzt-Thema Scan verifiziert/behalten
+- [ ] Voller INCI/CosIng-Parser (bewusst STUB — nur Katalog-Hooks)

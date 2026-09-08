@@ -1362,11 +1362,16 @@ function showVerdict(prodId) {
   const prod = DB[prodId];
   if (!prod) return;
   const v = evaluateCandidate(prod);
+  // Arzt-Thema: keine Active-Upsell-Listen (Support/Reiniger/SPF ok)
+  const arztThema = (typeof hasArztThema === "function") && hasArztThema();
 
   let altsHTML = "";
   if (v.alts && v.alts.length) {
+    const altTitle = arztThema
+      ? "Basis-Alternativen (kein Serum-Upgrade bei Arzt-Thema)"
+      : "Gleiches Regal bei dm / Apotheke (Bessere Wahl)";
     altsHTML = `
-      <div class="alt-title">Gleiches Regal bei dm / Apotheke (Bessere Wahl)</div>
+      <div class="alt-title">${altTitle}</div>
       <div class="alt-list">
         ${v.alts.map(a => `
           <div class="alt-card">
@@ -1377,6 +1382,13 @@ function showVerdict(prodId) {
             <div class="alt-price">${a.price}</div>
           </div>
         `).join("")}
+      </div>
+    `;
+  } else if (arztThema && (typeof isCosmeticActiveUpsell === "function") && isCosmeticActiveUpsell(prod)) {
+    altsHTML = `
+      <div class="alt-title">Arzt-Thema – kein Active-Upsell</div>
+      <div style="font-size:0.84rem;color:var(--muted);line-height:1.4;margin-bottom:0.6rem">
+        Keine stärkeren Seren als Alternative. Reiniger, Creme, SPF und milder Support bleiben scannbar.
       </div>
     `;
   }
@@ -1423,11 +1435,35 @@ function showVerdict(prodId) {
     </div>
   `;
 
-  const statusPill = (v.status === "ok" || v.status === "passt")
-    ? '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#dcfce7;color:#166534;padding:3px 9px;border-radius:6px;font-weight:800">🟢 Passt in deine Routine</span>'
-    : ((v.status === "warn" || v.status === "eher_nicht")
-      ? '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#fef3c7;color:#92400e;padding:3px 9px;border-radius:6px;font-weight:800">🟡 Eher nicht (Reiz-Risiko)</span>'
-      : '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#fee2e2;color:#991b1b;padding:3px 9px;border-radius:6px;font-weight:800">🔴 Wirkstoff-Konflikt</span>');
+  const verdictId = v.verdict || (typeof normalizeOutcome === "function" ? normalizeOutcome(v.status) : v.status);
+  const oneLook = v.oneLook || (typeof formatVerdictOneLook === "function"
+    ? formatVerdictOneLook(verdictId, v.reason)
+    : v.title);
+  const statusPill = (verdictId === "passt" || v.status === "ok")
+    ? '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#dcfce7;color:#166534;padding:3px 9px;border-radius:6px;font-weight:800">🟢 passt</span>'
+    : ((verdictId === "eher_nicht" || v.status === "warn")
+      ? '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#fef3c7;color:#92400e;padding:3px 9px;border-radius:6px;font-weight:800">🟡 eher nicht</span>'
+      : '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#fee2e2;color:#991b1b;padding:3px 9px;border-radius:6px;font-weight:800">🔴 Konflikt</span>');
+
+  function dimLine(label, dim) {
+    if (!dim) return "";
+    if (dim.outcome == null && (dim.code === "noch_nicht" || v.emptyCabinet)) {
+      return `<div style="font-size:0.82rem;line-height:1.35;margin-top:4px"><strong>${label}:</strong> noch nicht prüfbar — ${dim.reason || "Schrank leer"}</div>`;
+    }
+    const o = dim.outcome || "passt";
+    const lab = o === "konflikt" ? "Konflikt" : (o === "eher_nicht" ? "eher nicht" : "passt");
+    return `<div style="font-size:0.82rem;line-height:1.35;margin-top:4px"><strong>${label}:</strong> ${lab} — ${dim.reason || ""}</div>`;
+  }
+  const dimsHTML = v.dims ? `
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.06)">
+        ${dimLine("Zu dir", v.dims.zuDir)}
+        ${dimLine("Zum Schrank", v.dims.zumSchrank)}
+        ${dimLine("Slot", v.dims.slot)}
+      </div>` : "";
+  const emptyTip = v.emptyCabinet ? `
+      <div style="margin-top:6px;font-size:0.78rem;color:var(--muted);line-height:1.35">
+        Tipp: Produkt speichern oder 2–3 Alltagsprodukte scannen — dann wird „Zum Schrank“ scharf. Scan bleibt frei.
+      </div>` : "";
 
   showModalSheet(`
     <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">Scan-Ergebnis für:</div>
@@ -1435,18 +1471,20 @@ function showVerdict(prodId) {
     
     <div class="verdict-banner ${v.status}" style="flex-direction:column;gap:6px">
       <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:6px">
-        <div class="verdict-title">${v.title}</div>
+        <div class="verdict-title">${oneLook}</div>
         ${statusPill}
       </div>
       <div class="verdict-sub" style="font-size:0.92rem;font-weight:600;margin-top:2px">
         <strong>Warum?</strong> ${v.reason}
       </div>
+      ${dimsHTML}
+      ${emptyTip}
       <div style="display:inline-flex;align-items:center;gap:6px;margin-top:4px;padding:4px 9px;background:rgba(255,255,255,0.85);border-radius:6px;font-size:0.78rem;font-weight:700;color:var(--ink)">
         <span>⏱️ Empfohlener Einsatz:</span>
         <span style="font-weight:600">${v.where}</span>
       </div>
       <div style="margin-top:6px;font-size:0.72rem;color:var(--muted);font-style:italic">
-        ⚖️ Hinweis: Keine medizinische Therapie — reines Einkaufs- & Layering-Erkennungstool.
+        ⚖️ ${v.disclaimer || "Keine medizinische Therapie — reines Einkaufs- & Layering-Erkennungstool."}
       </div>
     </div>
 
