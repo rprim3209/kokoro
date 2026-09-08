@@ -1032,6 +1032,10 @@ function openScanModal() {
           💡 Hinweis: Live-Kamera braucht HTTPS oder <strong>localhost</strong>. Starte <code>start-server.bat</code> für die Kamera oder tippe die EAN unten ein.
         </div>
       ` : ''}
+      <div style="margin-top:8px;font-size:0.72rem;color:#94a3b8;display:flex;align-items:center;justify-content:center;gap:4px">
+        <span>🔒 Kamera verarbeitet 100% lokal im Browser ·</span>
+        <button type="button" class="btn-text" style="color:#93c5fd;text-decoration:underline;font-size:0.72rem;padding:0;background:transparent;border:none" onclick="if(typeof openPrivacyModal==='function')openPrivacyModal()">Datenschutz</button>
+      </div>
     </div>
 
     <input type="text" class="search-input" id="scanSearchInput" placeholder="🔍 EAN (z.B. 4066447952971) oder Produktname..." value="" oninput="window.filterScanList(this.value)">

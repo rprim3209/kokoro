@@ -18,7 +18,7 @@ Profil/Tags → Produkt scannen oder suchen → **passt / eher nicht / Konflikt*
 
 ### Woche 1 (Tage 1–7) — Recht & Klarheit
 - [x] Disclaimer überall gleich: „Keine Therapie — dein Ratgeber für Einkauf & Layering.“
-- [ ] Kurze **Datenschutz**-Notiz (Kamera, localStorage, dm-Abfragen) entwerfen
+- [x] Kurze **Datenschutz**-Notiz (Kamera, localStorage, dm-Abfragen) entwerfen (siehe datenschutz.md & Settings-Modal)
 - [ ] **Impressum**-Entwurf (auch für spätere HTTPS-Seite)
 - [ ] Positionierungs-Satz + 3 Beispiel-Scans aufschreiben (Retinol, parfümierte Creme, Baby-Produkt)
 - [ ] `start-server.bat` als Standard-Start (nie `file://` für Tests)

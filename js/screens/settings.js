@@ -97,5 +97,98 @@ function renderSettingsScreen(container) {
         </div>
       </div>
     </div>
+
+    <div class="settings-section">
+      <div class="settings-title">
+        <span>🔒 Datenschutz & Privatsphäre</span>
+      </div>
+      <div style="font-size:0.82rem;color:var(--muted);line-height:1.5">
+        <p style="margin:0 0 0.6rem">
+          <strong>Privacy by Design:</strong> Deine Hautbedürfnisse und Routinen gehören dir allein.
+        </p>
+        <ul style="margin:0;padding-left:1.2rem">
+          <li><strong>📷 Kamera:</strong> Bildverarbeitung läuft zu 100 % lokal im Browser. Kein Videobild wird gespeichert oder übertragen.</li>
+          <li><strong>💾 Speicherort:</strong> Schrank und Profile liegen ausschließlich im <code>localStorage</code> deines Endgeräts. Keine Cloud.</li>
+          <li><strong>🔍 dm-Suche:</strong> Überträgt nur den Suchbegriff oder die EAN zur Produktdaten-Abfrage — niemals persönliche Profildaten.</li>
+          <li><strong>🚫 Zero Tracking:</strong> Keine Tracking-Cookies, keine Werbenetzwerke, keine externen Analyse-Dienste.</li>
+        </ul>
+        <div style="margin-top:0.8rem">
+          <button type="button" class="ghost-btn" style="width:auto;margin-top:0;padding:0.45rem 0.9rem;font-size:0.8rem" onclick="openPrivacyModal()">
+            📜 Ausführliche Datenschutz-Notiz lesen ➔
+          </button>
+        </div>
+      </div>
+    </div>
   `;
+}
+
+function openPrivacyModal() {
+  const modalHTML = `
+    <div style="padding:1rem 1.1rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">
+        <div style="font-family:'Iowan Old Style', Georgia, serif;font-size:1.3rem;font-weight:700">
+          🔒 Datenschutz & Privatsphäre
+        </div>
+        <button class="btn-text" onclick="closeModal()" style="font-size:1.2rem;color:var(--muted);padding:0 4px">✕</button>
+      </div>
+
+      <div style="font-size:0.82rem;color:var(--muted);line-height:1.45;margin-bottom:1rem">
+        Transparenz nach DSGVO & Grundsatz der Datensparsamkeit: Wie diese Anwendung deine Privatsphäre schützt.
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <!-- 1. Kamera -->
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:0.8rem">
+          <div style="font-weight:700;font-size:0.88rem;color:#0f172a;display:flex;align-items:center;gap:6px">
+            <span>📷</span> 1. Kamera-Zugriff (Barcode-Scanner)
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);line-height:1.4;margin-top:4px">
+            Die Kamera dient ausschließlich der optischen Erfassung von EAN-Strichcodes. Die Erkennung erfolgt über die native BarcodeDetector-API <strong>zu 100 % lokal auf deinem Gerät</strong>. Es werden niemals Videobilder aufgezeichnet, gespeichert oder übertragen. Der Stream stoppt sofort beim Schließen oder Erkennen.
+          </div>
+        </div>
+
+        <!-- 2. localStorage -->
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:0.8rem">
+          <div style="font-weight:700;font-size:0.88rem;color:#0f172a;display:flex;align-items:center;gap:6px">
+            <span>💾</span> 2. Lokale Speicherung (localStorage)
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);line-height:1.4;margin-top:4px">
+            Alle Daten (Morgen-/Abend-Routine, Profile, Hauttyp-Quiz) werden ausschließlich lokal im <code>window.localStorage</code> deines Browsers gespeichert. Es gibt keinen Cloud-Speicher, keinen Server-Abgleich und keinen Account-Zwang. Ein Klick auf „Gesamten Schrank zurücksetzen“ löscht alle Daten rückstandslos.
+          </div>
+        </div>
+
+        <!-- 3. dm-Abfragen -->
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:0.8rem">
+          <div style="font-weight:700;font-size:0.88rem;color:#0f172a;display:flex;align-items:center;gap:6px">
+            <span>🔍</span> 3. Produktsuche & dm-Abfragen
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);line-height:1.4;margin-top:4px">
+            Der Offline-Katalog mit über 980 Produkten funktioniert komplett ohne Internetverbindung. Nutzt du die Live-Suche nach neuen Produkten, wird nur der eingegebene Text oder die EAN an die öffentliche dm-Schnittstelle gesendet. Es werden <strong>keine persönlichen Profildaten, Hautzustände oder Routinen</strong> übertragen.
+          </div>
+        </div>
+
+        <!-- 4. Zero Tracking -->
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:0.8rem">
+          <div style="font-weight:700;font-size:0.88rem;color:#0f172a;display:flex;align-items:center;gap:6px">
+            <span>🚫</span> 4. Keine Tracking-Cookies & keine Analyse
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);line-height:1.4;margin-top:4px">
+            Kein Google Analytics, kein Meta-Pixel, keine Werbe-Netzwerke, keine externen CDNs.
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.2rem;display:flex;flex-direction:column;gap:8px">
+        <button class="primary" onclick="closeModal()">Verstanden</button>
+        <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:4px">
+          ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+        </div>
+      </div>
+    </div>
+  `;
+  showModalSheet(modalHTML);
+}
+
+if (typeof window !== "undefined") {
+  window.openPrivacyModal = openPrivacyModal;
 }
