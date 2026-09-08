@@ -4,7 +4,7 @@ Schluss mit Fehlkäufen & Reiz-Chaos. Prüfe deine Kosmetikprodukte in Sekunden 
 
 > **Demo steht, wenn:** Speichern hält (lokal via `localStorage`), Flags sind ehrlich (Quellennachweis oder transparent „offen“), Ordner und README sind aufgeräumt.
 >
-> **Haltung:** Einkauf und Layering erleichtern. Keine medizinische Therapie — reines Einkaufs- & Layering-Erkennungstool.
+> **Haltung:** Einkauf und Layering erleichtern. Keine Therapie — dein Ratgeber für Einkauf & Layering.
 
 ---
 

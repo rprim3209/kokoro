@@ -300,6 +300,11 @@ function openBabyProductDetail(prodId) {
         </div>
       ` : ''}
 
+      <!-- Disclaimer -->
+      <div style="font-size:0.73rem;color:var(--muted);text-align:center;margin-bottom:10px">
+        ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+      </div>
+
       <!-- Action Button -->
       <div style="display:flex;gap:8px">
         ${inCabinet ? `
@@ -620,6 +625,11 @@ function openTeenProductDetail(prodId) {
           </a>
         </div>
       ` : ''}
+
+      <!-- Disclaimer -->
+      <div style="font-size:0.73rem;color:var(--muted);text-align:center;margin-bottom:10px">
+        ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+      </div>
 
       <!-- Action Button -->
       <div style="display:flex;gap:8px">
@@ -1484,7 +1494,7 @@ function showVerdict(prodId) {
         <span style="font-weight:600">${v.where}</span>
       </div>
       <div style="margin-top:6px;font-size:0.72rem;color:var(--muted);font-style:italic">
-        ⚖️ ${v.disclaimer || "Keine medizinische Therapie — reines Einkaufs- & Layering-Erkennungstool."}
+        ⚖️ ${v.disclaimer || window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
       </div>
     </div>
 

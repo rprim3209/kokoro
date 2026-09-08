@@ -128,6 +128,10 @@ function renderStartScreen(container) {
           📷 Oder Barcode direkt im Laden scannen →
         </button>
       </div>
+
+      <div style="text-align:center;margin-top:1.2rem;font-size:0.75rem;color:var(--muted)">
+        ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+      </div>
     </div>
   `;
 }

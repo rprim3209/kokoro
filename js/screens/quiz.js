@@ -625,6 +625,9 @@ function finishQuiz() {
       <button class="ghost-btn" style="margin-top:0" onclick="startWithEmptyCabinet(); closeModal();">
         🧴 Mit leerem Schrank starten (eigene Produkte einsortieren)
       </button>
+      <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:4px">
+        ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+      </div>
     </div>
   `);
 }

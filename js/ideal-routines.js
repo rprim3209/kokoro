@@ -1467,6 +1467,9 @@ function renderBudgetRoutineModalContent() {
       <button type="button" class="ghost-btn" onclick="closeModal()">
         Schließen
       </button>
+      <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:4px">
+        ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+      </div>
     </div>
   `;
 

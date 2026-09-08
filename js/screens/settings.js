@@ -92,6 +92,9 @@ function renderSettingsScreen(container) {
           <li><strong>Teenie:</strong> AAD Adolescent Skincare Guidelines & Leitlinien-Trio</li>
           <li><strong>Kinder & Säuglinge:</strong> EU-Kosmetikverordnung 1223/2009 Anhang I Teil B, EDQM Pediatric Guideline & DGKJ</li>
         </ul>
+        <div style="margin-top:0.85rem;padding:8px 12px;background:var(--paper);border-radius:8px;border:1px solid var(--line);font-size:0.78rem;color:var(--muted);text-align:center">
+          ⚖️ <strong>Disclaimer:</strong> ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+        </div>
       </div>
     </div>
   `;

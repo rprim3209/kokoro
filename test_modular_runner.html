@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -158,7 +158,7 @@
     const vPasst = evaluateCandidate(DB.baleaWash || { kat: "reiniger", klassen: [], ff: true });
     assert(vPasst.verdict === "passt" && vPasst.title.includes("passt"), "Verdict evaluates 'passt'");
     assert(typeof vPasst.reason === "string" && vPasst.reason.length > 0, "Verdict includes concise Warum explanation");
-    assert(vPasst.disclaimer && vPasst.disclaimer.includes("Keine medizinische Therapie"), "Verdict includes standard disclaimer");
+    assert(vPasst.disclaimer && vPasst.disclaimer.includes("Keine Therapie"), "Verdict includes standard disclaimer");
 
     // Retinoid conflict test
     appState.pm_a = ["adap"];

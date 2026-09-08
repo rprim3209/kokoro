@@ -6,7 +6,11 @@
 // ==========================================
 
 const VERDICT_DISCLAIMER =
-  "Keine medizinische Therapie — reines Einkaufs- & Layering-Erkennungstool.";
+  "Keine Therapie — dein Ratgeber für Einkauf & Layering.";
+
+if (typeof window !== "undefined") {
+  window.APP_DISCLAIMER = VERDICT_DISCLAIMER;
+}
 
 const OUTCOME_RANK = { passt: 0, eher_nicht: 1, konflikt: 2 };
 

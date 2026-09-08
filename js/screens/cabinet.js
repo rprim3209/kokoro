@@ -195,6 +195,11 @@ function renderBabyCabinet(container) {
   }
 
   html += renderBabyTypRegal();
+  html += `
+    <div style="text-align:center;margin:1.6rem 0 1rem;font-size:0.75rem;color:var(--muted)">
+      ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+    </div>
+  `;
   container.innerHTML = html;
 }
 
@@ -322,6 +327,11 @@ function renderChildCabinet(container) {
   }
 
   html += renderChildTypRegal();
+  html += `
+    <div style="text-align:center;margin:1.6rem 0 1rem;font-size:0.75rem;color:var(--muted)">
+      ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+    </div>
+  `;
   container.innerHTML = html;
 }
 
@@ -529,6 +539,11 @@ function renderTeenCabinet(container) {
 
   // Teenie-Typ-Regal / AAD-Ideal-Vergleich
   html += renderTeenTypRegal();
+  html += `
+    <div style="text-align:center;margin:1.6rem 0 1rem;font-size:0.75rem;color:var(--muted)">
+      ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+    </div>
+  `;
   container.innerHTML = html;
 }
 
@@ -963,6 +978,12 @@ function renderMain(autoSave = true) {
   // Typ-Regal / Ideal-Vergleich direkt unter dem Schrank rendern
   html += renderTypRegal(appState.tab, currentList);
 
+  html += `
+    <div style="text-align:center;margin:1.6rem 0 1rem;font-size:0.75rem;color:var(--muted)">
+      ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+    </div>
+  `;
+
   container.innerHTML = html;
 
   // Bind edit profile
@@ -1121,6 +1142,9 @@ function openDoctorGuideModal() {
         🛒 Passende Drogerie- & Apothekenprodukte ansehen (Markt-Navigator)
       </button>
       <button class="ghost-btn" style="margin-top:0" onclick="closeModal()">Schließen</button>
+      <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:6px">
+        ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+      </div>
     </div>
   `);
 }
@@ -1316,8 +1340,11 @@ function openMarketGuideModal() {
       </div>
     </div>
 
-    <div style="display:flex;gap:8px;margin-top:1.2rem">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:1.2rem">
       <button class="primary" onclick="closeModal(); renderMain()">Zurück zum Schrank</button>
+      <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:4px">
+        ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+      </div>
     </div>
   `);
 }
