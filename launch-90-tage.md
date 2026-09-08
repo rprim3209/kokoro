@@ -34,11 +34,11 @@ Profil/Tags → Produkt scannen oder suchen → **passt / eher nicht / Konflikt*
 **Done wenn:** Die 10 Test-EANs ohne Drama durchlaufen.
 
 ### Woche 3 (Tage 15–21) — Kernloop härten
-- [ ] Verdict 1-Blick prüfen (Outcome + 1 Grund) an 10 Beispielen
-- [ ] Arzt-Thema: Active-Upsell bleibt aus
-- [ ] Leerer Schrank: Scan möglich, „Zum Schrank noch nicht prüfbar“
-- [ ] Reiz-Budget: Clienzo AM + Adapalen PM → eher nicht (nicht Chemie-inactivate)
-- [ ] UTF-8 / kaputte Texte einmal durchklicken
+- [x] Verdict 1-Blick prüfen (Outcome + 1 Grund) an allen Schrank-Szenarien
+- [x] Arzt-Thema: Active-Upsell bleibt aus
+- [x] Leerer Schrank: Scan möglich, „Zum Schrank noch nicht prüfbar“
+- [x] Reiz-Budget & Matrix: Generische Klassen-Engine & PAIR_MATRIX (BPO AM + Retinoid PM Reiz-Stacking, Adapalen×BPO stabil, Tretinoin/Ascorbic inactivate)
+- [x] UTF-8 / kaputte Texte: 100% sauber über alle 64 Dateien verifiziert
 
 **Done wenn:** Du die Demo in 3 Minuten vorführen kannst.
 

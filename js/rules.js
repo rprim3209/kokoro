@@ -217,6 +217,69 @@ function isCabinetEmptyForLayering() {
 }
 
 /** Lightweight Reiz-Gewicht aus vorhandenen klassen/kat (kein CosIng). */
+function productHasClass(p, klass) {
+  return !!(p && Array.isArray(p.klassen) && p.klassen.indexOf(klass) !== -1);
+}
+
+function isRetinoidProduct(p) {
+  if (!p) return false;
+  return productHasClass(p, "retinoid_rx") || productHasClass(p, "retinoid_cos");
+}
+
+function isRxRetinoid(p) {
+  if (!p) return false;
+  return productHasClass(p, "retinoid_rx") || (!!p.rx && isRetinoidProduct(p));
+}
+
+function isCosmeticRetinoid(p) {
+  if (!p) return false;
+  return productHasClass(p, "retinoid_cos") && !p.rx;
+}
+
+function isBpoProduct(p) {
+  if (!p) return false;
+  return productHasClass(p, "bpo");
+}
+
+function isAntibioticProduct(p) {
+  if (!p) return false;
+  return productHasClass(p, "ab_top");
+}
+
+function isAcidProduct(p) {
+  if (!p) return false;
+  return productHasClass(p, "aha") || productHasClass(p, "bha");
+}
+
+function isAhaProduct(p) {
+  return productHasClass(p, "aha");
+}
+
+function isBhaProduct(p) {
+  return productHasClass(p, "bha");
+}
+
+function isAscorbicProduct(p) {
+  return productHasClass(p, "ascorbic");
+}
+
+function isAzelaicProduct(p) {
+  return productHasClass(p, "azelaic");
+}
+
+function isTretinoinProduct(p) {
+  if (!p) return false;
+  if (productHasClass(p, "retinoid_rx_tretinoin")) return true;
+  var blob = ((p.name || "") + " " + (p.wirk || "")).toLowerCase();
+  return (productHasClass(p, "retinoid_rx") || !!p.rx) && blob.indexOf("tretinoin") !== -1;
+}
+
+function isAdapalenProduct(p) {
+  if (!p) return false;
+  var blob = ((p.name || "") + " " + (p.wirk || "")).toLowerCase();
+  return blob.indexOf("adapalen") !== -1 || blob.indexOf("adapalene") !== -1;
+}
+
 function reizWeightForProduct(p) {
   if (!p) return 0;
   var kl = p.klassen || [];
@@ -229,30 +292,307 @@ function reizWeightForProduct(p) {
   mid.forEach(function (k) {
     if (kl.indexOf(k) !== -1) w = Math.max(w, 1);
   });
-  if (p.id === "adap" || (p.rx && kl.indexOf("retinoid_rx") !== -1)) w = Math.max(w, 2);
-  if (p.id === "clienzo" || kl.indexOf("bpo") !== -1) w = Math.max(w, 2);
+  if (p.rx && (kl.indexOf("retinoid_rx") !== -1 || kl.indexOf("bpo") !== -1)) w = Math.max(w, 2);
   if (p.kat === "active" || p.kat === "spot") w = Math.max(w, 1);
   return w;
 }
 
-function productHasClass(p, klass) {
-  return !!(p && p.klassen && p.klassen.indexOf(klass) !== -1);
-}
+// ==========================================
+// PAIR_MATRIX: Deklarative Paartabelle
+// Konfliktmatrix v0.2 — Prio:
+// not_cosmetic > inactivate > same_class > skip_stack > alternate_days > split > resistance > begleit_barrier > uv / bleach
+// ==========================================
 
-function isRetinoidProduct(p) {
-  if (!p) return false;
-  if (p.id === "adap" || p.id === "retinol") return true;
-  return productHasClass(p, "retinoid_rx") || productHasClass(p, "retinoid_cos");
-}
+const PAIR_MATRIX = [
+  // 1. not_cosmetic: BPO Leave-on in Kosmetik-Schiene
+  {
+    id: "rule_not_cosmetic_bpo",
+    code: "not_cosmetic",
+    prio: 10,
+    outcome: "konflikt",
+    match: function (cand, other, ctx) {
+      if (isBpoProduct(cand) && cand.schiene === "kosmetik" && cand.kat !== "reiniger") {
+        return "BPO ist in der EU kein Gesichts-Kosmetikstoff (Annex III/94) — nur im Arzneimittel-Schrank erfassen.";
+      }
+      return false;
+    }
+  },
+  // 2. not_cosmetic: Hydrochinon in Kosmetik verboten
+  {
+    id: "rule_not_cosmetic_hq",
+    code: "not_cosmetic",
+    prio: 10,
+    outcome: "konflikt",
+    match: function (cand, other, ctx) {
+      var blob = ((cand.name || "") + " " + (cand.wirk || "")).toLowerCase();
+      var isHq = productHasClass(cand, "hq_banned") || blob.indexOf("hydrochinon") !== -1 || blob.indexOf("hydroquinone") !== -1;
+      if (isHq && !cand.rx) {
+        return "Hydrochinon ist in der EU in Kosmetik verboten (Annex II/1339).";
+      }
+      return false;
+    }
+  },
+  // 3. inactivate: BPO + klassisches Tretinoin (BPO oxidiert Tretinoin)
+  {
+    id: "rule_inactivate_bpo_tretinoin",
+    code: "inactivate",
+    prio: 20,
+    outcome: "konflikt",
+    match: function (cand, other, ctx) {
+      if (!other) return false;
+      var candBpo = isBpoProduct(cand);
+      var otherBpo = isBpoProduct(other);
+      var candTret = isTretinoinProduct(cand);
+      var otherTret = isTretinoinProduct(other);
+      if ((candBpo && otherTret) || (candTret && otherBpo)) {
+        return "Klassisches Tretinoin wird durch BPO oxidiert und inaktiviert — nicht zeitgleich anwenden.";
+      }
+      return false;
+    }
+  },
+  // 12. inactivate: BPO + reine L-Ascorbinsäure (Vitamin C)
+  {
+    id: "rule_inactivate_bpo_ascorbic",
+    code: "inactivate",
+    prio: 20,
+    outcome: "konflikt",
+    match: function (cand, other, ctx) {
+      if (!other) return false;
+      var candBpo = isBpoProduct(cand);
+      var otherBpo = isBpoProduct(other);
+      var candAsc = isAscorbicProduct(cand);
+      var otherAsc = isAscorbicProduct(other);
+      if ((candBpo && otherAsc) || (candAsc && otherBpo)) {
+        return "BPO oxidiert reine L-Ascorbinsäure (Vitamin C) sofort — besser trennen (z. B. Vitamin C morgens, BPO abends).";
+      }
+      return false;
+    }
+  },
+  // 8. same_class: retinoid_rx + retinoid_cos
+  {
+    id: "rule_same_class_ret_cos_rx",
+    code: "same_class",
+    prio: 30,
+    outcome: "konflikt",
+    match: function (cand, other, ctx) {
+      if (!other) return false;
+      var candCos = isCosmeticRetinoid(cand);
+      var otherCos = isCosmeticRetinoid(other);
+      var candRx = isRxRetinoid(cand);
+      var otherRx = isRxRetinoid(other);
+      if ((candCos && otherRx) || (candRx && otherCos)) {
+        return "Gleiche Wirkstoffklasse (Retinoid) schon im Schrank — kosmetisches Retinol neben medizinischem Retinoid bringt mehr Reiz ohne Zusatznutzen.";
+      }
+      return false;
+    }
+  },
+  // 9. same_class: retinoid_rx + retinoid_rx
+  {
+    id: "rule_same_class_ret_rx_rx",
+    code: "same_class",
+    prio: 30,
+    outcome: "konflikt",
+    match: function (cand, other, ctx) {
+      if (!other) return false;
+      if (isRxRetinoid(cand) && isRxRetinoid(other)) {
+        return "Gleiche Wirkstoffklasse: Zwei medizinische Retinoide nicht kombinieren — erhöht nur das Schälungs- und Reizrisiko.";
+      }
+      return false;
+    }
+  },
+  // 10. same_class: retinoid_cos + retinoid_cos
+  {
+    id: "rule_same_class_ret_cos_cos",
+    code: "same_class",
+    prio: 30,
+    outcome: "konflikt",
+    match: function (cand, other, ctx) {
+      if (!other) return false;
+      if (isCosmeticRetinoid(cand) && isCosmeticRetinoid(other)) {
+        return "Gleiche Wirkstoffklasse (Retinoid): Zwei kosmetische Retinoide doppeln sich nur — lieber bei einem bewährten Produkt bleiben.";
+      }
+      return false;
+    }
+  },
+  // 11. same_class: aha + aha
+  {
+    id: "rule_same_class_aha_aha",
+    code: "same_class",
+    prio: 30,
+    outcome: "konflikt",
+    match: function (cand, other, ctx) {
+      if (!other) return false;
+      if (isAhaProduct(cand) && isAhaProduct(other)) {
+        return "Gleiche Wirkstoffklasse (AHA-Fruchtsäure) schon vorhanden — zwei AHA-Peelings doppeln sich nur und strapazieren die Barriere.";
+      }
+      return false;
+    }
+  },
+  // 4. skip_stack: BPO + Retinoid (Einzeltuben) in derselben Schicht (Reizrisiko, keine Inaktivierung bei Adapalen)
+  {
+    id: "rule_skip_stack_bpo_retinoid",
+    code: "skip_stack",
+    prio: 40,
+    outcome: "konflikt",
+    match: function (cand, other, ctx) {
+      if (!other) return false;
+      var candBpo = isBpoProduct(cand);
+      var otherBpo = isBpoProduct(other);
+      var candRet = isRetinoidProduct(cand);
+      var otherRet = isRetinoidProduct(other);
+      if ((candBpo && otherRet) || (candRet && otherBpo)) {
+        if (ctx && ctx.slot === "pm") {
+          return "Retinoid und BPO nicht in derselben Abend-Schicht stapeln (Reiz). Chemie Adapalen×BPO ist stabil — Problem ist Reiz, nicht Zerstörung.";
+        }
+      }
+      return false;
+    }
+  },
+  // 10. skip_stack: AHA + BHA am selben Abend
+  {
+    id: "rule_skip_stack_aha_bha",
+    code: "skip_stack",
+    prio: 40,
+    outcome: "konflikt",
+    match: function (cand, other, ctx) {
+      if (!other) return false;
+      var candAha = isAhaProduct(cand);
+      var otherAha = isAhaProduct(other);
+      var candBha = isBhaProduct(cand);
+      var otherBha = isBhaProduct(other);
+      if ((candAha && otherBha) || (candBha && otherAha)) {
+        if (ctx && ctx.slot === "pm") {
+          return "Zwei starke Säuren (AHA + BHA) am selben Abend überfordern die Barriere.";
+        }
+      }
+      return false;
+    }
+  },
+  // 6 & 7. alternate_days: Retinoid x AHA / BHA
+  {
+    id: "rule_alternate_retinoid_acid",
+    code: "alternate_days",
+    prio: 50,
+    outcome: "eher_nicht",
+    match: function (cand, other, ctx) {
+      if (!other) return false;
+      var candRet = isRetinoidProduct(cand);
+      var otherRet = isRetinoidProduct(other);
+      var candAcid = isAcidProduct(cand);
+      var otherAcid = isAcidProduct(other);
+      if ((candRet && otherAcid) || (candAcid && otherRet)) {
+        return "Nicht am selben Abend wie dein Retinoid — lieber getrennte Tage (Skin Cycling).";
+      }
+      return false;
+    }
+  },
+  // 13. split: Ascorbinsäure (Vitamin C) x AHA / BHA
+  {
+    id: "rule_split_ascorbic_acid",
+    code: "split",
+    prio: 50,
+    outcome: "eher_nicht",
+    match: function (cand, other, ctx) {
+      if (!other) return false;
+      var candAsc = isAscorbicProduct(cand);
+      var otherAsc = isAscorbicProduct(other);
+      var candAcid = isAcidProduct(cand);
+      var otherAcid = isAcidProduct(other);
+      if ((candAsc && otherAcid) || (candAcid && otherAsc)) {
+        return "Stark saures Milieu kann reizen — besser trennen (z. B. Vitamin C morgens, Säure-Peeling abends).";
+      }
+      return false;
+    }
+  },
+  // 5. resistance: Topisches Antibiotikum (ab_top) ohne BPO im Schrank
+  {
+    id: "rule_resistance_ab_without_bpo",
+    code: "resistance",
+    prio: 55,
+    outcome: "eher_nicht",
+    match: function (cand, other, ctx) {
+      if (isAntibioticProduct(cand)) {
+        var cabinetHasBpo = ctx && ctx.allCabinetProducts && ctx.allCabinetProducts.some(isBpoProduct);
+        if (!cabinetHasBpo && !isBpoProduct(cand)) {
+          return "Topisches Antibiotikum nie als Monotherapie ohne BPO anwenden — Gefahr von bakterieller Resistenzbildung. Ärztlich abklären.";
+        }
+      }
+      return false;
+    }
+  },
+  // 17. begleit_barrier: Duftstoffe / Barrierestress neben aktiver Rx-Therapie
+  {
+    id: "rule_begleit_barrier",
+    code: "begleit_barrier",
+    prio: 60,
+    outcome: "eher_nicht",
+    match: function (cand, other, ctx) {
+      if (!other) return false;
+      var candStress = cand.ff === false || productHasClass(cand, "barrier_stress");
+      var otherRx = isRxRetinoid(other) || isBpoProduct(other);
+      if (candStress && (otherRx || hasTag("begleitpflege"))) {
+        return "Parfüm/Barrierestress neben Rx/Retinoid — Begleitpflege eher reizarm und barrierefreundlich halten.";
+      }
+      return false;
+    }
+  },
+  // 19. bleach: BPO bleicht Textilien
+  {
+    id: "rule_bleach_bpo",
+    code: "bleach",
+    prio: 80,
+    outcome: "passt",
+    match: function (cand, other, ctx) {
+      if (isBpoProduct(cand)) {
+        return "Hinweis: Benzoylperoxid (BPO) bleicht Textilien und Kissenbezüge.";
+      }
+      return false;
+    }
+  }
+];
 
-function isBpoProduct(p) {
-  if (!p) return false;
-  if (p.id === "clienzo") return true;
-  return productHasClass(p, "bpo") || productHasClass(p, "ab_top");
-}
+function checkPairRules(candidate, cabinetProducts, context) {
+  if (!candidate) return null;
+  var prods = Array.isArray(cabinetProducts) ? cabinetProducts.filter(Boolean) : [];
+  var ctx = context || {};
+  ctx.allCabinetProducts = prods;
 
-function isAcidProduct(p) {
-  return productHasClass(p, "aha") || productHasClass(p, "bha");
+  var matches = [];
+  PAIR_MATRIX.forEach(function (rule) {
+    // 1. Single-product check
+    var candOnly = rule.match(candidate, null, ctx);
+    if (candOnly) {
+      matches.push({
+        prio: rule.prio,
+        code: rule.code,
+        outcome: rule.outcome,
+        reason: candOnly
+      });
+      return;
+    }
+    // 2. Pairwise check against cabinet products
+    for (var i = 0; i < prods.length; i++) {
+      var other = prods[i];
+      if (!other || (candidate.id && other.id === candidate.id)) continue;
+      var hit = rule.match(candidate, other, ctx);
+      if (hit) {
+        matches.push({
+          prio: rule.prio,
+          code: rule.code,
+          outcome: rule.outcome,
+          reason: hit,
+          withProduct: other
+        });
+        break;
+      }
+    }
+  });
+
+  if (!matches.length) return null;
+  matches.sort(function (a, b) {
+    return a.prio - b.prio;
+  });
+  return matches[0];
 }
 
 /**
@@ -262,28 +602,55 @@ function isAcidProduct(p) {
 function assessNightReiz(pmIds, candidate) {
   var ids = (pmIds || []).slice();
   if (candidate && candidate.id && ids.indexOf(candidate.id) === -1) ids.push(candidate.id);
-  var classes = {};
+
+  var prods = ids.map(function (id) {
+    if (candidate && id === candidate.id) return candidate;
+    return typeof DB !== "undefined" ? DB[id] : null;
+  }).filter(Boolean);
+
   var weight = 0;
-  ids.forEach(function (id) {
-    var p = id === (candidate && candidate.id) ? candidate : DB[id];
-    if (!p) return;
+  var classes = {};
+  prods.forEach(function (p) {
     weight += reizWeightForProduct(p);
     (p.klassen || []).forEach(function (k) {
       classes[k] = true;
     });
-    if (p.id === "adap") classes.retinoid_rx = true;
-    if (p.id === "clienzo") {
-      classes.bpo = true;
-      classes.ab_top = true;
-    }
-    if (p.id === "retinol") classes.retinoid_cos = true;
   });
-  var hasRet =
-    classes.retinoid_rx || classes.retinoid_cos || ids.indexOf("adap") !== -1 || ids.indexOf("retinol") !== -1;
-  var hasAcid = classes.aha || classes.bha;
-  var hasBpo = classes.bpo || classes.ab_top || ids.indexOf("clienzo") !== -1;
+
+  var hasRet = prods.some(isRetinoidProduct);
+  var hasRxRet = prods.some(isRxRetinoid);
+  var hasCosRet = prods.some(isCosmeticRetinoid);
+  var hasAcid = prods.some(isAcidProduct);
+  var hasAha = prods.some(isAhaProduct);
+  var hasBha = prods.some(isBhaProduct);
+  var hasBpo = prods.some(isBpoProduct);
+  var hasAscorbic = prods.some(isAscorbicProduct);
+
   var sharp = hasTag("begleitpflege") || hasTag("barrier") || hasTag("sensibel");
   var threshold = sharp ? 3 : 4;
+
+  // Inaktivierung (BPO x Tretinoin / BPO x Ascorbic)
+  var pairNight = checkPairRules(candidate || prods[0], prods, { slot: "pm" });
+  if (pairNight && pairNight.code === "inactivate") {
+    return makeDim("konflikt", pairNight.reason, "inactivate");
+  }
+
+  // Redundanz am selben Abend
+  if (hasRxRet && hasCosRet) {
+    return makeDim(
+      "konflikt",
+      "Gleiche Wirkstoffklasse (Retinoid) schon im Schrank — kosmetisches Retinol neben medizinischem Retinoid bringt mehr Reiz ohne Zusatznutzen.",
+      "same_class"
+    );
+  }
+  var ahaCount = prods.filter(isAhaProduct).length;
+  if (ahaCount > 1) {
+    return makeDim(
+      "konflikt",
+      "Gleiche Wirkstoffklasse (AHA-Fruchtsäure) schon vorhanden — zwei AHA-Peelings doppeln sich nur und strapazieren die Barriere.",
+      "same_class"
+    );
+  }
 
   if (hasRet && hasAcid) {
     return makeDim(
@@ -300,7 +667,14 @@ function assessNightReiz(pmIds, candidate) {
       "skip_stack"
     );
   }
-  if (weight >= threshold && (hasRet || hasAcid || hasBpo)) {
+  if (hasAha && hasBha) {
+    return makeDim(
+      "konflikt",
+      "Zwei starke Säuren (AHA + BHA) am selben Abend überfordern die Barriere.",
+      "skip_stack"
+    );
+  }
+  if (weight >= threshold && (hasRet || hasAcid || hasBpo || hasAscorbic)) {
     return makeDim(
       "konflikt",
       "Reiz-Budget der Nacht überschritten — starke Actives besser trennen.",
@@ -311,7 +685,7 @@ function assessNightReiz(pmIds, candidate) {
 }
 
 /**
- * Tageslast AM+PM: Clienzo AM + Adapalen PM → eher nicht (Default);
+ * Tageslast AM+PM: BPO AM + Retinoid PM → eher nicht (Default);
  * bei begleitpflege+barrier eher Konflikt-Ton.
  */
 function assessDayReiz(amIds, pmIds, candidate, candidateSlot) {
@@ -326,28 +700,27 @@ function assessDayReiz(amIds, pmIds, candidate, candidateSlot) {
       if (isRetinoidProduct(candidate) && pm.indexOf(candidate.id) === -1) pm = pm.concat([candidate.id]);
     }
   }
-  var amHeavy = am.some(function (id) {
-    var p = candidate && id === candidate.id ? candidate : DB[id];
+  var amProds = am.map(function (id) {
+    return candidate && id === candidate.id ? candidate : (typeof DB !== "undefined" ? DB[id] : null);
+  }).filter(Boolean);
+  var pmProds = pm.map(function (id) {
+    return candidate && id === candidate.id ? candidate : (typeof DB !== "undefined" ? DB[id] : null);
+  }).filter(Boolean);
+
+  var amHeavy = amProds.some(function (p) {
     return reizWeightForProduct(p) >= 2;
   });
-  var pmHeavy = pm.some(function (id) {
-    var p = candidate && id === candidate.id ? candidate : DB[id];
+  var pmHeavy = pmProds.some(function (p) {
     return reizWeightForProduct(p) >= 2;
   });
-  var amBpo = am.some(function (id) {
-    var p = candidate && id === candidate.id ? candidate : DB[id];
-    return isBpoProduct(p);
-  });
-  var pmRet = pm.some(function (id) {
-    var p = candidate && id === candidate.id ? candidate : DB[id];
-    return isRetinoidProduct(p);
-  });
+  var amBpo = amProds.some(isBpoProduct);
+  var pmRet = pmProds.some(isRetinoidProduct);
   var sharp = hasTag("begleitpflege") && (hasTag("barrier") || hasTag("sensibel"));
 
   if (amBpo && pmRet) {
     return makeDim(
       sharp ? "konflikt" : "eher_nicht",
-      "Viel Active an einem Tag (z. B. Clienzo-Spot morgens + Adapalen abends). Nicht weil Adapalen×BPO „nie geht“ — sondern zwei Reiz-Mittel ohne Fertiggalenik.",
+      "Viel Active an einem Tag (z. B. BPO morgens + medizinisches Retinoid abends). Nicht weil Adapalen×BPO chemisch inkompatibel wäre — sondern zwei starke Reizstoffe an einem Tag ohne Fertiggalenik.",
       "day_skip_stack"
     );
   }
@@ -528,33 +901,26 @@ function assessZumSchrank(candidate) {
 
   var currentPM = typeof getActivePMList === "function" ? getActivePMList() : [];
   var am = (typeof appState !== "undefined" && appState.am) || [];
-  var hasRxRetinoid =
-    currentPM.indexOf("adap") !== -1 ||
-    ((appState.pm_a || []).indexOf("adap") !== -1) ||
-    am.concat(currentPM).some(function (id) {
-      return isRetinoidProduct(DB[id]);
-    });
-  var hasBPO =
-    currentPM.indexOf("clienzo") !== -1 ||
-    ((appState.pm_b || []).indexOf("clienzo") !== -1) ||
-    am.concat(currentPM).some(function (id) {
-      return isBpoProduct(DB[id]);
-    });
+  var allCabinetIds = getCabinetProductIds();
+  var allCabinetProds = allCabinetIds.map(function (id) {
+    return typeof DB !== "undefined" ? DB[id] : null;
+  }).filter(Boolean);
 
-  // same_class Retinoid
-  if (productHasClass(candidate, "retinoid_cos") && hasRxRetinoid) {
-    return makeDim(
-      "konflikt",
-      "Gleiche Wirkstoffklasse (Retinoid) schon im Schrank — mehr Reiz ohne Zusatznutzen.",
-      "same_class"
-    );
+  var hasRxRetinoid = allCabinetProds.some(isRxRetinoid);
+  var hasBPO = allCabinetProds.some(isBpoProduct);
+
+  // 1. Matrix-Prüfung gegen Schrank-Produkte (Prio: not_cosmetic > inactivate > same_class)
+  var pairHit = checkPairRules(candidate, allCabinetProds, { slot: null, currentPM: currentPM });
+  if (pairHit && pairHit.outcome === "konflikt") {
+    return makeDim(pairHit.outcome, pairHit.reason, pairHit.code);
   }
 
-  // Night stack hypothetisch wenn Kandidat abends landet
-  var night = assessNightReiz(currentPM, candidate);
-  if (night.outcome === "konflikt") return night;
+  // 2. Matrix-Warnungen mit spezifischem Ablauf (alternate_days, split, resistance)
+  if (pairHit && pairHit.outcome === "eher_nicht") {
+    return makeDim(pairHit.outcome, pairHit.reason, pairHit.code);
+  }
 
-  // AHA/BHA vs Retinoid → eher nicht / alternate wenn nicht schon konflikt
+  // 3. Fallback: AHA/BHA vs Retinoid → lieber getrennte Tage (Skin Cycling) falls nicht bereits durch pairHit
   if (isAcidProduct(candidate) && hasRxRetinoid) {
     return makeDim(
       "eher_nicht",
@@ -563,15 +929,29 @@ function assessZumSchrank(candidate) {
     );
   }
 
+  // 4. Hypothetischer Nacht-Stack wenn Kandidat abends landet (Reizgewicht-Budget)
+  var night = assessNightReiz(currentPM, candidate);
+  if (night.outcome === "konflikt") return night;
+
+  // 5. Tageslast prüfen
   var day = assessDayReiz(am, currentPM, candidate, null);
   if (day.outcome === "eher_nicht" || day.outcome === "konflikt") return day;
 
-  if (candidate.ff === false && (hasRxRetinoid || hasBPO || hasTag("begleitpflege"))) {
+  // 6. Begleitpflege / Duftstoffe
+  var hasRxTherapy = allCabinetProds.some(function (p) {
+    return isRxRetinoid(p) || isBpoProduct(p) || (p && (p.rx || p.schiene === "arzneimittel"));
+  });
+  if (candidate.ff === false && (hasRxTherapy || hasTag("begleitpflege"))) {
     return makeDim(
       "eher_nicht",
       "Parfüm neben Rx/Retinoid — Begleitpflege eher reizarm halten.",
       "begleit_barrier"
     );
+  }
+
+  // 7. Hinweis-Hits (z.B. bleach)
+  if (pairHit && pairHit.code === "bleach") {
+    return makeDim("passt", pairHit.reason, "bleach");
   }
 
   return makeDim("passt", "Kein bekannter harter Konflikt auf Stoffebene.", "ok");
@@ -599,7 +979,10 @@ function assessSlot(candidate, emptyCabinet) {
   }
 
   var currentPM = typeof getActivePMList === "function" ? getActivePMList() : [];
-  if (isAcidProduct(candidate) && currentPM.indexOf("adap") !== -1) {
+  var pmHasRetinoid = currentPM.some(function (id) {
+    return isRetinoidProduct(typeof DB !== "undefined" ? DB[id] : null);
+  });
+  if (isAcidProduct(candidate) && pmHasRetinoid) {
     return makeDim(
       "eher_nicht",
       "Nur an freien Abenden (ohne Retinoid-Nacht).",
@@ -656,11 +1039,13 @@ function evaluateCandidate(candidate) {
           ? "Schritt 1 morgens & abends"
           : primary.code === "alternate_days" || primary.code === "slot_alternate"
             ? "Nur an freien Abenden / getrennte Tage"
-            : primary.code === "day_skip_stack" || primary.code === "day_load"
-              ? "Tageslast prüfen — Wechsel-Nacht oder Spot pausieren (Nutzerwahl)"
-              : candidate.kat === "creme"
-                ? "Schritt 4 Creme"
-                : "Je nach Slot in der Routine";
+            : primary.code === "split"
+              ? "Morgens und abends trennen"
+              : primary.code === "day_skip_stack" || primary.code === "day_load"
+                ? "Tageslast prüfen — Wechsel-Nacht oder Spot pausieren (Nutzerwahl)"
+                : candidate.kat === "creme"
+                  ? "Schritt 4 Creme"
+                  : "Je nach Slot in der Routine";
 
   return {
     status: statusFromOutcome(overall),
@@ -687,7 +1072,7 @@ function evaluateCandidate(candidate) {
 }
 
 function calculatePrognosis() {
-  var am = appState.am || [];
+  var am = (typeof appState !== "undefined" && appState.am) || [];
   var pm = typeof getActivePMList === "function" ? getActivePMList() : [];
   var all = am.concat(pm);
   var layering = getLayeringProductIds();
@@ -719,24 +1104,32 @@ function calculatePrognosis() {
   var points = [];
   var outcomes = [];
 
-  var hasSPF = am.some(function (id) {
-    return DB[id] && DB[id].kat === "spf";
+  var allProds = all.map(function (id) {
+    return typeof DB !== "undefined" ? DB[id] : null;
+  }).filter(Boolean);
+  var pmProds = pm.map(function (id) {
+    return typeof DB !== "undefined" ? DB[id] : null;
+  }).filter(Boolean);
+  var amProds = am.map(function (id) {
+    return typeof DB !== "undefined" ? DB[id] : null;
+  }).filter(Boolean);
+
+  var hasSPF = amProds.some(function (p) {
+    return p && p.kat === "spf";
   });
-  var hasActives = all.some(function (id) {
-    return DB[id] && (DB[id].kat === "active" || DB[id].kat === "serum" || DB[id].rx);
+  var hasActives = allProds.some(function (p) {
+    return p && (p.kat === "active" || p.kat === "serum" || p.kat === "spot" || p.rx);
   });
-  var hasMoisturizer = all.some(function (id) {
-    return DB[id] && DB[id].kat === "creme";
+  var hasMoisturizer = allProds.some(function (p) {
+    return p && p.kat === "creme";
   });
-  var hasAdap = all.indexOf("adap") !== -1;
-  var hasClienzo = all.indexOf("clienzo") !== -1;
-  var hasRetinol = all.indexOf("retinol") !== -1;
-  var hasAHA = pm.some(function (id) {
-    return DB[id] && DB[id].klassen && DB[id].klassen.indexOf("aha") !== -1;
-  });
-  var hasBHA = pm.some(function (id) {
-    return DB[id] && DB[id].klassen && DB[id].klassen.indexOf("bha") !== -1;
-  });
+
+  var rxRetinoids = allProds.filter(isRxRetinoid);
+  var cosRetinoids = allProds.filter(isCosmeticRetinoid);
+  var pmHasBpo = pmProds.some(isBpoProduct);
+  var pmHasRet = pmProds.some(isRetinoidProduct);
+  var allHasBpo = allProds.some(isBpoProduct);
+  var allHasAbTop = allProds.some(isAntibioticProduct);
 
   var night = assessNightReiz(pm, null);
   if (night.outcome === "konflikt") {
@@ -744,23 +1137,51 @@ function calculatePrognosis() {
     points.push(formatVerdictOneLook("konflikt", night.reason));
   }
 
-  if (hasAdap && hasRetinol) {
+  // Redundanz: Retinoide
+  if (rxRetinoids.length > 0 && cosRetinoids.length > 0) {
     outcomes.push("konflikt");
     points.push(
       formatVerdictOneLook(
         "konflikt",
-        "Zwei Retinoide: Adapalen und kosmetisches Retinol — mehr Reiz ohne Zusatznutzen."
+        "Zwei Retinoide im Schrank (medizinisches Retinoid + kosmetisches Retinol) — mehr Reiz ohne Zusatznutzen."
+      )
+    );
+  } else if (rxRetinoids.length > 1) {
+    outcomes.push("konflikt");
+    points.push(
+      formatVerdictOneLook(
+        "konflikt",
+        "Zwei medizinische Retinoide im Schrank — doppelte Dosierung ohne Zusatznutzen."
+      )
+    );
+  } else if (cosRetinoids.length > 1) {
+    outcomes.push("konflikt");
+    points.push(
+      formatVerdictOneLook(
+        "konflikt",
+        "Zwei kosmetische Retinoide im Schrank — redundante Wirkung."
       )
     );
   }
 
-  // Gleicher Abend Clienzo+Adap (exklusiver Wechsel bleibt)
-  if (pm.indexOf("clienzo") !== -1 && pm.indexOf("adap") !== -1) {
+  // Gleicher Abend BPO + Retinoid
+  if (pmHasBpo && pmHasRet) {
     outcomes.push("konflikt");
     points.push(
       formatVerdictOneLook(
         "konflikt",
-        "Clienzo und Adapalen nicht am selben Abend schichten — Modus A ‖ Modus B im Wechsel."
+        "BPO und Retinoid nicht am selben Abend schichten — lieber an getrennten Tagen im Wechsel anwenden."
+      )
+    );
+  }
+
+  // Resistenz-Gefahr: Topisches Antibiotikum ohne BPO
+  if (allHasAbTop && !allHasBpo) {
+    outcomes.push("eher_nicht");
+    points.push(
+      formatVerdictOneLook(
+        "eher_nicht",
+        "Topisches Antibiotikum ohne BPO in der Routine — Resistenzgefahr, ärztlich abklären."
       )
     );
   }
@@ -789,8 +1210,14 @@ function calculatePrognosis() {
     points.push(formatVerdictOneLook("passt", "Feuchtigkeitspflege als Puffer vorhanden."));
   }
 
-  if (hasAdap || hasClienzo) {
-    points.push("ℹ️ Begleitpflege: Rx erkannt — Reizstoff-Filter aktiver. Kein Therapie-Schema.");
+  var hasRxTherapy = allProds.some(function (p) {
+    return isRxRetinoid(p) || isBpoProduct(p) || (p && (p.rx || p.schiene === "arzneimittel"));
+  });
+  if (hasRxTherapy) {
+    points.push("ℹ️ Begleitpflege: Rx-Wirkstoff erkannt — Reizstoff-Filter aktiver. Kein Therapie-Schema.");
+  }
+  if (allHasBpo) {
+    points.push("ℹ️ Textil-Hinweis: BPO bleicht Handtücher und Kissenbezüge.");
   }
 
   var overall = outcomes.length ? worstWins.apply(null, outcomes) : "passt";
