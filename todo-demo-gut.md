@@ -13,9 +13,10 @@ Stand: 2026-09-08
 - [x] Baby `u3 || true` entfernen
 
 ## Danach
-- [ ] Verdict-Copy auf 1 Blick schärfen
-- [ ] 10–20 dm-EANs Happy-Path
-- [ ] Leicht aufräumen (README, `.bak` → archiv/)
+- [x] Verdict-Copy auf 1 Blick schärfen (Prominente Status-Pill, klare 'Warum?'-Begründung, Timing-Chip)
+- [x] 10–20 dm-EANs Happy-Path (20 echte dm-EANs verifiziert, kein unbegründetes false)
+- [x] Leicht aufräumen (README aktuell, `.bak` & `eu_catalog.js` in archiv/)
 
 ## Nicht jetzt
 Fotos-Marathon, Cloud, App-Store, Skin-Bliss nachbauen
+

@@ -1445,9 +1445,9 @@ function normalizeDmProduct(p) {
   }
 
   // Fragrance Free evaluation
-  let ff = false;
+  let ff = null;
   const titleLower = title.toLowerCase();
-  if (titleLower.includes("ultra sensitive") || titleLower.includes("parfümfrei") || titleLower.includes("unparfümiert") || titleLower.includes("ohne parfüm")) {
+  if (titleLower.includes("parfümfrei") || titleLower.includes("unparfümiert") || titleLower.includes("ohne parfüm")) {
     ff = true;
   }
   if (p.attributes) {
@@ -1472,7 +1472,7 @@ function normalizeDmProduct(p) {
     kat = "creme";
   }
 
-  const cf = typeof isBrandCrueltyFree === "function" ? isBrandCrueltyFree(brand) : false;
+  const cf = typeof isBrandCrueltyFree === "function" && isBrandCrueltyFree(brand) ? true : null;
 
   return {
     id,
@@ -1488,8 +1488,8 @@ function normalizeDmProduct(p) {
     klassen: ["support"],
     shape: kat === "reiniger" ? "pump" : (kat === "serum" ? "serum" : (kat === "spf" ? "tube" : "jar")),
     c: kat === "reiniger" ? "#76a9c7" : (kat === "serum" ? "#6aa8c9" : (kat === "spf" ? "#ecd37b" : "#a4c8a8")),
-    wirk: (ff ? "Parfümfrei · " : "") + (price ? price + " · " : "") + brand,
-    nc: false,
+    wirk: (ff === true ? "Parfümfrei · " : "") + (price ? price + " · " : "") + brand,
+    nc: null,
     ff,
     cf,
     store: `dm (${price || 'Online/Filiale'})`,
@@ -1504,7 +1504,29 @@ function normalizeDmPilotRow(r) {
   const name = r.name || "dm-Produkt";
   const brand = r.brand || "dm";
   const price = r.price || "";
-  const ff = r.flag_fragrance_free === "yes" || r.dm_fragranceFree === "True";
+
+  let ff = null;
+  if (r.flag_fragrance_free === "yes" || r.dm_fragranceFree === "True" || String(r.dm_fragranceFree).toLowerCase() === "true") {
+    ff = true;
+  } else if (r.flag_fragrance_free === "no" && (r.fragrance_basis || "").trim().length > 0) {
+    ff = false;
+  }
+
+  let nc = null;
+  if ((r.flag_nc === "yes" || r.flag_nc === "true") && (r.nc_basis || "").trim().length > 0) {
+    nc = true;
+  } else if ((r.flag_nc === "no" || r.flag_nc === "false") && (r.nc_basis || "").trim().length > 0) {
+    nc = false;
+  }
+
+  const isCf = typeof isBrandCrueltyFree === "function" && isBrandCrueltyFree(brand);
+  let cf = null;
+  if (isCf || ((r.flag_cf === "yes" || r.flag_cf === "true") && (r.cf_basis || "").trim().length > 0)) {
+    cf = true;
+  } else if ((r.flag_cf === "no" || r.flag_cf === "false") && (r.cf_basis || "").trim().length > 0) {
+    cf = false;
+  }
+
   const url = r.dm_url || (dan ? `https://www.dm.de/p/d/${dan}` : "https://www.dm.de");
 
   let kat = "creme";
@@ -1533,10 +1555,10 @@ function normalizeDmPilotRow(r) {
     klassen: ["support"],
     shape: kat === "reiniger" ? "pump" : (kat === "serum" ? "serum" : (kat === "spf" ? "tube" : "jar")),
     c: kat === "reiniger" ? "#76a9c7" : (kat === "serum" ? "#6aa8c9" : (kat === "spf" ? "#ecd37b" : "#a4c8a8")),
-    wirk: (ff ? "Parfümfrei · " : "") + (price ? price + " · " : "") + brand,
-    nc: false,
+    wirk: (ff === true ? "Parfümfrei · " : "") + (price ? price + " · " : "") + brand,
+    nc,
     ff,
-    cf: typeof isBrandCrueltyFree === "function" ? isBrandCrueltyFree(brand) : false,
+    cf,
     store: `dm (${price || 'Filiale'})`,
     source: "dm-pilot"
   };

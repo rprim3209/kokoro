@@ -25,9 +25,9 @@ function openAddBabyProductModal(targetSlot = "all", profileType = "baby") {
       }
 
       // Flags
-      if (filterFF && !p.ff) return false;
-      if (filterU3 && !p.u3) return false;
-      if (filterCF && !p.cf) return false;
+      if (filterFF && p.ff !== true) return false;
+      if (filterU3 && p.u3 !== true) return false;
+      if (filterCF && p.cf !== true) return false;
 
       return true;
     });
@@ -347,9 +347,9 @@ function openAddTeenProductModal(targetSlot = "all") {
       if (currentSlot !== "all" && p.slot !== currentSlot) return false;
 
       // Flags
-      if (filterFF && !p.ff) return false;
-      if (filterNC && !p.nc) return false;
-      if (filterCF && !p.cf) return false;
+      if (filterFF && p.ff !== true) return false;
+      if (filterNC && p.nc !== true) return false;
+      if (filterCF && p.cf !== true) return false;
       if (filterTeenOnly && p.notForMinors) return false;
 
       return true;
@@ -706,7 +706,7 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
                 </div>
                 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">
                   ${p.ff === true ? '<span class="tag ff" style="font-size:0.65rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.65rem;padding:1px 5px">⚠️ Parfümiert</span>' : '')}
-                  ${p.cf ? '<span class="tag cf" style="font-size:0.65rem;padding:1px 5px">🐰 CF</span>' : ''}
+                  ${p.cf === true ? '<span class="tag cf" style="font-size:0.65rem;padding:1px 5px">🐰 CF</span>' : ''}
                   <span class="tag" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-size:0.65rem;padding:1px 5px">Live dm</span>
                 </div>
               </div>
@@ -1135,7 +1135,7 @@ function openScanModal() {
             <div style="font-size:0.74rem;color:var(--muted)">
               <span style="color:#16a34a;font-weight:700">${p.price || 'dm'}</span>
               ${p.ff === true ? ' · <span style="color:#16a34a;font-weight:600">🌸 Parfümfrei</span>' : (p.ff === false ? ' · <span style="color:#d97706">⚠️ Parfümiert</span>' : '')}
-              ${p.cf ? ' · <span style="color:#6b21a8">🐰 CF</span>' : ''}
+              ${p.cf === true ? ' · <span style="color:#6b21a8">🐰 CF</span>' : ''}
               · <a href="${p.url}" target="_blank" style="color:#2563eb;text-decoration:underline">dm.de ↗</a>
             </div>
           </div>
@@ -1202,9 +1202,9 @@ function openScanModal() {
         else if (m.type === "baby") badges.push('<span class="tag ped-blue" style="font-size:0.65rem;padding:1px 5px">👶 Baby/Kind</span>');
 
         if (p.ff === false) badges.push('<span class="tag warn" style="font-size:0.65rem;padding:1px 4px">⚠️ Parfüm</span>');
-        else if (p.ff) badges.push('<span class="tag ff" style="font-size:0.65rem;padding:1px 4px">🌸 Parfümfrei</span>');
-        if (p.nc) badges.push('<span class="tag nc" style="font-size:0.65rem;padding:1px 4px">🛡️ NC</span>');
-        if (p.cf) badges.push('<span class="tag cf" style="font-size:0.65rem;padding:1px 4px">🐰 CF</span>');
+        else if (p.ff === true) badges.push('<span class="tag ff" style="font-size:0.65rem;padding:1px 4px">🌸 Parfümfrei</span>');
+        if (p.nc === true) badges.push('<span class="tag nc" style="font-size:0.65rem;padding:1px 4px">🛡️ NC</span>');
+        if (p.cf === true) badges.push('<span class="tag cf" style="font-size:0.65rem;padding:1px 4px">🐰 CF</span>');
 
         const clickAction = m.type === "teen" ? `openTeenProductDetail('${p.id}')` : (m.type === "baby" ? `openBabyProductDetail('${p.id}')` : `showVerdict('${p.id}')`);
 
@@ -1423,16 +1423,30 @@ function showVerdict(prodId) {
     </div>
   `;
 
+  const statusPill = (v.status === "ok" || v.status === "passt")
+    ? '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#dcfce7;color:#166534;padding:3px 9px;border-radius:6px;font-weight:800">🟢 Passt in deine Routine</span>'
+    : ((v.status === "warn" || v.status === "eher_nicht")
+      ? '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#fef3c7;color:#92400e;padding:3px 9px;border-radius:6px;font-weight:800">🟡 Eher nicht (Reiz-Risiko)</span>'
+      : '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#fee2e2;color:#991b1b;padding:3px 9px;border-radius:6px;font-weight:800">🔴 Wirkstoff-Konflikt</span>');
+
   showModalSheet(`
     <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">Scan-Ergebnis für:</div>
     <h2>${prod.brand} ${prod.name}</h2>
     
-    <div class="verdict-banner ${v.status}">
-      <div>
+    <div class="verdict-banner ${v.status}" style="flex-direction:column;gap:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:6px">
         <div class="verdict-title">${v.title}</div>
-        <div class="verdict-sub"><strong>Warum?</strong> ${v.reason}</div>
-        <div style="margin-top:6px;font-size:0.78rem;font-weight:600">Empfohlene Routine: ${v.where}</div>
-        <div style="margin-top:6px;font-size:0.72rem;color:var(--muted);font-style:italic">⚖️ Hinweis: Keine medizinische Therapie — reines Einkaufs- & Layering-Erkennungstool.</div>
+        ${statusPill}
+      </div>
+      <div class="verdict-sub" style="font-size:0.92rem;font-weight:600;margin-top:2px">
+        <strong>Warum?</strong> ${v.reason}
+      </div>
+      <div style="display:inline-flex;align-items:center;gap:6px;margin-top:4px;padding:4px 9px;background:rgba(255,255,255,0.85);border-radius:6px;font-size:0.78rem;font-weight:700;color:var(--ink)">
+        <span>⏱️ Empfohlener Einsatz:</span>
+        <span style="font-weight:600">${v.where}</span>
+      </div>
+      <div style="margin-top:6px;font-size:0.72rem;color:var(--muted);font-style:italic">
+        ⚖️ Hinweis: Keine medizinische Therapie — reines Einkaufs- & Layering-Erkennungstool.
       </div>
     </div>
 
