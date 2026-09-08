@@ -112,9 +112,12 @@ function renderSettingsScreen(container) {
           <li><strong>🔍 dm-Suche:</strong> Überträgt nur den Suchbegriff oder die EAN zur Produktdaten-Abfrage — niemals persönliche Profildaten.</li>
           <li><strong>🚫 Zero Tracking:</strong> Keine Tracking-Cookies, keine Werbenetzwerke, keine externen Analyse-Dienste.</li>
         </ul>
-        <div style="margin-top:0.8rem">
+        <div style="margin-top:0.8rem;display:flex;gap:8px;flex-wrap:wrap">
           <button type="button" class="ghost-btn" style="width:auto;margin-top:0;padding:0.45rem 0.9rem;font-size:0.8rem" onclick="openPrivacyModal()">
-            📜 Ausführliche Datenschutz-Notiz lesen ➔
+            📜 Datenschutz-Notiz lesen ➔
+          </button>
+          <button type="button" class="ghost-btn" style="width:auto;margin-top:0;padding:0.45rem 0.9rem;font-size:0.8rem" onclick="openImpressumModal()">
+            ⚖️ Impressum anzeigen ➔
           </button>
         </div>
       </div>
@@ -189,6 +192,63 @@ function openPrivacyModal() {
   showModalSheet(modalHTML);
 }
 
+function openImpressumModal() {
+  const modalHTML = `
+    <div style="padding:1rem 1.1rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">
+        <div style="font-family:'Iowan Old Style', Georgia, serif;font-size:1.3rem;font-weight:700">
+          ⚖️ Impressum & Rechtliche Hinweise
+        </div>
+        <button class="btn-text" onclick="closeModal()" style="font-size:1.2rem;color:var(--muted);padding:0 4px">✕</button>
+      </div>
+
+      <div style="font-size:0.82rem;color:var(--muted);line-height:1.45;margin-bottom:1rem">
+        Angaben gemäß § 5 Digitale-Dienste-Gesetz (DDG) & § 5 E-Commerce-Gesetz (ECG Österreich)
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:0.8rem">
+          <div style="font-weight:700;font-size:0.88rem;color:#0f172a;margin-bottom:4px">
+            Dienstanbieter & Betreiber
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);line-height:1.4">
+            <strong>Kosmetikschrank (Kokoro)</strong><br>
+            Open-Source-Projekt zur evidenzbasierten Hautpflege-Transparenz<br>
+            GitHub: <a href="https://github.com/rprim3209/kokoro" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline">github.com/rprim3209/kokoro</a>
+          </div>
+        </div>
+
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:0.8rem">
+          <div style="font-weight:700;font-size:0.88rem;color:#0f172a;margin-bottom:4px">
+            Medizinischer & kosmetischer Disclaimer
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);line-height:1.4">
+            Die App dient ausschließlich der neutralen Verbraucherinformation sowie der Unterstützung beim Einkauf und Layering frei verkäuflicher Kosmetika. Die Inhalte stellen <strong>keine medizinische Therapie, Diagnose oder Heilbehandlung</strong> dar und ersetzen nicht den Besuch einer Fachärztin oder eines Facharztes.
+          </div>
+        </div>
+
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:0.8rem">
+          <div style="font-weight:700;font-size:0.88rem;color:#0f172a;margin-bottom:4px">
+            Haftung für Inhalte & Links
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);line-height:1.4">
+            Als Diensteanbieter sind wir gemäß § 7 Abs. 1 DDG für eigene Inhalte verantwortlich. Für externe Links zu Webseiten Dritter (z. B. Herstellerseiten oder OpenBeautyFacts) übernehmen wir keine Haftung; für deren Inhalte ist stets der jeweilige Anbieter verantwortlich.
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.2rem;display:flex;flex-direction:column;gap:8px">
+        <button class="primary" onclick="closeModal()">Schließen</button>
+        <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:4px">
+          ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+        </div>
+      </div>
+    </div>
+  `;
+  showModalSheet(modalHTML);
+}
+
 if (typeof window !== "undefined") {
   window.openPrivacyModal = openPrivacyModal;
+  window.openImpressumModal = openImpressumModal;
 }
