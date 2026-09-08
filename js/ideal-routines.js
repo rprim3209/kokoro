@@ -8,7 +8,7 @@ const IDEAL_ROUTINES = {
     id: "acne_barrier",
     name: "Akne & Barriere-Schutz",
     badge: "Rx / Akne / Sensibel",
-    color: "#206845",
+    color: "#0a3323",
     desc: "Evidenzbasiert bei unreiner Haut, Pickeln, Rx-Therapie (Adapalen/Clienzo) oder empfindlicher Barriere. Sanfte Tenside, Rötungshemmung und Reparatur ohne komedogene Öle.",
     am: [
       { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "baleaWash", why: "Tensid-mild & parfümfrei – greift die Säureschutzschicht nicht an" },
@@ -445,7 +445,7 @@ function renderTypRegal(tab, currentList) {
             <span style="color:${pct === 100 ? 'var(--ok)' : 'var(--ink)'}">${pct}%</span>
           </div>
           <div class="coverage-progress">
-            <div class="coverage-progress-fill" style="width:${pct}%;background:${pct === 100 ? '#16a34a' : (pct >= 50 ? '#206845' : '#d97706')}"></div>
+            <div class="coverage-progress-fill" style="width:${pct}%;background:${pct === 100 ? 'var(--ok)' : (pct >= 50 ? 'var(--moss)' : '#d97706')}"></div>
           </div>
         </div>
         <div>
@@ -454,7 +454,7 @@ function renderTypRegal(tab, currentList) {
               ⚡ Alle ${missingCount} Lücken füllen
             </button>
           ` : `
-            <span style="font-size:0.78rem;font-weight:700;color:#166534;background:#dcfce7;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
+            <span style="font-size:0.78rem;font-weight:700;color:var(--ok);background:var(--ok-bg);padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
               ✓ Komplett abgedeckt
             </span>
           `}
@@ -499,7 +499,7 @@ function renderTypRegal(tab, currentList) {
                 </div>
                 <div style="min-width:0;flex:1">
                   <div style="display:flex;align-items:center;gap:6px">
-                    <span style="font-size:0.68rem;text-transform:uppercase;font-weight:700;color:#206845;letter-spacing:0.04em">
+                    <span style="font-size:0.68rem;text-transform:uppercase;font-weight:700;color:var(--ok);letter-spacing:0.04em">
                       Sinnvoll: ${idealP.name}
                     </span>
                   </div>
@@ -507,7 +507,7 @@ function renderTypRegal(tab, currentList) {
                     💡 <strong>Warum:</strong> ${st.why}
                   </div>
                   <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:3px">
-                    <span style="font-size:0.68rem;font-weight:600;color:#206845">${idealP.store || 'dm / Drogerie'}</span>
+                    <span style="font-size:0.68rem;font-weight:600;color:var(--ok)">${idealP.store || 'dm / Drogerie'}</span>
                     ${idealP.ff ? '<span class="tag ff" style="font-size:0.62rem;padding:0 4px">🌸 FF</span>' : ''}
                     ${idealP.nc ? '<span class="tag nc" style="font-size:0.62rem;padding:0 4px">🛡️ NC</span>' : ''}
                     ${idealP.cf ? '<span class="tag cf" style="font-size:0.62rem;padding:0 4px">🐰 CF</span>' : ''}

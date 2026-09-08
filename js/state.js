@@ -467,19 +467,19 @@ function openNewProfileModal() {
     <div style="margin:0.6rem 0">
       <label style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">1. Kategorie auswählen</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="newProfCatGrid">
-        <div class="choice-card active" id="catChoice_adult" onclick="selectNewProfileCategory('adult')" style="padding:0.75rem;cursor:pointer;border:2px solid #206845;border-radius:10px;background:#f4f9f5;margin-bottom:0">
+        <div class="choice-card active" id="catChoice_adult" onclick="selectNewProfileCategory('adult')" style="padding:0.75rem;cursor:pointer;border:2px solid #0a3323;border-radius:10px;background:#f4f8f5;margin-bottom:0">
           <div style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:6px">👤 Erwachsener</div>
           <div style="font-size:0.74rem;color:var(--muted);margin-top:2px">Akne, Skin Cycling & Barriere</div>
         </div>
-        <div class="choice-card" id="catChoice_teen" onclick="selectNewProfileCategory('teen')" style="padding:0.75rem;cursor:pointer;border:2px solid #e3d9cb;border-radius:10px;background:#fff;margin-bottom:0">
+        <div class="choice-card" id="catChoice_teen" onclick="selectNewProfileCategory('teen')" style="padding:0.75rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0">
           <div style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:6px">🧑‍🦱 Teenie (12–17 J.)</div>
           <div style="font-size:0.74rem;color:var(--muted);margin-top:2px">Basis & Akne, kein Anti-Aging</div>
         </div>
-        <div class="choice-card" id="catChoice_child" onclick="selectNewProfileCategory('child')" style="padding:0.75rem;cursor:pointer;border:2px solid #e3d9cb;border-radius:10px;background:#fff;margin-bottom:0">
+        <div class="choice-card" id="catChoice_child" onclick="selectNewProfileCategory('child')" style="padding:0.75rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0">
           <div style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:6px">🧒 Kind (3–11 J.)</div>
           <div style="font-size:0.74rem;color:var(--muted);margin-top:2px">Sanfte Barriere & LSF 50+</div>
         </div>
-        <div class="choice-card" id="catChoice_baby" onclick="selectNewProfileCategory('baby')" style="padding:0.75rem;cursor:pointer;border:2px solid #e3d9cb;border-radius:10px;background:#fff;margin-bottom:0">
+        <div class="choice-card" id="catChoice_baby" onclick="selectNewProfileCategory('baby')" style="padding:0.75rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0">
           <div style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:6px">👶 Baby (&lt;3 J.)</div>
           <div style="font-size:0.74rem;color:var(--muted);margin-top:2px">100% Parfümfrei & Säuglings-Schutz</div>
         </div>
@@ -505,15 +505,21 @@ function openNewProfileModal() {
 
 function selectNewProfileCategory(cat) {
   newProfileSelectedCat = cat;
+  const colors = {
+    adult: { border: "#0a3323", bg: "#f4f8f5" },
+    teen: { border: "#105666", bg: "#E3EFF2" },
+    child: { border: "#4A5B2B", bg: "#EDF3E4" },
+    baby: { border: "#8C483E", bg: "#FBF0ED" }
+  };
   const cats = ["adult", "teen", "child", "baby"];
   cats.forEach(c => {
     const el = document.getElementById("catChoice_" + c);
     if (!el) return;
     if (c === cat) {
-      el.style.borderColor = "#206845";
-      el.style.background = "#f4f9f5";
+      el.style.borderColor = colors[c] ? colors[c].border : "#0a3323";
+      el.style.background = colors[c] ? colors[c].bg : "#f4f8f5";
     } else {
-      el.style.borderColor = "#e3d9cb";
+      el.style.borderColor = "var(--line)";
       el.style.background = "#ffffff";
     }
   });

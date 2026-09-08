@@ -1867,7 +1867,7 @@ function showKatalogStatusModal() {
       ` : ''}
 
       <div style="display:flex;gap:8px;margin-top:0.8rem">
-        <button class="btn-text" style="flex:1;background:#206845;color:#fff;padding:9px;border-radius:8px;font-weight:600" onclick="closeModal()">
+        <button class="btn-text" style="flex:1;background:var(--ok);color:#F7F4D5;padding:9px;border-radius:8px;font-weight:700" onclick="closeModal()">
           Verstanden
         </button>
       </div>

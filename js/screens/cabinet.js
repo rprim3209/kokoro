@@ -592,7 +592,7 @@ function openTeenSafetyGuideModal() {
       </div>
 
       <div style="margin-top:1.2rem;text-align:center">
-        <button class="btn-text" style="background:#206845;color:#fff;padding:8px 16px;border-radius:8px;font-weight:600" onclick="closeModal()">
+        <button class="btn-text" style="background:var(--ok);color:#F7F4D5;padding:8px 16px;border-radius:8px;font-weight:700" onclick="closeModal()">
           Alles klar!
         </button>
       </div>
@@ -638,7 +638,7 @@ function openBabySafetyGuideModal() {
       </div>
 
       <div style="margin-top:1.2rem;text-align:center">
-        <button class="btn-text" style="background:#206845;color:#fff;padding:8px 16px;border-radius:8px;font-weight:600" onclick="closeModal()">
+        <button class="btn-text" style="background:var(--ok);color:#F7F4D5;padding:8px 16px;border-radius:8px;font-weight:700" onclick="closeModal()">
           Verstanden
         </button>
       </div>
@@ -968,7 +968,7 @@ function renderMain(autoSave = true) {
             </div>
           </div>
         </div>
-        <button type="button" class="btn-adopt" style="background:#206845;color:#fff;font-size:0.82rem;padding:8px 14px" onclick="openBudgetRoutineModal()">
+        <button type="button" class="btn-adopt" style="background:var(--ok);color:#F7F4D5;font-size:0.82rem;padding:8px 14px" onclick="openBudgetRoutineModal()">
           Budget festlegen ➔
         </button>
       </div>

@@ -19,7 +19,7 @@ function renderSettingsScreen(container) {
             <span style="font-size:1.4rem">${emoji}</span>
             <div>
               <div style="font-weight:700;font-size:0.92rem">
-                ${escapeHtml(p.name)} ${isActive ? '<span style="font-size:0.7rem;color:#206845;font-weight:700">(Aktiv)</span>' : ''}
+                ${escapeHtml(p.name)} ${isActive ? '<span style="font-size:0.7rem;color:var(--ok);font-weight:700">(Aktiv)</span>' : ''}
               </div>
               <div style="font-size:0.74rem;color:var(--muted)">
                 ${p.category === 'adult' ? 'Erwachsener' : (p.category === 'teen' ? 'Teenie' : (p.category === 'child' ? 'Kind' : 'Baby'))} · ${escapeHtml(p.subtitle || '')}

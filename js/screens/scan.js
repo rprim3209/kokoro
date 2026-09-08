@@ -76,7 +76,7 @@ function openAddBabyProductModal(targetSlot = "all", profileType = "baby") {
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
-            <button class="btn-text" style="background:#206845;color:#fff;font-weight:600;padding:6px 11px;border-radius:8px;font-size:0.78rem" onclick="addBabyProduct('${p.id}', '${profileType}', '${targetSlot}')">
+            <button class="btn-text" style="background:var(--ok);color:#F7F4D5;font-weight:700;padding:6px 11px;border-radius:8px;font-size:0.78rem" onclick="addBabyProduct('${p.id}', '${profileType}', '${targetSlot}')">
               + Schrank
             </button>
             <button class="btn-text" style="font-size:0.72rem;color:#666;padding:2px 6px" onclick="openBabyProductDetail('${p.id}')">
@@ -313,7 +313,7 @@ function openBabyProductDetail(prodId) {
             Aus dem Schrank entfernen
           </button>
         ` : `
-          <button class="btn-text" style="flex:1;background:#206845;color:#fff;padding:10px;border-radius:10px;font-weight:700" 
+          <button class="btn-text" style="flex:1;background:var(--ok);color:#F7F4D5;padding:10px;border-radius:10px;font-weight:700" 
             onclick="addBabyProduct('${p.id}', '${appState.profile}'); closeModal()">
             + In den Schrank stellen
           </button>
@@ -402,7 +402,7 @@ function openAddTeenProductModal(targetSlot = "all") {
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
-            <button class="btn-text" style="background:#206845;color:#fff;font-weight:600;padding:6px 11px;border-radius:8px;font-size:0.78rem" onclick="addTeenProduct('${p.id}', '${targetSlot}')">
+            <button class="btn-text" style="background:var(--ok);color:#F7F4D5;font-weight:700;padding:6px 11px;border-radius:8px;font-size:0.78rem" onclick="addTeenProduct('${p.id}', '${targetSlot}')">
               + Schrank
             </button>
             <button class="btn-text" style="font-size:0.72rem;color:#666;padding:2px 6px" onclick="openTeenProductDetail('${p.id}')">
@@ -639,7 +639,7 @@ function openTeenProductDetail(prodId) {
             Aus dem Schrank entfernen
           </button>
         ` : `
-          <button class="btn-text" style="flex:1;background:#206845;color:#fff;padding:10px;border-radius:10px;font-weight:700" 
+          <button class="btn-text" style="flex:1;background:var(--ok);color:#F7F4D5;padding:10px;border-radius:10px;font-weight:700" 
             onclick="addTeenProduct('${p.id}', '${p.slot}'); closeModal()">
             + In den Schrank stellen
           </button>

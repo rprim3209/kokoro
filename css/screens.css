@@ -49,20 +49,20 @@
   transform: scale(0.95);
 }
 .nav-tab-btn.active {
-  color: #206845;
-  background: #eaf5ee;
+  color: #0A3323;
+  background: #E4ECE5;
 }
 .nav-tab-btn.active.tab-teen {
-  color: #0d9488;
-  background: #f0fdfa;
+  color: #105666;
+  background: #E3EFF2;
 }
 .nav-tab-btn.active.tab-child {
-  color: #b45309;
-  background: #fef3c7;
+  color: #4A5B2B;
+  background: #EDF3E4;
 }
 .nav-tab-btn.active.tab-baby {
-  color: #1d4ed8;
-  background: #eff6ff;
+  color: #8C483E;
+  background: #FBF0ED;
 }
 
 /* Screen Wrapper */
@@ -104,8 +104,8 @@
   margin-bottom: 0.5rem;
 }
 .profile-manage-card.active-profile {
-  border-color: #206845;
-  background: #f4f9f5;
+  border-color: #0A3323;
+  background: #f4f8f5;
 }
 
 /* Dedicated Scan & Verdict Screen Styling */
@@ -149,21 +149,24 @@
   border-color: #cbd5e1;
 }
 .start-pill-btn.active {
-  background: #206845;
-  color: #ffffff;
-  border-color: #206845;
+  background: #0A3323;
+  color: #F7F4D5;
+  border-color: #0A3323;
 }
 .start-pill-btn.active.pill-teen {
-  background: #0d9488;
-  border-color: #0d9488;
+  background: #105666;
+  color: #F7F4D5;
+  border-color: #105666;
 }
 .start-pill-btn.active.pill-child {
-  background: #d97706;
-  border-color: #d97706;
+  background: #4A5B2B;
+  color: #F7F4D5;
+  border-color: #4A5B2B;
 }
 .start-pill-btn.active.pill-baby {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: #8C483E;
+  color: #F7F4D5;
+  border-color: #8C483E;
 }
 
 .start-action-card {
@@ -185,8 +188,8 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 .start-action-card.primary {
-  border-color: #206845;
-  background: linear-gradient(180deg, #ffffff 0%, #f4fbf6 100%);
+  border-color: #0A3323;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f8f5 100%);
 }
 .start-action-card.secondary {
   border-color: #e2e8f0;
@@ -212,7 +215,7 @@
 }
 .start-action-title .arrow {
   font-size: 1.1rem;
-  color: #206845;
+  color: #0A3323;
   transition: transform 0.15s ease;
 }
 .start-action-card:hover .arrow {
