@@ -298,8 +298,8 @@ def product_from_pilot(row: dict) -> dict:
         "fragranceFree": is_true(row.get("dm_fragranceFree"))
         or str(row.get("flag_fragrance_free") or "").strip().lower() == "yes",
         "oilFree": is_true(row.get("dm_oilFree")),
-        "naturalCosmetics": is_true(row.get("dm_naturalCosmetics"))
-        or str(row.get("flag_nc") or "").strip().lower() == "yes",
+        # flag_nc = non-comedogenic — NICHT naturalCosmetics
+        "naturalCosmetics": is_true(row.get("dm_naturalCosmetics")),
         "vegan": is_true(row.get("dm_vegan")),
     }
     link = row.get("dm_url") or ""

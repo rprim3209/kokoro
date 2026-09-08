@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // Scanner, Live dm & Verdict Module
 // Dedicated Scan Screen & Unified Evidence Modals
 // ==========================================
@@ -256,23 +256,23 @@ function openBabyProductDetail(prodId) {
           </div>
         </div>
 
-        <!-- EU Sicherheitsbewertung -->
-        <div style="padding:8px 10px;border-radius:8px;margin-bottom:6px;background:#eff6ff;border:1px solid #bfdbfe">
-          <div style="font-weight:700;font-size:0.84rem;color:#1e40af">
-            👶 EU VO 1223/2009 Annex I Teil B
+        <!-- EU Sicherheitsbewertung U3 -->
+        <div style="padding:8px 10px;border-radius:8px;margin-bottom:6px;background:${p.u3 === true ? '#eff6ff' : (p.u3 === false ? '#fffbeb' : '#f9fafb')};border:1px solid ${p.u3 === true ? '#bfdbfe' : (p.u3 === false ? '#fde68a' : '#e5e7eb')}">
+          <div style="font-weight:700;font-size:0.84rem;color:${p.u3 === true ? '#1e40af' : (p.u3 === false ? '#92400e' : '#4b5563')}">
+            ${p.u3 === true ? '👶 EU &lt;3 Jahre (VO 1223/2009 Annex I Teil B)' : (p.u3 === false ? '🧒 Für Kinder ab 3 Jahren / älter' : 'ℹ️ U3-Eignung offen (keine explizite Säuglingsauslobung)')}
           </div>
-          <div style="font-size:0.76rem;color:#1e40af;margin-top:2px">
-            Gesetzlich vorgeschriebene, spezifische Sicherheitsbewertung für Kosmetikprodukte für Kinder unter drei Jahren.
+          <div style="font-size:0.76rem;color:${p.u3 === true ? '#1e40af' : (p.u3 === false ? '#92400e' : '#6b7280')};margin-top:2px">
+            ${p.u3 === true ? 'Gesetzlich vorgeschriebene, spezifische Sicherheitsbewertung für Kosmetikprodukte für Kinder unter drei Jahren bestätigt.' : (p.u3 === false ? 'Produkt ist nicht für Säuglinge/Kleinkinder unter drei Jahren zertifiziert.' : 'Keine herstellerseitige Verifizierung für Kinder unter 3 Jahren hinterlegt.')}
           </div>
         </div>
 
         <!-- Cruelty-Free Check -->
-        <div style="padding:8px 10px;border-radius:8px;margin-bottom:6px;background:${p.cf ? '#faf5ff' : '#f9fafb'};border:1px solid ${p.cf ? '#e9d5ff' : '#e5e7eb'}">
-          <div style="font-weight:700;font-size:0.84rem;color:${p.cf ? '#6b21a8' : '#4b5563'}">
-            ${p.cf ? '🐰 Cruelty-Free (CFI Leaping Bunny)' : '⚖️ Standard EU-Rechtsrahmen'}
+        <div style="padding:8px 10px;border-radius:8px;margin-bottom:6px;background:${p.cf === true ? '#faf5ff' : (p.cf === false ? '#fffbeb' : '#f9fafb')};border:1px solid ${p.cf === true ? '#e9d5ff' : (p.cf === false ? '#fde68a' : '#e5e7eb')}">
+          <div style="font-weight:700;font-size:0.84rem;color:${p.cf === true ? '#6b21a8' : (p.cf === false ? '#92400e' : '#4b5563')}">
+            ${p.cf === true ? '🐰 Cruelty-Free (CFI Leaping Bunny / Zertifiziert)' : (p.cf === false ? '⚠️ Tierversuche nicht ausgeschlossen' : '⚖️ Standard EU-Rechtsrahmen (kein Verbandssiegel)')}
           </div>
-          <div style="font-size:0.76rem;color:${p.cf ? '#6b21a8' : '#4b5563'};margin-top:2px">
-            ${p.cf ? 'Marke ist im CFI Leaping Bunny Verzeichnis als tierversuchsfrei zertifiziert.' : 'EU-Tierversuchsverbot für Kosmetik seit 2013 erfüllt; kein gesondertes CFI-Siegel hinterlegt.'}
+          <div style="font-size:0.76rem;color:${p.cf === true ? '#6b21a8' : (p.cf === false ? '#92400e' : '#6b7280')};margin-top:2px">
+            ${p.cf === true ? 'Marke ist im CFI Leaping Bunny Verzeichnis als tierversuchsfrei zertifiziert.' : (p.cf === false ? 'Keine Zertifizierung; Marke vertreibt potenziell in Märkten mit vorgeschriebenen Tierversuchen.' : 'EU-Tierversuchsverbot für Kosmetik seit 2013 erfüllt; kein gesondertes Verbandssiegel deklariert.')}
           </div>
         </div>
 
@@ -586,22 +586,22 @@ function openTeenProductDetail(prodId) {
         </div>
 
         <!-- Nicht-Komedogen Check -->
-        <div style="padding:8px 10px;border-radius:8px;margin-bottom:6px;background:${p.nc ? '#f0fdf4' : '#f9fafb'};border:1px solid ${p.nc ? '#bbf7d0' : '#e5e7eb'}">
-          <div style="font-weight:700;font-size:0.84rem;color:${p.nc ? '#166534' : '#4b5563'}">
-            ${p.nc ? '🛡️ Nicht komedogen (Non-comedogenic)' : 'ℹ️ Komedogenität nicht gesondert ausgelobt'}
+        <div style="padding:8px 10px;border-radius:8px;margin-bottom:6px;background:${p.nc === true ? '#f0fdf4' : (p.nc === false ? '#fffbeb' : '#f9fafb')};border:1px solid ${p.nc === true ? '#bbf7d0' : (p.nc === false ? '#fde68a' : '#e5e7eb')}">
+          <div style="font-weight:700;font-size:0.84rem;color:${p.nc === true ? '#166534' : (p.nc === false ? '#92400e' : '#4b5563')}">
+            ${p.nc === true ? '🛡️ Nicht komedogen (Claim verifiziert)' : (p.nc === false ? '⚠️ Kein NC-Claim / potenziell komedogen' : 'ℹ️ NC offen (Komedogenität nicht deklariert)')}
           </div>
-          <div style="font-size:0.76rem;color:${p.nc ? '#166534' : '#4b5563'};margin-top:2px">
-            ${p.nc ? 'Formulierung ist darauf getestet, Poren nicht zu verstopfen – ideal bei Neigung zu Mitessern und Pickeln.' : 'Standard-Formulierung; bei Akne-Neigung auf leichte Texturen achten.'}
+          <div style="font-size:0.76rem;color:${p.nc === true ? '#166534' : (p.nc === false ? '#92400e' : '#6b7280')};margin-top:2px">
+            ${p.nc === true ? 'Herstellerclaim bestätigt: Formulierung ist darauf getestet, Poren nicht zu verstopfen – ideal bei Akne-Neigung.' : (p.nc === false ? 'Kein Nicht-Komedogen-Nachweis; Textur könnte bei Neigung zu Unreinheiten porenverstopfend wirken.' : 'Keine offizielle Hersteller-Auslobung bezüglich Komedogenität hinterlegt.')}
           </div>
         </div>
 
         <!-- Cruelty-Free Check -->
-        <div style="padding:8px 10px;border-radius:8px;margin-bottom:6px;background:${p.cf ? '#faf5ff' : '#f9fafb'};border:1px solid ${p.cf ? '#e9d5ff' : '#e5e7eb'}">
-          <div style="font-weight:700;font-size:0.84rem;color:${p.cf ? '#6b21a8' : '#4b5563'}">
-            ${p.cf ? '🐰 Cruelty-Free (CFI Leaping Bunny / Zertifiziert)' : '⚖️ Standard EU-Rechtsrahmen'}
+        <div style="padding:8px 10px;border-radius:8px;margin-bottom:6px;background:${p.cf === true ? '#faf5ff' : (p.cf === false ? '#fffbeb' : '#f9fafb')};border:1px solid ${p.cf === true ? '#e9d5ff' : (p.cf === false ? '#fde68a' : '#e5e7eb')}">
+          <div style="font-weight:700;font-size:0.84rem;color:${p.cf === true ? '#6b21a8' : (p.cf === false ? '#92400e' : '#4b5563')}">
+            ${p.cf === true ? '🐰 Cruelty-Free (CFI Leaping Bunny / Zertifiziert)' : (p.cf === false ? '⚠️ Tierversuche nicht ausgeschlossen' : '⚖️ Standard EU-Rechtsrahmen (kein Verbandssiegel)')}
           </div>
-          <div style="font-size:0.76rem;color:${p.cf ? '#6b21a8' : '#4b5563'};margin-top:2px">
-            ${p.cf ? 'Marke ist im CFI Leaping Bunny Verzeichnis als tierversuchsfrei bestätigt.' : 'EU-Tierversuchsverbot für Kosmetik seit 2013 erfüllt; kein gesondertes CFI-Siegel hinterlegt.'}
+          <div style="font-size:0.76rem;color:${p.cf === true ? '#6b21a8' : (p.cf === false ? '#92400e' : '#6b7280')};margin-top:2px">
+            ${p.cf === true ? 'Marke ist im CFI Leaping Bunny Verzeichnis als tierversuchsfrei bestätigt.' : (p.cf === false ? 'Keine Zertifizierung; Marke vertreibt potenziell in Märkten mit vorgeschriebenen Tierversuchen.' : 'EU-Tierversuchsverbot für Kosmetik seit 2013 erfüllt; kein gesondertes CFI-Siegel hinterlegt.')}
           </div>
         </div>
 
@@ -1325,11 +1325,11 @@ function saveCustomProductAndCheck() {
   const name = (document.getElementById("custName")?.value || "Gesichtspflege").trim();
   const kat = document.getElementById("custKat")?.value || "creme";
   const ean = (document.getElementById("custEan")?.value || "").trim();
-  const ff = document.getElementById("custFf")?.checked || false;
-  const nc = document.getElementById("custNc")?.checked || false;
-  const cf = document.getElementById("custCf")?.checked || false;
+  const ff = document.getElementById("custFf")?.checked ? true : null;
+  const nc = document.getElementById("custNc")?.checked ? true : null;
+  const cf = document.getElementById("custCf")?.checked ? true : null;
 
-  const isCf = cf || isBrandCrueltyFree(brand);
+  const isCf = (cf === true) || isBrandCrueltyFree(brand);
   const cfBasis = isCf ? (isBrandCrueltyFree(brand) ? "CFI Leaping Bunny (genehmigte Marke)" : "Manuell deklariert") : "";
 
   const id = "custom_" + Date.now();
@@ -1403,7 +1403,7 @@ function showVerdict(prodId) {
             ? '<span style="color:#0369a1;font-weight:700;flex-shrink:0">🌸 Parfümfrei:</span> <span>✅ Formel ohne Duftstoffe & Duftallergene (optimal reizarm).</span>' 
             : (prod.ff === false 
                 ? '<span style="color:#b91c1c;font-weight:700;flex-shrink:0">⚠️ Nicht parfümfrei:</span> <span style="color:#7f1d1d">Enthält Parfüm/Duftstoffe. Kann bei sensibler Haut oder aktiver Retinoid-Therapie Brennen & Rötungen begünstigen.</span>'
-                : '<span style="color:#525252;font-weight:700;flex-shrink:0">🌸 Duftstoffe:</span> <span>Keine deklarationspflichtigen Duftstoff-Auffälligkeiten.</span>')}
+                : '<span style="color:#525252;font-weight:700;flex-shrink:0">🌸 Parfümierung:</span> <span style="color:#6b7280">ℹ️ Offen (keine verifizierten Angaben).</span>')}
         </div>
         <div style="display:flex;align-items:flex-start;gap:7px">
           ${prod.nc === true 
