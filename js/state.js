@@ -52,8 +52,20 @@ let appState = {
       tags: ["Eigene Routine"],
       data: { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a" }
     }
-  ]
+  ],
+  customProducts: {}
 };
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+window.escapeHtml = escapeHtml;
 
 // ==========================================
 // LOCALSTORAGE PERSISTENZ (Schrank-Speicherung)
@@ -81,6 +93,23 @@ if (saved) {
           child: "Sanft & LSF 50+",
           baby: "Parfümfrei-Prio"
         };
+      }
+      if (!appState.customProducts || typeof appState.customProducts !== "object") {
+        appState.customProducts = {};
+      }
+      // Restore dynamic & live-dm products into DB
+      for (const [cid, cprod] of Object.entries(appState.customProducts)) {
+        if (typeof DB === "object" && cprod) DB[cid] = cprod;
+        if (typeof TEEN_DB === "object" && cprod && !TEEN_DB[cid]) {
+          TEEN_DB[cid] = Object.assign({}, cprod, {
+            slot: cprod.kat === "reiniger" ? "reiniger" : (cprod.kat === "spf" ? "spf" : (cprod.kat === "serum" ? "active" : "creme"))
+          });
+        }
+        if (typeof BABY_DB === "object" && cprod && !BABY_DB[cid]) {
+          BABY_DB[cid] = Object.assign({}, cprod, {
+            slot: cprod.kat === "reiniger" ? "reiniger" : (cprod.kat === "spf" ? "spf" : "creme")
+          });
+        }
       }
       // Migration / Initialisierung von profiles
       if (!appState.profiles || !Array.isArray(appState.profiles) || appState.profiles.length === 0) {
@@ -165,7 +194,8 @@ function resetSchrank() {
         tags: ["Eigene Routine"],
         data: { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a" }
       }
-    ]
+    ],
+    customProducts: {}
   };
   updateCategoryNav();
   renderMain(false);

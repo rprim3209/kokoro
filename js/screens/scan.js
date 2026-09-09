@@ -722,8 +722,8 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
               </div>
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0" onclick="event.stopPropagation()">
-              <button type="button" class="btn-text" style="background:#eaf0f6;color:#204060;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:600" onclick="adoptDmProductToSlot(window.currentLiveDmResults[${idx}], 'am'); closeModal()">+ Morgen</button>
-              <button type="button" class="btn-text" style="background:#f4ece0;color:#5c3e1e;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:600" onclick="adoptDmProductToSlot(window.currentLiveDmResults[${idx}], 'pm'); closeModal()">+ Abend</button>
+              <button type="button" class="btn-text" style="background:#eaf0f6;color:#204060;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:600" onclick="adoptDmProductToSlot('${p.id}', 'am')">+ Morgen</button>
+              <button type="button" class="btn-text" style="background:#f4ece0;color:#5c3e1e;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:600" onclick="adoptDmProductToSlot('${p.id}', 'pm')">+ Abend</button>
             </div>
           </div>
         `;
@@ -820,10 +820,14 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
             const resEl = document.getElementById("addResultsList");
             if (resEl) resEl.innerHTML = renderListHtml();
             liveDmItems = await searchDmLive(searchVal);
+            window.currentLiveDmResults = liveDmItems;
+            window.dmResultsMap = window.dmResultsMap || {};
+            liveDmItems.forEach(pr => { if (pr.id) window.dmResultsMap[pr.id] = pr; });
             liveDmLoading = false;
             if (resEl) resEl.innerHTML = renderListHtml();
           } else {
             liveDmItems = [];
+            window.currentLiveDmResults = [];
             const resEl = document.getElementById("addResultsList");
             if (resEl) resEl.innerHTML = renderListHtml();
           }
@@ -850,6 +854,9 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
         const resEl = document.getElementById("addResultsList");
         if (resEl) resEl.innerHTML = renderListHtml();
         liveDmItems = await searchDmLive(searchVal);
+        window.currentLiveDmResults = liveDmItems;
+        window.dmResultsMap = window.dmResultsMap || {};
+        liveDmItems.forEach(pr => { if (pr.id) window.dmResultsMap[pr.id] = pr; });
         liveDmLoading = false;
         if (resEl) resEl.innerHTML = renderListHtml();
       } else {
@@ -1155,8 +1162,8 @@ function openScanModal() {
           </div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
-          <button type="button" class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 8px;border-radius:6px;font-size:0.74rem;font-weight:600" onclick="adoptDmProductToSlot(window.currentLiveDmResults[${idx}], 'am'); closeModal()">+ Morgen</button>
-          <button type="button" class="btn-text" style="background:#f4ece0;color:#5c3e1e;padding:5px 8px;border-radius:6px;font-size:0.74rem;font-weight:600" onclick="adoptDmProductToSlot(window.currentLiveDmResults[${idx}], 'pm'); closeModal()">+ Abend</button>
+          <button type="button" class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 8px;border-radius:6px;font-size:0.74rem;font-weight:600" onclick="adoptDmProductToSlot('${p.id}', 'am')">+ Morgen</button>
+          <button type="button" class="btn-text" style="background:#f4ece0;color:#5c3e1e;padding:5px 8px;border-radius:6px;font-size:0.74rem;font-weight:600" onclick="adoptDmProductToSlot('${p.id}', 'pm')">+ Abend</button>
         </div>
       </div>
     `).join("");
@@ -1621,33 +1628,33 @@ function renderScanScreen(container) {
 
   container.innerHTML = `
     <div class="scan-screen-box">
-      <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">Scan & Produktsuche</div>
-      <h2 style="margin:0.2rem 0 0.5rem;font-size:1.3rem">Produkt auf Verträglichkeit prüfen</h2>
-      <p style="font-size:0.86rem;color:var(--muted);margin:0 0 1.2rem;line-height:1.4">
+      <div class="scan-screen-kicker">Scan &amp; Produktsuche</div>
+      <h2>Produkt auf Verträglichkeit prüfen</h2>
+      <p class="scan-screen-lead">
         Prüfe Produkte vor dem Kauf oder aus dem Bad auf Reizstoffe, Duftstoffe und Leitlinien-Eignung für <strong>${escapeHtml(activeP.name)}</strong>.
       </p>
 
-      <div style="display:flex;gap:8px;margin-bottom:1.2rem">
-        <button class="primary" style="flex:1;margin-top:0;display:flex;align-items:center;justify-content:center;gap:8px" onclick="openScanModal()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+      <div class="scan-cta-row">
+        <button type="button" class="primary" onclick="openScanModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
           Kamera-Scanner starten
         </button>
-        <button class="ghost-btn" style="flex:1;margin-top:0" onclick="openAddProductModal('am')">
-          ðŸ” Katalog & dm Suche
+        <button type="button" class="ghost-btn" onclick="openAddProductModal('am')">
+          🔎 Katalog &amp; dm Suche
         </button>
       </div>
 
-      <div style="background:#fdfbf7;border:1px solid var(--line);border-radius:12px;padding:1rem">
-        <label style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">EAN-Barcode manuell eingeben</label>
-        <div style="display:flex;gap:6px">
-          <input type="text" id="scanScreenEanInput" placeholder="z. B. 4058172936746..." style="flex:1;padding:0.75rem 0.85rem;border:1.5px solid var(--line);border-radius:10px;font-size:0.92rem;font-family:monospace" onkeydown="if(event.key==='Enter'){ handleScanScreenEan(); }">
-          <button class="primary" style="margin-top:0;padding:0.75rem 1.1rem" onclick="handleScanScreenEan()">Prüfen â†’</button>
+      <div class="scan-ean-box">
+        <label for="scanScreenEanInput">EAN-Barcode manuell eingeben</label>
+        <div class="scan-ean-row">
+          <input type="text" id="scanScreenEanInput" placeholder="z. B. 4058172936746..." inputmode="numeric" autocomplete="off" onkeydown="if(event.key==='Enter'){ handleScanScreenEan(); }">
+          <button type="button" class="primary" onclick="handleScanScreenEan()">Prüfen →</button>
         </div>
       </div>
 
-      <div style="margin-top:1.2rem;text-align:center">
-        <button class="btn-text" style="font-size:0.82rem;color:var(--muted)" onclick="openCustomProductModal()">
-          âœï¸ Eigene INCI-Liste manuell einfügen & analysieren
+      <div class="scan-inci-link">
+        <button type="button" class="btn-text" onclick="openCustomProductModal()">
+          ✏️ Eigene INCI-Liste manuell einfügen &amp; analysieren
         </button>
       </div>
     </div>

@@ -895,7 +895,7 @@ function renderMain(autoSave = true) {
   // Render Step-by-Step Cards or Empty Shelf (KEINE leeren Placeholder!)
   if (currentList.length === 0) {
     html += `
-      <div style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed var(--line);border-radius:14px;margin:0.8rem 0 1.2rem">
+      <div class="empty-shelf" style="text-align:center;padding:1.8rem 1.2rem;margin:0.8rem 0 1.2rem">
         <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">🧴</div>
         <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein ${isAM ? 'Morgen-Schrank' : 'Abend-Schrank'} ist noch leer</div>
         <div style="font-size:0.85rem;color:var(--muted);max-width:400px;margin:4px auto 14px;line-height:1.45">
@@ -1033,6 +1033,118 @@ function addProductToSlot(prodId, target) {
   renderMain();
   closeModal();
 }
+
+function adoptDmProductToSlot(prodOrIdOrIdx, target = "am") {
+  let prod = null;
+  if (prodOrIdOrIdx && typeof prodOrIdOrIdx === "object") {
+    prod = prodOrIdOrIdx;
+  } else if (typeof prodOrIdOrIdx === "string") {
+    prod = (window.dmResultsMap && window.dmResultsMap[prodOrIdOrIdx])
+        || (window.currentLiveDmResults && window.currentLiveDmResults.find(x => x.id === prodOrIdOrIdx || x.ean === prodOrIdOrIdx || x.dan === prodOrIdOrIdx))
+        || (typeof DB === "object" && DB[prodOrIdOrIdx])
+        || null;
+  } else if (typeof prodOrIdOrIdx === "number") {
+    prod = (window.currentLiveDmResults && window.currentLiveDmResults[prodOrIdOrIdx]) || null;
+  }
+
+  if (!prod || typeof prod !== "object") {
+    console.error("[adoptDmProductToSlot] Kein gültiges dm-Produkt gefunden:", prodOrIdOrIdx);
+    return;
+  }
+
+  // Stabile ID & Pflichtfelder absichern
+  if (!prod.id) {
+    prod.id = "dm_" + (prod.dan || prod.ean || ("live_" + Math.random().toString(36).slice(2, 9)));
+  }
+
+  const kat = prod.kat || "creme";
+  const colors = { reiniger: "#76a9c7", serum: "#6aa8c9", creme: "#a4c8a8", spf: "#ecd37b" };
+  const shapes = { reiniger: "pump", serum: "serum", creme: "jar", spf: "tube" };
+
+  if (!prod.c) prod.c = colors[kat] || "#a4c8a8";
+  if (!prod.shape) prod.shape = shapes[kat] || "tube";
+  if (!prod.wirk) prod.wirk = (prod.ff === true ? "Parfümfrei · " : "") + (prod.price ? prod.price + " · " : "") + (prod.brand || "dm");
+  if (!prod.store) prod.store = `dm (${prod.price || "Drogerie"})`;
+  if (!Array.isArray(prod.klassen) || prod.klassen.length === 0) {
+    prod.klassen = kat === "spf" ? ["uv"] : (kat === "serum" ? ["humectant"] : ["support"]);
+  }
+  if (!prod.schiene) prod.schiene = "support";
+
+  // 1. In globalem Katalog (DB) registrieren
+  if (typeof DB === "object") {
+    DB[prod.id] = prod;
+  }
+  if (typeof TEEN_DB === "object" && !TEEN_DB[prod.id]) {
+    TEEN_DB[prod.id] = Object.assign({}, prod, {
+      slot: kat === "reiniger" ? "reiniger" : (kat === "spf" ? "spf" : (kat === "serum" ? "active" : "creme"))
+    });
+  }
+  if (typeof BABY_DB === "object" && !BABY_DB[prod.id]) {
+    BABY_DB[prod.id] = Object.assign({}, prod, {
+      slot: kat === "reiniger" ? "reiniger" : (kat === "spf" ? "spf" : "creme")
+    });
+  }
+
+  // 2. In appState.customProducts persistieren (überlebt Reload)
+  if (typeof appState === "object") {
+    if (!appState.customProducts) appState.customProducts = {};
+    appState.customProducts[prod.id] = prod;
+  }
+
+  // 3. Dem aktiven Profil / Schrank zuordnen
+  const activeProfile = typeof getActiveProfile === "function" ? getActiveProfile() : null;
+  const profileCat = activeProfile ? activeProfile.category : (appState.profile || "adult");
+
+  if (profileCat === "teen") {
+    const slot = kat === "reiniger" ? "reiniger" : (kat === "spf" ? "spf" : (kat === "serum" ? "active" : "creme"));
+    if (!appState.teen) appState.teen = { reiniger: [], active: [], creme: [], spf: [] };
+    if (!appState.teen[slot]) appState.teen[slot] = [];
+    if (!appState.teen[slot].includes(prod.id)) appState.teen[slot].push(prod.id);
+  } else if (profileCat === "baby" || profileCat === "child") {
+    const slot = kat === "reiniger" ? "reiniger" : (kat === "spf" ? "spf" : "creme");
+    const targetKey = profileCat;
+    if (!appState[targetKey]) appState[targetKey] = { reiniger: [], creme: [], spf: [] };
+    if (!appState[targetKey][slot]) appState[targetKey][slot] = [];
+    if (!appState[targetKey][slot].includes(prod.id)) appState[targetKey][slot].push(prod.id);
+  } else {
+    // Erwachsenen-Profil: AM oder PM
+    if (target === "am") {
+      if (!Array.isArray(appState.am)) appState.am = [];
+      if (!appState.am.includes(prod.id)) appState.am.push(prod.id);
+      if (typeof sortRoutine === "function") appState.am = sortRoutine(appState.am, true);
+      appState.tab = "am";
+    } else {
+      let activeList = typeof getActivePMList === "function" ? getActivePMList() : appState.pm_a;
+      if (!Array.isArray(activeList)) {
+        appState.pm_a = appState.pm_a || [];
+        activeList = appState.pm_a;
+      }
+      if (!activeList.includes(prod.id)) activeList.push(prod.id);
+      if (typeof sortRoutine === "function") {
+        if (appState.pmMode === "a") appState.pm_a = sortRoutine(appState.pm_a, false);
+        else if (appState.pmMode === "b") appState.pm_b = sortRoutine(appState.pm_b, false);
+        else appState.pm_c = sortRoutine(appState.pm_c, false);
+      }
+      appState.tab = "pm";
+    }
+  }
+
+  // 4. Speichern, Modal schließen, Schrank aktualisieren
+  if (typeof saveState === "function") saveState();
+  if (typeof closeModal === "function") closeModal();
+  if (typeof renderMain === "function") renderMain();
+
+  // 5. Toast Feedback
+  const targetName = (profileCat === "adult")
+    ? (target === "am" ? "Morgen-Routine" : "Abend-Routine")
+    : (activeProfile ? activeProfile.name : "Schrank");
+
+  const esc = typeof escapeHtml === "function" ? escapeHtml : (s) => String(s || "");
+  if (typeof showToast === "function") {
+    showToast(`🛒 <strong>${esc(prod.brand)} ${esc(prod.name)}</strong> in ${targetName} gestellt!`);
+  }
+}
+window.adoptDmProductToSlot = adoptDmProductToSlot;
 
 // 3-Second Verdict Logic against Cabinet
 

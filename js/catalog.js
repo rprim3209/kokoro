@@ -1472,6 +1472,31 @@ function normalizeDmProduct(p) {
     kat = "creme";
   }
 
+  let klassen = ["support"];
+  let schiene = "support";
+  if (kat === "spf") {
+    klassen = ["uv"];
+  } else if (catStr.includes("bha") || catStr.includes("salicyl")) {
+    klassen = ["bha"];
+    schiene = "active";
+  } else if (catStr.includes("aha") || catStr.includes("glycol") || catStr.includes("milchsäure") || catStr.includes("lactic")) {
+    klassen = ["aha"];
+    schiene = "active";
+  } else if (catStr.includes("retinol") || catStr.includes("retinal")) {
+    klassen = ["retinoid"];
+    schiene = "active";
+  } else if (catStr.includes("azelain") || catStr.includes("azelaic")) {
+    klassen = ["azelaic"];
+    schiene = "active";
+  } else if (catStr.includes("niacinamid")) {
+    klassen = ["niacinamide"];
+  } else if (catStr.includes("vitamin c") || catStr.includes("ascorb")) {
+    klassen = ["ascorbic"];
+    schiene = "active";
+  } else if (kat === "serum") {
+    klassen = ["humectant"];
+  }
+
   const cf = typeof isBrandCrueltyFree === "function" && isBrandCrueltyFree(brand) ? true : null;
 
   return {
@@ -1484,8 +1509,8 @@ function normalizeDmProduct(p) {
     img,
     url,
     kat,
-    schiene: "support",
-    klassen: ["support"],
+    schiene,
+    klassen,
     shape: kat === "reiniger" ? "pump" : (kat === "serum" ? "serum" : (kat === "spf" ? "tube" : "jar")),
     c: kat === "reiniger" ? "#76a9c7" : (kat === "serum" ? "#6aa8c9" : (kat === "spf" ? "#ecd37b" : "#a4c8a8")),
     wirk: (ff === true ? "Parfümfrei · " : "") + (price ? price + " · " : "") + brand,
@@ -1541,6 +1566,31 @@ function normalizeDmPilotRow(r) {
     kat = "creme";
   }
 
+  let klassen = ["support"];
+  let schiene = "support";
+  if (kat === "spf") {
+    klassen = ["uv"];
+  } else if (catStr.includes("bha") || catStr.includes("salicyl")) {
+    klassen = ["bha"];
+    schiene = "active";
+  } else if (catStr.includes("aha") || catStr.includes("glycol") || catStr.includes("milchsäure") || catStr.includes("lactic")) {
+    klassen = ["aha"];
+    schiene = "active";
+  } else if (catStr.includes("retinol") || catStr.includes("retinal")) {
+    klassen = ["retinoid"];
+    schiene = "active";
+  } else if (catStr.includes("azelain") || catStr.includes("azelaic")) {
+    klassen = ["azelaic"];
+    schiene = "active";
+  } else if (catStr.includes("niacinamid")) {
+    klassen = ["niacinamide"];
+  } else if (catStr.includes("vitamin c") || catStr.includes("ascorb")) {
+    klassen = ["ascorbic"];
+    schiene = "active";
+  } else if (kat === "serum") {
+    klassen = ["humectant"];
+  }
+
   return {
     id,
     name,
@@ -1551,8 +1601,8 @@ function normalizeDmPilotRow(r) {
     img: "",
     url,
     kat,
-    schiene: "support",
-    klassen: ["support"],
+    schiene,
+    klassen,
     shape: kat === "reiniger" ? "pump" : (kat === "serum" ? "serum" : (kat === "spf" ? "tube" : "jar")),
     c: kat === "reiniger" ? "#76a9c7" : (kat === "serum" ? "#6aa8c9" : (kat === "spf" ? "#ecd37b" : "#a4c8a8")),
     wirk: (ff === true ? "Parfümfrei · " : "") + (price ? price + " · " : "") + brand,
@@ -1577,6 +1627,12 @@ async function searchDmLive(query) {
         if (data && data.products && data.products.length > 0) {
           const prods = data.products.map(normalizeDmProduct);
           window.currentLiveDmResults = prods;
+          window.dmResultsMap = window.dmResultsMap || {};
+          prods.forEach(pr => {
+            if (pr.id) window.dmResultsMap[pr.id] = pr;
+            if (pr.ean) window.dmResultsMap[pr.ean] = pr;
+            if (pr.dan) window.dmResultsMap[pr.dan] = pr;
+          });
           return prods;
         }
       }
@@ -1598,6 +1654,12 @@ async function searchDmLive(query) {
     if (hits.length > 0) {
       const prods = hits.slice(0, 12).map(normalizeDmPilotRow);
       window.currentLiveDmResults = prods;
+      window.dmResultsMap = window.dmResultsMap || {};
+      prods.forEach(pr => {
+        if (pr.id) window.dmResultsMap[pr.id] = pr;
+        if (pr.ean) window.dmResultsMap[pr.ean] = pr;
+        if (pr.dan) window.dmResultsMap[pr.dan] = pr;
+      });
       return prods;
     }
   }
@@ -1795,6 +1857,13 @@ function applyKatalogRows(rows) {
         if (cfFromBrand && !DB[id].cf) { DB[id].cf = true; DB[id].cf_basis = "CFI Leaping Bunny"; }
       }
     });
+  }
+
+  // Eigene und aus Live-dm übernommene Produkte im DB-Katalog absichern
+  if (typeof appState === "object" && appState.customProducts) {
+    for (const [cid, cprod] of Object.entries(appState.customProducts)) {
+      if (typeof DB === "object" && cprod) DB[cid] = cprod;
+    }
   }
 
   // Wenn Schrank geöffnet ist, Ansicht auffrischen
