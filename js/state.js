@@ -544,7 +544,12 @@ function updateCategoryNav() {
     } else if (activeP.category === "child") {
       guardBadge.innerHTML = "🧒 Kinder-Wächter · Barriere";
     } else {
-      guardBadge.innerHTML = "🛡️ Begleitpflege aktiv";
+      var tagBag = [].concat((activeP && activeP.tags) || [], (appState && appState.tags) || []);
+      var isRxGuard = tagBag.some(function (t) {
+        var s = String(t || "").toLowerCase();
+        return s.indexOf("begleit") !== -1 || s.indexOf("rx") !== -1;
+      });
+      guardBadge.innerHTML = isRxGuard ? "🛡️ Begleitpflege aktiv" : "🛡️ Schrank-Wächter";
     }
   }
 

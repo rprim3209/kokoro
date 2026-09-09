@@ -12,6 +12,7 @@ function mountProfileDmLiveSearch(opts) {
   const chipId = opts.chipId || null;
   const catalogListId = opts.catalogListId || null;
   let dmTimer = null;
+  let catalogOnInput = null;
 
   async function runDm(q) {
     const box = document.getElementById(resultsId);
@@ -63,9 +64,13 @@ function mountProfileDmLiveSearch(opts) {
     if (list) list.style.display = on ? "none" : "";
     if (box) {
       box.style.display = on ? "block" : "none";
+      const inp = document.getElementById(inputId);
       if (on) {
-        const inp = document.getElementById(inputId);
         runDm(inp ? inp.value : "");
+      } else if (inp) {
+        // Live-Modus aus: Katalog mit aktuellem Suchtext neu filtern
+        if (typeof catalogOnInput === "function") catalogOnInput({ target: inp });
+        else if (typeof window._refreshOpenCountryFilteredList === "function") window._refreshOpenCountryFilteredList();
       }
     }
     window._profileDmLiveMode = !!on;
@@ -73,13 +78,13 @@ function mountProfileDmLiveSearch(opts) {
 
   const inp = document.getElementById(inputId);
   if (inp) {
-    const prev = inp.oninput;
+    catalogOnInput = typeof inp.oninput === "function" ? inp.oninput : null;
     inp.oninput = (e) => {
       if (window._profileDmLiveMode) {
         clearTimeout(dmTimer);
         dmTimer = setTimeout(() => runDm(e.target.value), 350);
-      } else if (typeof prev === "function") {
-        prev(e);
+      } else if (typeof catalogOnInput === "function") {
+        catalogOnInput(e);
       }
     };
   }

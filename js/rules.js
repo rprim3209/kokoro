@@ -1212,12 +1212,16 @@ function productLooksPerfumed(p) {
   if (p.ff === false) return true;
   var basis = String(p.ff_basis || p.fragrance_basis || "").toLowerCase();
   var notes = String(p.notes || "").toLowerCase();
+  var nameBlob = (String(p.name || "") + " " + String(p.brand || "") + " " + String(p.wirk || "")).toLowerCase();
   var blob = basis + " " + notes;
-  var freeHint = /parf[uü]mfrei|parfumfrei|fragrance[\s-]?free|unparf[uü]miert|ohne duft|ohne parf|duftstofffrei|ff=yes|ff:true/;
+  var freeHint = /parf[uü]mfrei|parfumfrei|fragrance[\s-]?free|unparf[uü]miert|ohne duft|ohne parf|duftstofffrei|0%\s*parf|ff=yes|ff:true/;
   var perfumeHint = /parf[uü]m(?!frei)|fragrance|perfume|duftstoff|duft\/|\bduft\b|ätherisch|etherisch|essential oil|essential oils|leichten? (frischen )?duft/;
   if (freeHint.test(blob) && !perfumeHint.test(basis)) return false;
   if (perfumeHint.test(basis)) return true;
   if (/oft mit duft|nicht parf[uü]mfrei|ff nur parf[uü]mfrei|ff=no|ff:false|parf[uü]miert/.test(notes)) return true;
+  // Name/Marke: wenn ff unbekannt, aber klar Parfüm im Namen (Baby-Sicherheit)
+  if (freeHint.test(nameBlob)) return false;
+  if (perfumeHint.test(nameBlob)) return true;
   return false;
 }
 
@@ -1278,7 +1282,7 @@ function assessCabinetProfileConstraints(products, opts) {
         {
           code: "baby_perfume",
           outcome: "konflikt",
-          reason: "Parfüm bei Baby <3: häufigster Allergie-Trigger — Konflikt.",
+          reason: "Parfüm bei Baby unter 3 Jahren ist ein häufiger Allergie-Auslöser.",
           prio: 20,
           edu: "Duftstoffe (auch ätherische Öle) sind der häufigste Allergieauslöser bei Säuglingen. Parfümfrei-Prio im Baby-Profil."
         },
@@ -1292,9 +1296,9 @@ function assessCabinetProfileConstraints(products, opts) {
         {
           code: "child_perfume",
           outcome: "eher_nicht",
-          reason: "Duftstoffarm bevorzugt bei Kinderhaut — eher nicht.",
+          reason: "Duftstoffarm bevorzugt bei Kinderhaut.",
           prio: 40,
-          edu: "Weniger Duftstoffe reduzieren Irritationsrisiko bei Schulkindern."
+          edu: "Weniger Duftstoffe reduzieren das Irritationsrisiko bei Schulkindern."
         },
         p
       );
@@ -1336,7 +1340,7 @@ function assessCabinetProfileConstraints(products, opts) {
         {
           code: "pref_nc_miss",
           outcome: "eher_nicht",
-          reason: "Als komedogen bekannt — bei NC-Preference eher nicht.",
+          reason: "Als komedogen bekannt — bei Unreinheiten eher ungeeignet.",
           prio: 60,
           edu: null
         },
@@ -1491,13 +1495,46 @@ function calculateCategoryCabinetPrognosis(products, category) {
   if (!points.length) {
     points = [formatVerdictOneLook("passt", "Kein bekannter Konflikt in diesem Schrank.")];
   }
+
+  var whyNotes = (profile.eduNotes || []).slice();
+  (cabinet.hits || []).forEach(function (hit) {
+    if (hit.outcome === "konflikt" || hit.outcome === "eher_nicht") {
+      if (hit.code === "skip_stack") {
+        whyNotes.push("Warum kein Stacking am selben Abend? Starke Wirkstoffe überfordern empfindliche Haut; Wechselabende schonen die Barriere.");
+      } else if (hit.code === "same_class") {
+        whyNotes.push("Warum keine zwei Produkte derselben Klasse? Doppelungen erhöhen das Irritationsrisiko ohne Zusatznutzen.");
+      }
+    }
+  });
+  if (!whyNotes.length) {
+    if (category === "baby") {
+      whyNotes.push("Säuglingshaut (<3 Jahre) benötigt reizarme, parfümfreie Basispflege. Die Hautbarriere ist bis zu 30% dünner und stark aufnahmefähig.");
+    } else if (category === "child") {
+      whyNotes.push("Kinderhaut profitiert von sanfter, duftstoffarmer Pflege und zuverlässigem Breitband-Sonnenschutz (LSF 50+) ohne aggressive Peelings.");
+    } else if (category === "teen") {
+      whyNotes.push("Die Teenie-Routine setzt auf evidenzbasierte Klärung und milde Tenside, ohne die Barriere mit schweren Anti-Aging-Stoffen zu überfordern.");
+    } else {
+      whyNotes.push("Deine Produkte passen gut zusammen und schonen die natürliche Hautbarriere.");
+    }
+  }
+
+  var seenWhyCat = {};
+  whyNotes = whyNotes.filter(function (wn) {
+    var k = String(wn);
+    if (seenWhyCat[k]) return false;
+    seenWhyCat[k] = true;
+    return true;
+  });
+
   return {
     status: statusFromOutcome(overall),
     verdict: overall,
     title: title,
     points: points,
+    shortPoints: points.slice(),
+    whyNotes: whyNotes,
+    eduNotes: whyNotes,
     flagged: flagged,
-    eduNotes: profile.eduNotes || [],
     empty: false,
     hits: (cabinet.hits || []).concat(profile.hits || []),
     cabinetHits: cabinet.hits || []
@@ -1744,6 +1781,20 @@ function calculatePrognosis() {
   var outcomes = [];
 
   var allProds = fullIds.map(resolve).filter(Boolean);
+  // Verhindert Grün-Flash: IDs da, aber Katalog/CSV noch nicht geladen → Produkte unresolved
+  if (allProds.length === 0 && fullIds.length > 0) {
+    return {
+      status: "empty",
+      title: "⏳ Produkte werden geladen…",
+      points: [
+        "Katalog noch nicht bereit — die Prognose erscheint, sobald die Produkte geladen sind.",
+        VERDICT_DISCLAIMER
+      ],
+      verdict: null,
+      flagged: {},
+      cabinetHits: []
+    };
+  }
   allProds.forEach(ensureClassesForRules);
 
   var pmProds = pm.map(resolve).filter(Boolean);
@@ -1876,7 +1927,62 @@ function calculatePrognosis() {
     return true;
   });
 
+  var whyNotes = [];
+  if (hasRxTherapy) {
+    whyNotes.push("ℹ️ Du hast ein Arzneimittel (z. B. Retinoid oder BPO) im Schrank. Die App filtert dann schärfer auf Duft und starke Reizstoffe — das ist Einkaufs-Hilfe, kein Behandlungsplan.");
+    whyNotes.push("Laut gängiger Begleitpflege (AAD / EuroGuiDerm-Praxis): Haut sanft halten — milde Reinigung, reichhaltige Creme als Puffer, morgens LSF. Kein Extra-Retinol und kein starkes Säure-Peeling dazu stapeln.");
+    if (missing && missing.length) {
+      whyNotes.push("Zusätzlich sinnvoll im Schrank: " + missing.join("; ") + ".");
+    } else {
+      whyNotes.push("Basis ist da (Reinigung/Creme/SPF). Beim Zukauf: eher Support wie Purito Panthenol, CeraVe Creme oder Bioderma Sébium Hydra — nicht noch ein zweites Retinoid.");
+    }
+  }
+  if (allHasBpo) {
+    whyNotes.push("ℹ️ Textil-Hinweis: BPO bleicht Handtücher und Kissenbezüge.");
+  }
+
+  (cabinet.hits || []).forEach(function (hit) {
+    if (hit.outcome === "konflikt" || hit.outcome === "eher_nicht") {
+      if (hit.code === "skip_stack") {
+        whyNotes.push("Warum kein Stacking am selben Abend? Starke Wirkstoffe überfordern die Hornschicht; getrennte Wechsel-Abende (Skin Cycling) schonen die Barriere.");
+      } else if (hit.code === "same_class") {
+        whyNotes.push("Warum keine Wirkstoff-Doppelung? Zwei Produkte derselben Klasse verdoppeln nicht den Nutzen, sondern vervielfachen das Irritationsrisiko.");
+      } else if (hit.code === "inactivate") {
+        whyNotes.push("Warum inkompatibel? Bestimmte Wirkstoffpaare heben ihre Wirkung gegenseitig auf oder zersetzen sich chemisch.");
+      }
+    }
+  });
+  (profileCab.hits || []).forEach(function (hit) {
+    if (hit.edu) {
+      whyNotes.push(hit.edu);
+    }
+  });
+
   var overall = outcomes.length ? worstWins.apply(null, outcomes) : "passt";
+
+  if (!whyNotes.length) {
+    if (overall === "passt") {
+      whyNotes.push("Deine Produkte ergänzen sich ohne chemische Inaktivierung oder übermäßiges Reiz-Stacking. Reinigung, Pflege und Schutz sind aufeinander abgestimmt.");
+    } else {
+      whyNotes.push("Prüfe die Wirkstoff-Kombinationen und nutze bei Bedarf Wechselabende (Skin Cycling).");
+    }
+  }
+
+  var seenWhy = {};
+  whyNotes = whyNotes.filter(function (wn) {
+    var k = String(wn);
+    if (seenWhy[k]) return false;
+    seenWhy[k] = true;
+    return true;
+  });
+
+  var shortPoints = points.filter(function (pt) {
+    var s = String(pt);
+    if (s.length > 130) return false;
+    if (/Laut gängiger Begleitpflege|Arzneimittel.*Einkaufs-Hilfe|Beim Zukauf: eher Support|Textil-Hinweis/i.test(s)) return false;
+    return true;
+  });
+
   return {
     status: statusFromOutcome(overall),
     verdict: overall,
@@ -1889,6 +1995,11 @@ function calculatePrognosis() {
     points: points.length
       ? points
       : [formatVerdictOneLook("passt", "Kein bekannter harter Konflikt in der aktuellen Routine.")],
+    shortPoints: shortPoints.length
+      ? shortPoints
+      : [formatVerdictOneLook(overall, overall === "passt" ? "Routine abgestimmt" : "Schrank anpassen")],
+    whyNotes: whyNotes,
+    eduNotes: whyNotes,
     disclaimer: VERDICT_DISCLAIMER,
     flagged: cabinet.flagged || {},
     cabinetHits: cabinet.hits || []

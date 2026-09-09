@@ -1928,9 +1928,10 @@ function normalizeDmProduct(p) {
   // Category deduction
   let kat = "creme";
   const catStr = ((p.tileData && p.tileData.trackingData && p.tileData.trackingData.categories) ? p.tileData.trackingData.categories.join(" ") : "") + " " + titleLower;
+  // Kein bare includes("uv") — False-Positives bei FR-Namen (nouvelle/ouverture/sauvage)
   if (catStr.includes("reinigung") || catStr.includes("wasch") || catStr.includes("cleanser") || catStr.includes("schaum") || catStr.includes("mizellen") || catStr.includes("gel moussant")) {
     kat = "reiniger";
-  } else if (catStr.includes("sonne") || catStr.includes("lsf") || catStr.includes("spf") || catStr.includes("uv") || catStr.includes("fluid lsf")) {
+  } else if (/\b(spf\s*\d*|lsf\s*\d*|sonnenschutz|sunscreen|uv[\s-]?mune|uv[\s-]?schutz|uv[\s-]?filter|breitbandfilter|sun\s*lotion|sun\s*fluid|sonnenfluid|sonnencreme|sonnenmilch|fluid lsf)\b/.test(catStr) || (catStr.includes("sonne") && /(schutz|creme|fluid|spray|milch)/.test(catStr))) {
     kat = "spf";
   } else if (catStr.includes("serum") || catStr.includes("toner") || catStr.includes("tonic") || catStr.includes("peeling") || catStr.includes("bha") || catStr.includes("aha") || catStr.includes("niacinamid") || catStr.includes("azelain")) {
     kat = "serum";
@@ -2038,9 +2039,10 @@ function normalizeDmPilotRow(r) {
 
   let kat = "creme";
   const catStr = ((r.category || "") + " " + name).toLowerCase();
+  // Kein bare includes("uv") — False-Positives bei FR-Namen (nouvelle/ouverture/…)
   if (catStr.includes("reinigung") || catStr.includes("wasch") || catStr.includes("cleanser") || catStr.includes("schaum") || catStr.includes("mizellen")) {
     kat = "reiniger";
-  } else if (catStr.includes("sonne") || catStr.includes("lsf") || catStr.includes("spf") || catStr.includes("uv")) {
+  } else if (/\b(spf\s*\d*|lsf\s*\d*|sonnenschutz|sunscreen|uv[\s-]?mune|uv[\s-]?schutz|uv[\s-]?filter|breitbandfilter|sun\s*lotion|sun\s*fluid|sonnenfluid|sonnencreme|sonnenmilch)\b/.test(catStr) || (catStr.includes("sonne") && /(schutz|creme|fluid|spray|milch)/.test(catStr))) {
     kat = "spf";
   } else if (catStr.includes("serum") || catStr.includes("toner") || catStr.includes("tonic") || catStr.includes("peeling") || catStr.includes("bha") || catStr.includes("aha") || catStr.includes("niacinamid")) {
     kat = "serum";
@@ -2116,15 +2118,30 @@ function normalizeDmPilotRow(r) {
 async function searchDmLive(query) {
   if (!query || String(query).trim().length < 2) return [];
   const q = String(query).trim();
+  const cc = (typeof getProfileCountry === "function" ? getProfileCountry() : "AT") || "AT";
 
-  // 1. If running on localhost / server, call server proxy
+  // Prefer country-aware live-retail client if already loaded (load-order safe)
+  if (typeof window.searchLiveProducts === "function" && window.searchLiveProducts !== searchDmLive) {
+    try {
+      return await window.searchLiveProducts(q, cc);
+    } catch (e) {
+      console.warn("[Live-dm] searchLiveProducts fehlgeschlagen, Fallback:", e);
+    }
+  }
+
+  // 1. If running on localhost / server, call country-aware live-search
   if (window.location.protocol !== "file:") {
     try {
-      const res = await fetch(`/api/dm-search?query=${encodeURIComponent(q)}&pageSize=12`);
+      const res = await fetch(`/api/live-search?query=${encodeURIComponent(q)}&country=${encodeURIComponent(String(cc).toUpperCase())}&pageSize=12`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.products && data.products.length > 0) {
-          const prods = data.products.map(normalizeDmProduct);
+          const prods = data.products.map(function (row) {
+            if (row && (row.source === "dm_mcp" || (!row.source && String(cc).toUpperCase() === "DE"))) {
+              return normalizeDmProduct(row);
+            }
+            return (typeof normalizeLiveApiProduct === "function") ? normalizeLiveApiProduct(row) : normalizeDmProduct(row);
+          }).filter(Boolean);
           window.currentLiveDmResults = prods;
           window.dmResultsMap = window.dmResultsMap || {};
           prods.forEach(pr => {
@@ -2479,9 +2496,10 @@ function applyKatalogRows(rows) {
   enrichAllDbProducts();
   ensureCatalogCountries();
 
-  // Wenn Schrank geöffnet ist, Ansicht auffrischen
-  if (typeof appState === "object" && appState.view === "cabinet" && typeof renderMain === "function") {
-    renderMain();
+  // Nach CSV-Load neu zeichnen (vermeidet leere/grüne Prognose bevor Katalog da ist)
+  if (typeof appState === "object") {
+    if (typeof renderCurrentScreen === "function") renderCurrentScreen();
+    else if (appState.view === "cabinet" && typeof renderMain === "function") renderMain();
   }
 }
 

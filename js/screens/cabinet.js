@@ -90,13 +90,17 @@ function removeBabyProduct(prodId, profile, slot) {
 }
 
 
-/** Shared TOP verdict banner for Baby/Child/Teen — product-driven, no static info wall. */
+/** Shared unified verdict card for Adult, Teen, Child, and Baby.
+ * - Single concise banner on conflict/warning (no triple repetition!)
+ * - Short bullet list for quick checks/cautions (no long text walls)
+ * - Expandable "Warum?" details accordion for clinical guidelines, background, & rationale
+ */
 function renderCategoryPrognosisBanner(prog, opts) {
   opts = opts || {};
   var accent = opts.accent || "#1d4ed8";
   var countLabel = opts.countLabel || "Produkte";
-  var totalCount = opts.totalCount || 0;
-  if (!prog || prog.empty) {
+  var totalCount = opts.totalCount !== undefined ? opts.totalCount : 0;
+  if (!prog || prog.empty || prog.status === "empty") {
     return `
     <div class="prognosis-card empty" style="border-left-color:${accent}">
       <div class="prognosis-header">
@@ -108,39 +112,109 @@ function renderCategoryPrognosisBanner(prog, opts) {
       </ul>
     </div>`;
   }
+
   var statusClass = prog.status || "ok";
-  var bannerExtra = "";
-  if (prog.verdict === "konflikt" || prog.verdict === "eher_nicht") {
-    var topReason = (prog.points && prog.points[0]) ? prog.points[0] : "";
-    bannerExtra = `
-      <div class="schrank-conflict-banner ${prog.verdict === "konflikt" ? "is-konflikt" : "is-warn"}">
-        ${topReason || (prog.verdict === "konflikt" ? "Konflikt im Schrank — siehe Produkte unten." : "Hinweis: Profile-Priorität nicht erfüllt.")}
+  var verdict = prog.verdict || "passt";
+
+  // 1. Kurze Meldung oben: Genau EINE prägnante Meldung bei Konflikt oder Warnung
+  var bannerHtml = "";
+  var primaryAlertClean = "";
+
+  if (verdict === "konflikt" || verdict === "eher_nicht") {
+    var rawReason = "";
+    if (prog.topAlert) {
+      rawReason = prog.topAlert;
+    } else if (prog.points && prog.points.length > 0) {
+      var matchPt = prog.points.find(function (pt) {
+        return verdict === "konflikt"
+          ? String(pt).indexOf("Konflikt") !== -1
+          : (String(pt).indexOf("eher nicht") !== -1 || String(pt).indexOf("fehlt") !== -1 || String(pt).indexOf("Duft") !== -1);
+      }) || prog.points[0];
+      rawReason = matchPt;
+    }
+
+    // Clean up reason: remove leading icons / verdict tags and trailing suffixes
+    primaryAlertClean = String(rawReason || "")
+      .replace(/^[🔴🟡🟢ℹ️]\s*(konflikt|eher\s*nicht|passt)\s*—\s*/i, "")
+      .replace(/\s*—\s*(eher\s*nicht|konflikt)\.?$/i, "")
+      .trim();
+
+    if (!primaryAlertClean) {
+      primaryAlertClean = verdict === "konflikt"
+        ? "Wirkstoffe derselben Klasse oder hartes Stacking im Schrank."
+        : "Einige Wirkstoffe passen besser im Wechsel oder erfüllen Profil-Priorität nicht.";
+    }
+
+    var bannerPrefix = verdict === "konflikt" ? "🔴 Konflikt:" : "🟡 Hinweis:";
+    bannerHtml = `
+      <div class="schrank-conflict-banner ${verdict === "konflikt" ? "is-konflikt" : "is-warn"}">
+        ${bannerPrefix} ${escapeHtml(primaryAlertClean)}
       </div>`;
   }
-  var whyBlock = "";
-  if ((prog.eduNotes || []).length && (prog.verdict === "konflikt" || prog.verdict === "eher_nicht")) {
-    whyBlock = `
-      <details style="margin-top:0.45rem">
-        <summary style="cursor:pointer;font-size:0.8rem;font-weight:650;color:var(--muted)">Warum?</summary>
-        <ul class="prognosis-list" style="margin-top:0.35rem">
-          ${prog.eduNotes.map(function (n) { return "<li>" + n + "</li>"; }).join("")}
-        </ul>
-      </details>`;
+
+  // 2. Kurze Cautions & Checks (NUR kurze, prägnante Punkte — keine Romane!)
+  // Wichtig: Den im Banner gezeigten Grund nicht nochmals als Bullet duplizieren!
+  var rawBullets = prog.shortPoints || (prog.points || []);
+  var displayBullets = rawBullets.filter(function (pt) {
+    var s = String(pt);
+    if (s.length > 125) return false;
+    if (/Laut gängiger Begleitpflege|Arzneimittel.*Einkaufs-Hilfe|Beim Zukauf: eher Support|Textil-Hinweis/i.test(s)) return false;
+
+    var sClean = s
+      .replace(/^[🔴🟡🟢ℹ️]\s*(konflikt|eher\s*nicht|passt)\s*—\s*/i, "")
+      .replace(/\s*—\s*(eher\s*nicht|konflikt)\.?$/i, "")
+      .trim();
+    if (primaryAlertClean && (sClean === primaryAlertClean || primaryAlertClean.indexOf(sClean) !== -1 || sClean.indexOf(primaryAlertClean) !== -1)) {
+      return false; // Bereits im Banner oben genannt!
+    }
+    return true;
+  });
+
+  var pointsHtml = "";
+  if (displayBullets.length > 0) {
+    pointsHtml = `
+      <ul class="prognosis-list">
+        ${displayBullets.map(function (pt) { return "<li>" + pt + "</li>"; }).join("")}
+      </ul>`;
   }
-  var pointsHtml = (prog.points || []).map(function (pt) {
-    return "<li>" + pt + "</li>";
-  }).join("");
+
+  // 3. Aufklappbares "Warum?" (für alle Kategorien!)
+  var whyItems = (prog.whyNotes && prog.whyNotes.length > 0) ? prog.whyNotes.slice() : ((prog.eduNotes && prog.eduNotes.length > 0) ? prog.eduNotes.slice() : []);
+  if (!whyItems.length && prog.points) {
+    whyItems = prog.points.filter(function (pt) {
+      return String(pt).length > 110 || /Begleitpflege|Arzneimittel|Textil-Hinweis|Warum/i.test(String(pt));
+    });
+  }
+  if (!whyItems.length) {
+    if (verdict === "passt") {
+      whyItems = ["Deine Produkte ergänzen sich ohne Reiz-Stacking oder Inaktivierung. Reinigung, Pflege und Schutz sind aufeinander abgestimmt."];
+    } else {
+      whyItems = ["Prüfe die Verträglichkeit der Produkte und passe die Reihenfolge oder Wechsel-Abende an."];
+    }
+  }
+
+  var whyBlock = `
+    <details class="prognosis-why-details">
+      <summary>Warum?</summary>
+      <div class="prognosis-why-content">
+        <ul class="prognosis-why-list">
+          ${whyItems.map(function (n) { return "<li>" + n + "</li>"; }).join("")}
+        </ul>
+      </div>
+    </details>`;
+
   return `
     <div class="prognosis-card ${statusClass}">
       <div class="prognosis-header">
         <div class="prognosis-title">${prog.title}</div>
         <span style="font-size:0.75rem;color:var(--muted);font-weight:600">${totalCount} ${totalCount === 1 ? "Produkt" : countLabel}</span>
       </div>
-      ${bannerExtra}
-      <ul class="prognosis-list">${pointsHtml}</ul>
+      ${bannerHtml}
+      ${pointsHtml}
       ${whyBlock}
     </div>`;
 }
+window.renderUnifiedPrognosisCard = renderCategoryPrognosisBanner;
 
 function conflictBadgeHtml(flag) {
   if (!flag || !flag.outcome) return "";
@@ -929,21 +1003,11 @@ function renderMain(autoSave = true) {
     </div>
 
     <!-- Live Routine-Prognose Banner (inkl. Intra-Schrank Klassen-Konflikte) -->
-    <div class="prognosis-card ${prog.status}">
-      <div class="prognosis-header">
-        <div class="prognosis-title">${prog.title}</div>
-        <span style="font-size:0.75rem;color:var(--muted);font-weight:600">${(typeof getFullCabinetProductIds === "function" ? getFullCabinetProductIds().length : (appState.am.length + getActivePMList().length))} Flaschen</span>
-      </div>
-      ${(prog.verdict === "konflikt" || prog.verdict === "eher_nicht") ? `
-      <div class="schrank-conflict-banner ${prog.verdict === "konflikt" ? "is-konflikt" : "is-warn"}">
-        ${prog.verdict === "konflikt"
-          ? "Klarer Hinweis: Im Schrank stecken Wirkstoffe derselben Klasse oder ein hartes Stacking — siehe Punkte unten."
-          : "Hinweis: Einige Wirkstoffe passen besser im Wechsel (nicht am selben Abend)."}
-      </div>` : ""}
-      <ul class="prognosis-list">
-        ${prog.points.map(pt => `<li>${pt}</li>`).join("")}
-      </ul>
-    </div>
+    ${renderCategoryPrognosisBanner(prog, {
+      accent: "#4f46e5",
+      totalCount: (typeof getFullCabinetProductIds === "function" ? getFullCabinetProductIds().length : (appState.am.length + getActivePMList().length)),
+      countLabel: "Flaschen"
+    })}
 
     <!-- Scan & Search Bar -->
     <div class="scan-hero">
@@ -1345,13 +1409,24 @@ window.adoptDmProductToSlot = adoptDmProductToSlot;
 // 3-Second Verdict Logic against Cabinet
 
 function openGuardModal() {
+  const tags = [].concat((appState && appState.tags) || []);
+  const isRx = tags.some(function (t) {
+    const s = String(t || "").toLowerCase();
+    return s.indexOf("begleit") !== -1 || s.indexOf("rx") !== -1;
+  });
+  const hasRxProd = (typeof getFullCabinetProductIds === "function" ? getFullCabinetProductIds() : [])
+    .map(function (id) { return typeof resolveCabinetProduct === "function" ? resolveCabinetProduct(id) : (typeof DB !== "undefined" ? DB[id] : null); })
+    .some(function (p) { return p && (p.rx || p.schiene === "arzneimittel" || (Array.isArray(p.klassen) && p.klassen.some(function (k) { return /retinoid_rx|bpo/.test(k); }))); });
+
+  const lead = (isRx || hasRxProd)
+    ? "Du hast <strong>Begleitpflege / ein Rx-Mittel</strong> aktiv. Medizinische Akne-Wirkstoffe (z.&nbsp;B. Adapalen / BPO) können die Barriere vorübergehend empfindlicher machen — die App filtert dann schärfer beim Einkauf & Layering."
+    : "Der <strong>Schrank-Wächter</strong> prüft Konflikte in deiner Routine (gleiche Wirkstoffklasse, Stacking, fehlender LSF). <strong>Begleitpflege</strong> schaltet du im Quiz oder im Rx-Wegweiser dazu — dann wird bei Duft & starken Säuren strenger gefiltert.";
+
   showModalSheet(`
     <h2>🛡️ Was bedeutet Begleitpflege-Schutz?</h2>
-    <p style="font-size:0.92rem;line-height:1.45">
-      In deinem Schrank steht ein <strong>medizinisches Retinoid (Adapalen / BPO)</strong>. Medizinische Akne-Wirkstoffe reduzieren die Talgproduktion und beschleunigen die Zellerneuerung, machen die Hautbarriere aber vorübergehend trocken, schuppig und extrem empfindlich.
-    </p>
+    <p style="font-size:0.92rem;line-height:1.45">${lead}</p>
     <div class="pharma-box">
-      <div class="pharma-title">Deine automatischen Schutz-Regeln:</div>
+      <div class="pharma-title">${(isRx || hasRxProd) ? "Deine automatischen Schutz-Regeln:" : "Was der Wächter prüft:"}</div>
       <div class="pharma-text">
         • <strong>Kein Säure-Stacking:</strong> AHA/BHA-Peelings werden am selben Abend blockiert.<br>
         • <strong>Reizstoff-Filter:</strong> Warnung vor austrocknenden Alkoholen & ätherischen Zitrusölen.<br>
