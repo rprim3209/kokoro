@@ -491,7 +491,7 @@ const PAIR_MATRIX = [
       var candRet = isRetinoidProduct(cand);
       var otherRet = isRetinoidProduct(other);
       if ((candBpo && otherRet) || (candRet && otherBpo)) {
-        if (ctx && ctx.slot === "pm") {
+        if (ctx && (ctx.slot === "pm" || String(ctx.slot || "").indexOf("pm") !== -1)) {
           return "Retinoid und BPO nicht in derselben Abend-Schicht stapeln (Reiz). Chemie Adapalen×BPO ist stabil — Problem ist Reiz, nicht Zerstörung.";
         }
       }
@@ -511,7 +511,7 @@ const PAIR_MATRIX = [
       var candBha = isBhaProduct(cand);
       var otherBha = isBhaProduct(other);
       if ((candAha && otherBha) || (candBha && otherAha)) {
-        if (ctx && ctx.slot === "pm") {
+        if (ctx && (ctx.slot === "pm" || String(ctx.slot || "").indexOf("pm") !== -1)) {
           return "Zwei starke Säuren (AHA + BHA) am selben Abend überfordern die Barriere.";
         }
       }
@@ -531,7 +531,9 @@ const PAIR_MATRIX = [
       var candAcid = isAcidProduct(cand);
       var otherAcid = isAcidProduct(other);
       if ((candRet && otherAcid) || (candAcid && otherRet)) {
-        return "Nicht am selben Abend wie dein Retinoid — lieber getrennte Tage (Skin Cycling).";
+        if (!ctx || ctx.slot === "pm" || String(ctx.slot || "").indexOf("pm") !== -1) {
+          return "Nicht am selben Abend wie dein Retinoid — lieber getrennte Tage (Skin Cycling).";
+        }
       }
       return false;
     }
@@ -1176,12 +1178,20 @@ function resolveCabinetProduct(id) {
 
 function getFullCabinetProductIds() {
   if (typeof appState === "undefined" || !appState) return [];
-  var ids = [].concat(
-    appState.am || [],
-    appState.pm_a || [],
-    appState.pm_b || [],
-    appState.pm_c || []
-  );
+  var ids = [];
+  if (appState.useSkinCycling) {
+    ids = [].concat(
+      appState.am || [],
+      appState.pm_a || [],
+      appState.pm_b || [],
+      appState.pm_c || []
+    );
+  } else {
+    ids = [].concat(
+      appState.am || [],
+      appState.pm_a || []
+    );
+  }
   var seen = {};
   var out = [];
   ids.forEach(function (id) {
@@ -1495,11 +1505,68 @@ function calculateCategoryCabinetPrognosis(products, category) {
 }
 
 
+function getProductCoApplicationInfo(aId, bId) {
+  if (!aId || !bId) return { together: false, cyclingSeparated: false, dayNightSplit: false, slot: null };
+  if (typeof appState === "undefined" || !appState) {
+    return { together: true, cyclingSeparated: false, dayNightSplit: false, slot: null };
+  }
+
+  var am = Array.isArray(appState.am) ? appState.am : [];
+  var inAmA = am.indexOf(aId) !== -1;
+  var inAmB = am.indexOf(bId) !== -1;
+  if (inAmA && inAmB) {
+    return { together: true, cyclingSeparated: false, dayNightSplit: false, slot: "am" };
+  }
+
+  var useCycling = !!appState.useSkinCycling;
+
+  if (useCycling) {
+    var pmA = Array.isArray(appState.pm_a) ? appState.pm_a : [];
+    var pmB = Array.isArray(appState.pm_b) ? appState.pm_b : [];
+    var pmC = Array.isArray(appState.pm_c) ? appState.pm_c : [];
+
+    var inPmA_A = pmA.indexOf(aId) !== -1;
+    var inPmA_B = pmA.indexOf(bId) !== -1;
+    if (inPmA_A && inPmA_B) return { together: true, cyclingSeparated: false, dayNightSplit: false, slot: "pm_a" };
+
+    var inPmB_A = pmB.indexOf(aId) !== -1;
+    var inPmB_B = pmB.indexOf(bId) !== -1;
+    if (inPmB_A && inPmB_B) return { together: true, cyclingSeparated: false, dayNightSplit: false, slot: "pm_b" };
+
+    var inPmC_A = pmC.indexOf(aId) !== -1;
+    var inPmC_B = pmC.indexOf(bId) !== -1;
+    if (inPmC_A && inPmC_B) return { together: true, cyclingSeparated: false, dayNightSplit: false, slot: "pm_c" };
+
+    // Check if separated into different cycling modes:
+    var anyPmA = inPmA_A || inPmB_A || inPmC_A;
+    var anyPmB = inPmA_B || inPmB_B || inPmC_B;
+    if (anyPmA && anyPmB) {
+      // Both are in evening routines, but in different modes!
+      return { together: false, cyclingSeparated: true, dayNightSplit: false, slot: "cycling_split" };
+    }
+    if ((inAmA && anyPmB) || (inAmB && anyPmA)) {
+      return { together: false, cyclingSeparated: false, dayNightSplit: true, slot: "am_pm_split" };
+    }
+    return { together: false, cyclingSeparated: false, dayNightSplit: false, slot: null };
+  } else {
+    // Non-cycling adult cabinet: PM list is pm_a (or getActivePMList)
+    var pm = (typeof getActivePMList === "function" ? getActivePMList() : (Array.isArray(appState.pm_a) ? appState.pm_a : []));
+    var inPmA = pm.indexOf(aId) !== -1;
+    var inPmB = pm.indexOf(bId) !== -1;
+    if (inPmA && inPmB) return { together: true, cyclingSeparated: false, dayNightSplit: false, slot: "pm" };
+
+    if ((inAmA && inPmB) || (inAmB && inPmA)) {
+      return { together: false, cyclingSeparated: false, dayNightSplit: true, slot: "am_pm_split" };
+    }
+    return { together: false, cyclingSeparated: false, dayNightSplit: false, slot: null };
+  }
+}
+window.getProductCoApplicationInfo = getProductCoApplicationInfo;
+
 /**
  * Intra-Schrank Konfliktpass: jedes Paar gegen PAIR_MATRIX.
- * same_class / inactivate über gesamten Schrank;
- * skip_stack mit slot=pm wenn beide in der aktiven Abend-Liste liegen;
- * alternate_days als gelber Hinweis.
+ * Wenn Skin Cycling aktiv ist und Wirkstoffe auf getrennte Modi verteilt sind,
+ * entsteht kein Schrank-Konflikt (kein Reiz-Stacking am selben Abend).
  * Worst-wins Aggregation.
  */
 function assessCabinetConflicts(allProds, pmProds) {
@@ -1540,14 +1607,34 @@ function assessCabinetConflicts(allProds, pmProds) {
     for (var j = i + 1; j < products.length; j++) {
       var a = products[i];
       var b = products[j];
+      var coApp = getProductCoApplicationInfo(a.id, b.id);
+
+      // If cycling is active and products are separated across cycling modes:
+      // They are deliberately NOT applied together on the same evening!
+      if (coApp.cyclingSeparated) {
+        continue;
+      }
+
       var bothPm = !!(a.id && b.id && pmSet[a.id] && pmSet[b.id]);
-      var ctx = { slot: bothPm ? "pm" : null, allCabinetProducts: products };
+      var slotCtx = coApp.together ? coApp.slot : (bothPm ? "pm" : (coApp.dayNightSplit ? "am_pm_split" : null));
+      var ctx = { slot: slotCtx, allCabinetProducts: products };
 
       PAIR_MATRIX.forEach(function (rule) {
         // Pairwise only for product×product codes
         if (rule.code === "not_cosmetic" || rule.code === "bleach" || rule.code === "resistance") {
           return;
         }
+
+        // If day/night split (e.g. Vitamin C in AM, Acid or BPO in PM), skip rules that warn about same session
+        if (coApp.dayNightSplit && (rule.code === "skip_stack" || rule.code === "split" || rule.code === "alternate_days" || rule.id === "rule_inactivate_bpo_ascorbic")) {
+          return;
+        }
+
+        // If not applied together (and not both in current evaluated PM list), skip same-session stacking rules
+        if (!coApp.together && !bothPm && (rule.code === "skip_stack" || rule.code === "alternate_days")) {
+          return;
+        }
+
         var hitAb = rule.match(a, b, ctx);
         if (hitAb) {
           pushHit(
@@ -1555,23 +1642,6 @@ function assessCabinetConflicts(allProds, pmProds) {
             a,
             b
           );
-        }
-        // skip_stack may need pm slot even if not both currently in active PM —
-        // for Schrank overview also flag if both are leave-on actives in cabinet
-        if (!hitAb && (rule.code === "skip_stack") && !bothPm) {
-          var hitCab = rule.match(a, b, { slot: "pm", allCabinetProducts: products });
-          if (hitCab) {
-            pushHit(
-              {
-                code: rule.code,
-                outcome: rule.outcome,
-                reason: hitCab,
-                prio: rule.prio
-              },
-              a,
-              b
-            );
-          }
         }
       });
     }
@@ -1713,16 +1783,38 @@ function calculatePrognosis() {
   });
   cabinet.flagged = mergeCabinetFlagged(cabinet.flagged, profileCab.flagged);
 
-  // 2) Nacht-Reiz-Budget der aktiven PM-Liste
-  var night = assessNightReiz(pm, null);
-  if (night.outcome === "konflikt") {
-    var nightKey = "night|" + night.reason;
-    var already = points.some(function (pt) {
-      return String(pt).indexOf("Retinoid") !== -1 && night.code === "same_class";
+  // 2) Nacht-Reiz-Budget
+  if (typeof appState !== "undefined" && appState && appState.useSkinCycling) {
+    var modes = [
+      { key: "a", name: "Modus A", list: appState.pm_a || [] },
+      { key: "b", name: "Modus B", list: appState.pm_b || [] },
+      { key: "c", name: "Modus C", list: appState.pm_c || [] }
+    ];
+    var anyCyclingNightConflict = false;
+    modes.forEach(function (m) {
+      if (m.list.length > 0) {
+        var nRes = assessNightReiz(m.list, null);
+        if (nRes && nRes.outcome === "konflikt") {
+          anyCyclingNightConflict = true;
+          outcomes.push("konflikt");
+          points.push(formatVerdictOneLook("konflikt", m.name + ": " + nRes.reason));
+        }
+      }
     });
-    if (!already) {
-      outcomes.push("konflikt");
-      points.push(formatVerdictOneLook("konflikt", night.reason));
+    if (!anyCyclingNightConflict && hasActives) {
+      points.push(formatVerdictOneLook("passt", "Skin Cycling aktiv: Deine Wirkstoffe sind auf getrennte Abende verteilt (kein Reiz-Stacking)."));
+    }
+  } else {
+    var night = assessNightReiz(pm, null);
+    if (night.outcome === "konflikt") {
+      var nightKey = "night|" + night.reason;
+      var already = points.some(function (pt) {
+        return String(pt).indexOf("Retinoid") !== -1 && night.code === "same_class";
+      });
+      if (!already) {
+        outcomes.push("konflikt");
+        points.push(formatVerdictOneLook("konflikt", night.reason));
+      }
     }
   }
 

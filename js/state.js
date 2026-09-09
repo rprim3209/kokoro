@@ -7,6 +7,7 @@ let appState = {
   view: "cabinet", // Startet direkt in "Mein Schrank"!
   tab: "am", // "am" | "pm"
   pmMode: "a", // "a" (Adapalen) | "b" (Clienzo) | "c" (Pause)
+  useSkinCycling: false,
   tags: ["Eigene Routine"],
   routineComplexity: "basis", // "minimal" (2) | "basis" (3) | "comprehensive" (4-5)
   babyComplexity: "basis",
@@ -51,7 +52,7 @@ let appState = {
       complexity: "basis",
       tags: ["Eigene Routine"],
       country: "AT",
-      data: { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a" }
+      data: { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a", useSkinCycling: false }
     }
   ],
   customProducts: {},
@@ -83,6 +84,9 @@ if (saved) {
     const parsed = JSON.parse(saved);
     if (parsed && typeof parsed === "object") {
       appState = Object.assign({}, appState, parsed);
+      if (appState.useSkinCycling === undefined) {
+        appState.useSkinCycling = shouldAutoEnableSkinCycling(appState);
+      }
       if (!appState.baby) appState.baby = { reiniger: [], creme: [], windel: [], spf: [] };
       if (!appState.child) appState.child = { reiniger: [], creme: [], spf: [], haar: [] };
       if (!appState.teen) appState.teen = { reiniger: [], active: [], creme: [], spf: [] };
@@ -131,7 +135,8 @@ if (saved) {
               pm_a: appState.pm_a || [],
               pm_b: appState.pm_b || [],
               pm_c: appState.pm_c || [],
-              pmMode: appState.pmMode || "a"
+              pmMode: appState.pmMode || "a",
+              useSkinCycling: Boolean(appState.useSkinCycling)
             }
           }
         ];
@@ -192,6 +197,7 @@ function resetSchrank() {
     view: "cabinet",
     tab: "am",
     pmMode: "a",
+    useSkinCycling: false,
     tags: ["Eigene Routine"],
     routineComplexity: "basis",
     babyComplexity: "basis",
@@ -220,7 +226,7 @@ function resetSchrank() {
         complexity: "basis",
         tags: ["Eigene Routine"],
         country: "AT",
-        data: { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a" }
+        data: { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a", useSkinCycling: false }
       }
     ],
     customProducts: {},
@@ -347,6 +353,7 @@ function syncActiveProfileFromWorkingState() {
     p.data.pm_b = appState.pm_b || [];
     p.data.pm_c = appState.pm_c || [];
     p.data.pmMode = appState.pmMode || "a";
+    p.data.useSkinCycling = Boolean(appState.useSkinCycling);
     p.complexity = appState.routineComplexity || "basis";
     p.tags = appState.tags || ["Eigene Routine"];
     if (appState.profileSubtitles && appState.profileSubtitles.adult) {
@@ -373,6 +380,40 @@ function syncActiveProfileFromWorkingState() {
   }
 }
 
+function shouldAutoEnableSkinCycling(pOrState) {
+  const obj = pOrState || appState;
+  const cat = obj.category || obj.profile;
+  if (cat && cat !== "adult") return false;
+
+  const comp = obj.complexity || obj.routineComplexity || "basis";
+  if (comp === "minimal") return false;
+
+  const tags = obj.tags || (appState && appState.tags) || [];
+  const isRxOrAcne = tags.some(t => String(t).includes("Rx") || String(t).includes("Akne") || String(t).includes("Arzt-Thema") || String(t).includes("Skin Cycling"));
+
+  const routineId = typeof getSelectedIdealRoutineId === "function" ? getSelectedIdealRoutineId() : "acne_barrier";
+  if (routineId === "acne_barrier") return true;
+
+  const d = obj.data || obj;
+  const allIds = [].concat(
+    d.am || obj.am || [],
+    d.pm_a || obj.pm_a || [],
+    d.pm_b || obj.pm_b || [],
+    d.pm_c || obj.pm_c || []
+  );
+  let activeCount = 0;
+  allIds.forEach(id => {
+    const prod = (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(id) : null)
+      || (typeof DB !== "undefined" && DB ? DB[id] : null);
+    if (prod && (prod.rx || prod.schiene === "arzneimittel" || (typeof isRetinoidProduct === "function" && isRetinoidProduct(prod)) || (typeof isAcidProduct === "function" && isAcidProduct(prod)) || (typeof isBpoProduct === "function" && isBpoProduct(prod)))) {
+      activeCount++;
+    }
+  });
+  if (activeCount >= 2) return true;
+  return isRxOrAcne;
+}
+window.shouldAutoEnableSkinCycling = shouldAutoEnableSkinCycling;
+
 function loadProfileToAppState(p) {
   appState.activeProfileId = p.id;
   appState.profile = p.category;
@@ -396,6 +437,7 @@ function loadProfileToAppState(p) {
     appState.pm_b = d.pm_b || [];
     appState.pm_c = d.pm_c || [];
     appState.pmMode = d.pmMode || "a";
+    appState.useSkinCycling = d.useSkinCycling !== undefined ? Boolean(d.useSkinCycling) : shouldAutoEnableSkinCycling(p);
     appState.routineComplexity = p.complexity || "basis";
     appState.tags = p.tags || ["Eigene Routine"];
   } else if (p.category === "baby") {
@@ -432,7 +474,7 @@ function switchProfile(profileIdOrCategory) {
       complexity: "basis",
       tags: cat === "adult" ? ["Eigene Routine"] : [],
       country: getProfileCountry(),
-      data: cat === "adult" ? { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a" } :
+      data: cat === "adult" ? { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a", useSkinCycling: false } :
             cat === "baby" ? { reiniger: [], creme: [], windel: [], spf: [] } :
             cat === "child" ? { reiniger: [], creme: [], spf: [], haar: [] } :
             { reiniger: [], active: [], creme: [], spf: [] }
@@ -633,7 +675,7 @@ function submitCreateProfile() {
     complexity: "basis",
     tags: cat === "adult" ? ["Eigene Routine"] : [],
     country: getProfileCountry(),
-    data: cat === "adult" ? { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a" } :
+    data: cat === "adult" ? { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a", useSkinCycling: false } :
           cat === "baby" ? { reiniger: [], creme: [], windel: [], spf: [] } :
           cat === "child" ? { reiniger: [], creme: [], spf: [], haar: [] } :
           { reiniger: [], active: [], creme: [], spf: [] }

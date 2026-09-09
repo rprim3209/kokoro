@@ -46,6 +46,21 @@ const IDEAL_ROUTINES = {
       { slotKey: "creme", slotName: "3. Leichte Pflege", prodId: "isanaCreme", why: "Leichte Formulierung, spendet Feuchtigkeit ohne Glanz oder Fettfilm" },
       { slotKey: "spf", slotName: "4. Matt-LSF 50+", prodId: "baleaSpf", why: "Leichtes Sonnenfluid, klebt nicht und verstopft keine Poren" }
     ],
+    pm_a: [
+      { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "isanaWash", why: "Befreit verstopfte Poren von Talg und Umweltschmutz" },
+      { slotKey: "active", slotName: "2. Poren-Peeling", prodId: "bha", why: "2% Salicylsäure (BHA) dringt fettlöslich in die Pore ein und löst Talgpfropfen" },
+      { slotKey: "creme", slotName: "3. Nachtpflege", prodId: "baleaAqua", why: "Ölfreies Hydro-Gel beruhigt die Haut nach dem Peeling" }
+    ],
+    pm_b: [
+      { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "isanaWash", why: "Reizarme Porenreinigung" },
+      { slotKey: "serum", slotName: "2. Sebum-Regulator", prodId: "bbomb", why: "10% Niacinamid + Zink normalisiert die Talgproduktion" },
+      { slotKey: "creme", slotName: "3. Leichte Pflege", prodId: "isanaCreme", why: "Spendet Feuchtigkeit ohne Fettglanz" }
+    ],
+    pm_c: [
+      { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "isanaWash", why: "Sanfte Reinigung für die Barriere-Ruhe" },
+      { slotKey: "serum", slotName: "2. Feuchtigkeitspuffer", prodId: "ha", why: "Pralle Feuchtigkeit ohne komedogene Lipide" },
+      { slotKey: "creme", slotName: "3. Feuchtigkeitsgel", prodId: "baleaAqua", why: "Erholung und Erfrischung für die Hornschicht" }
+    ],
     pm: [
       { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "isanaWash", why: "Befreit verstopfte Poren von Talg und Umweltschmutz" },
       { slotKey: "active", slotName: "2. Peeling-Active", prodId: "bha", why: "2% Salicylsäure (BHA) dringt fettlöslich in die Pore ein und löst Talgpfropfen" },
@@ -64,6 +79,21 @@ const IDEAL_ROUTINES = {
       { slotKey: "creme", slotName: "3. Reichhaltige Creme", prodId: "ceraveMoist", why: "MVE-Technologie gibt Ceramide über den Tag verteilt an die Haut ab" },
       { slotKey: "spf", slotName: "4. Schutz & LSF 50+", prodId: "anthelios", why: "Mexoryl 400 schützt vor tiefer UV-Zellalterung ohne die Augen zu reizen" }
     ],
+    pm_a: [
+      { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "ceraveWash", why: "Reinigt ultra-sanft, ohne Lipide aus der Barriere zu waschen" },
+      { slotKey: "active", slotName: "2. Sanfter Wirkstoff", prodId: "apad", why: "PAD (Azelain-Derivat): Beruhigt Rötungen ohne die trockene Haut zu schälen" },
+      { slotKey: "creme", slotName: "3. Ceramid-Pflege", prodId: "ceraveMoist", why: "Schließt Wirkstoffe mit 3 Ceramiden ein" }
+    ],
+    pm_b: [
+      { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "ceraveWash", why: "Ultra-schonende Feuchtreinigung" },
+      { slotKey: "serum", slotName: "2. Tiefen-Hydrator", prodId: "noHydrator", why: "Ectoin & Panthenol zur tiefenwirksamen Feuchtigkeitsspeicherung" },
+      { slotKey: "creme", slotName: "3. Ceramid-Reparatur", prodId: "ceraveCreme", why: "Intensive Lipid-Reparatur für die geschwächte Hautbarriere" }
+    ],
+    pm_c: [
+      { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "ceraveWash", why: "Reizarme Reinigung für die Erholungsnacht" },
+      { slotKey: "serum", slotName: "2. Hyaluron-Puffer", prodId: "ha", why: "Plumpt die Haut und mindert Trockenheitsfältchen" },
+      { slotKey: "creme", slotName: "3. SOS-Lipidbalsam", prodId: "mixaPanthenol", why: "13% Glycerin + Panthenol zur Barriere-Erholung" }
+    ],
     pm: [
       { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "ceraveWash", why: "Reinigt ultra-sanft, ohne Lipide aus der Barriere zu waschen" },
       { slotKey: "serum", slotName: "2. Hyaluron-Puffer", prodId: "ha", why: "Plumpt die Haut und mindert Trockenheitsfältchen über Nacht" },
@@ -81,6 +111,21 @@ const IDEAL_ROUTINES = {
       { slotKey: "serum", slotName: "2. Feuchtigkeitsserum", prodId: "noHydrator", why: "Schützt vor oxidativem Stress und hält die Feuchtebarriere stabil" },
       { slotKey: "creme", slotName: "3. Tagespflege", prodId: "isanaCreme", why: "Unkomplizierte, leichte Feuchtigkeitscreme für den ganzen Tag" },
       { slotKey: "spf", slotName: "4. LSF 50+ Schutz", prodId: "anthelios", why: "Goldstandard-Sonnenschutz: Der wichtigste Schritt gegen vorzeitige Hautalterung" }
+    ],
+    pm_a: [
+      { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "baleaWash", why: "Wäscht Feinstaub und Sonnenfilter sanft ab" },
+      { slotKey: "active", slotName: "2. Peeling-Nacht", prodId: "bha", why: "Entfernt abgestorbene Hautschüppchen für glatte Textur & Glow" },
+      { slotKey: "creme", slotName: "3. Feuchtigkeitscreme", prodId: "baleaCreme", why: "Schützt die Hautbarriere nach dem Peeling" }
+    ],
+    pm_b: [
+      { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "baleaWash", why: "Schonende Reinigung" },
+      { slotKey: "serum", slotName: "2. Feuchtigkeit & Vitalisierung", prodId: "noHydrator", why: "Ectoin & Feuchtigkeitsfaktoren stärken die Zellregeneration" },
+      { slotKey: "creme", slotName: "3. Pflegecreme", prodId: "isanaCreme", why: "Versiegelt Feuchtigkeit ohne Poren zu belasten" }
+    ],
+    pm_c: [
+      { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "baleaWash", why: "Milde Vorbereitung für die Ruhe-Nacht" },
+      { slotKey: "serum", slotName: "2. Hyaluron-Glow", prodId: "ha", why: "Hyaluron-Puffer für die nächtliche Tiefenhydratisierung" },
+      { slotKey: "creme", slotName: "3. Regenerationscreme", prodId: "baleaCreme", why: "Unterstützt die natürliche nächtliche Barriere-Reparatur" }
     ],
     pm: [
       { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "baleaWash", why: "Wäscht Feinstaub und Sonnenfilter rückstandslos ab" },
@@ -157,6 +202,45 @@ function setIdealRoutineComplexity(comp) {
   showToast(`🎯 Routine-Aufwand auf <strong>${label}</strong> angepasst!`);
 }
 
+function getSkinCyclingConfig(routineId) {
+  const configs = {
+    acne_barrier: {
+      title: "Skin Cycling: Akne & Barriere",
+      modes: {
+        a: { name: "Modus A: Retinoid", desc: "Adapalen zur Porennormierung", icon: "🌙" },
+        b: { name: "Modus B: Akut-BPO", desc: "Clienzo bei entzündeten Pickeln", icon: "🎯" },
+        c: { name: "Modus C: Barriere-Pause", desc: "Reine Feuchtigkeit & Erholung", icon: "🛡️" }
+      }
+    },
+    oily_pores: {
+      title: "Skin Cycling: Poren & Sebum-Balance",
+      modes: {
+        a: { name: "Modus A: Poren-Peeling", desc: "2% BHA klärt Talgpfropfen", icon: "✨" },
+        b: { name: "Modus B: Sebum-Balance", desc: "Niacinamid & Zink regulierend", icon: "⚖️" },
+        c: { name: "Modus C: Feuchte-Pause", desc: "Leichtes Gel & Barriere-Ruhe", icon: "💧" }
+      }
+    },
+    dry_fragile: {
+      title: "Skin Cycling: Ceramid- & Barriereschutz",
+      modes: {
+        a: { name: "Modus A: Milder Wirkstoff", desc: "Sanftes PAD gegen Rötungen", icon: "🌿" },
+        b: { name: "Modus B: Ceramid-Reparatur", desc: "3 essenzielle Ceramide nährend", icon: "🧱" },
+        c: { name: "Modus C: SOS-Lipidbalsam", desc: "Panthenol-Intensivschutz", icon: "🛡️" }
+      }
+    },
+    healthy_glow: {
+      title: "Classic Skin Cycling: Erneuerung & Glow",
+      modes: {
+        a: { name: "Modus A: Peeling-Nacht", desc: "Sanfte Klärung abgestorbener Zellen", icon: "✨" },
+        b: { name: "Modus B: Vitalisierung", desc: "Hydration & Zellerneuerung", icon: "🌟" },
+        c: { name: "Modus C: Regenerations-Pause", desc: "Hyaluron & Barriere-Erholung", icon: "🌙" }
+      }
+    }
+  };
+  return configs[routineId] || configs.acne_barrier;
+}
+window.getSkinCyclingConfig = getSkinCyclingConfig;
+
 function getIdealRoutineSteps(routine, tab, complexity, specificPmMode) {
   const comp = complexity || appState.routineComplexity || "basis";
   const isAM = tab === "am";
@@ -201,20 +285,57 @@ function getIdealRoutineSteps(routine, tab, complexity, specificPmMode) {
           ];
         }
       } else if (id === "oily_pores") {
-        return [
-          { slotKey: "reiniger", slotName: "1. Klärende Reinigung", prodId: "isanaPure", why: "Befreit verstopfte Poren von Talg und Schmutzpartikeln." },
-          { slotKey: "active", slotName: "2. Poren-Peeling (BHA)", prodId: "bhaLiquid", why: "2% Salicylsäure dringt in die Poren ein und löst Talgpfropfen." }
-        ];
+        if (currentPmMode === "b") {
+          return [
+            { slotKey: "reiniger", slotName: "1. Klärende Reinigung", prodId: "isanaPure", why: "Befreit verstopfte Poren von Talg und Schmutz." },
+            { slotKey: "active", slotName: "2. Sebum-Regulator", prodId: "bbomb", why: "10% Niacinamid + Zink: Reguliert Talgproduktion und verfeinert Poren." }
+          ];
+        } else if (currentPmMode === "c") {
+          return [
+            { slotKey: "reiniger", slotName: "1. Klärende Reinigung", prodId: "isanaPure", why: "Sanfte Reinigung für die Barriere-Ruhe." },
+            { slotKey: "creme", slotName: "2. Ölfreies Hydro-Gel", prodId: "baleaAqua", why: "Leichte Erfrischung ohne Fettfilm." }
+          ];
+        } else {
+          return [
+            { slotKey: "reiniger", slotName: "1. Klärende Reinigung", prodId: "isanaPure", why: "Befreit verstopfte Poren von Talg und Schmutzpartikeln." },
+            { slotKey: "active", slotName: "2. Poren-Peeling (BHA)", prodId: "bhaLiquid", why: "2% Salicylsäure dringt in die Poren ein und löst Talgpfropfen." }
+          ];
+        }
       } else if (id === "dry_fragile") {
-        return [
-          { slotKey: "reiniger", slotName: "1. Barriere-Reinigung", prodId: "ceraveWash", why: "Milde Lotion reinigt ohne transepidermalen Wasserverlust." },
-          { slotKey: "creme", slotName: "2. Ceramid-Nachtcreme", prodId: "ceraveCreme", why: "Reichhaltige Lipide regenerieren die Lipiddoppelschicht über Nacht." }
-        ];
+        if (currentPmMode === "b") {
+          return [
+            { slotKey: "reiniger", slotName: "1. Barriere-Reinigung", prodId: "ceraveWash", why: "Milde Lotion reinigt ohne transepidermalen Wasserverlust." },
+            { slotKey: "creme", slotName: "2. Ceramid-Reparatur", prodId: "ceraveCreme", why: "3 essenzielle Ceramide reparieren die Barriere über Nacht." }
+          ];
+        } else if (currentPmMode === "c") {
+          return [
+            { slotKey: "reiniger", slotName: "1. Barriere-Reinigung", prodId: "ceraveWash", why: "Sanfte Feuchtreinigung für die Erholungsnacht." },
+            { slotKey: "creme", slotName: "2. SOS-Lipidbalsam", prodId: "mixaPanthenol", why: "13% Glycerin + Panthenol versiegelt trockene Stellen." }
+          ];
+        } else {
+          return [
+            { slotKey: "reiniger", slotName: "1. Barriere-Reinigung", prodId: "ceraveWash", why: "Milde Lotion reinigt ohne transepidermalen Wasserverlust." },
+            { slotKey: "active", slotName: "2. Milder Wirkstoff (PAD)", prodId: "apad", why: "PAD (Azelain-Derivat): Beruhigt Rötungen ohne die trockene Haut zu schälen." }
+          ];
+        }
       } else {
-        return [
-          { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "baleaWash", why: "Sanfte Reinigung befreit die Haut von Rückständen des Tages." },
-          { slotKey: "creme", slotName: "2. Barriere-Nachtpflege", prodId: "baleaCreme", why: "Cica & Panthenol unterstützen die nächtliche Regeneration." }
-        ];
+        // healthy_glow
+        if (currentPmMode === "b") {
+          return [
+            { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "baleaWash", why: "Sanfte Reinigung befreit die Haut von Rückständen des Tages." },
+            { slotKey: "serum", slotName: "2. Feuchtigkeits-Serum", prodId: "noHydrator", why: "Ectoin & Feuchtigkeitsfaktoren stärken die Zellregeneration." }
+          ];
+        } else if (currentPmMode === "c") {
+          return [
+            { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "baleaWash", why: "Sanfte Reinigung vor der Regenerations-Pause." },
+            { slotKey: "creme", slotName: "2. Barriere-Nachtpflege", prodId: "baleaCreme", why: "Cica & Panthenol unterstützen die nächtliche Erholung." }
+          ];
+        } else {
+          return [
+            { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "baleaWash", why: "Sanfte Reinigung befreit die Haut von Rückständen des Tages." },
+            { slotKey: "active", slotName: "2. Sanftes Peeling (BHA)", prodId: "bhaLiquid", why: "Löst abgestorbene Hautschüppchen für glatte Haut." }
+          ];
+        }
       }
     }
   } else if (comp === "basis") {
@@ -268,23 +389,66 @@ function getIdealRoutineSteps(routine, tab, complexity, specificPmMode) {
           ];
         }
       } else if (id === "oily_pores") {
-        return [
-          { slotKey: "reiniger", slotName: "1. Klärende Reinigung", prodId: "isanaPure", why: "Befreit die Poren ohne Austrocknung." },
-          { slotKey: "active", slotName: "2. Poren-Peeling (BHA)", prodId: "bhaLiquid", why: "Salicylsäure beugt Mitessern und Glanz vor." },
-          { slotKey: "creme", slotName: "3. Leichtes Gel", prodId: "baleaAqua", why: "Ölfreie Feuchtigkeit ohne Porenverstopfung." }
-        ];
+        if (currentPmMode === "b") {
+          return [
+            { slotKey: "reiniger", slotName: "1. Klärende Reinigung", prodId: "isanaPure", why: "Befreit die Poren ohne Austrocknung." },
+            { slotKey: "active", slotName: "2. Sebum-Regulator", prodId: "bbomb", why: "10% Niacinamid + Zink normalisiert die Talgproduktion." },
+            { slotKey: "creme", slotName: "3. Leichte Feuchtigkeit", prodId: "isanaCreme", why: "Spendet Feuchtigkeit ohne Fettglanz." }
+          ];
+        } else if (currentPmMode === "c") {
+          return [
+            { slotKey: "reiniger", slotName: "1. Klärende Reinigung", prodId: "isanaPure", why: "Sanfte Reinigung für die Erholungsnacht." },
+            { slotKey: "serum", slotName: "2. Feuchtigkeitspuffer", prodId: "ha", why: "Hyaluron spendet pralle Feuchtigkeit." },
+            { slotKey: "creme", slotName: "3. Ölfreies Hydro-Gel", prodId: "baleaAqua", why: "Ölfreie Feuchtigkeit ohne Porenverstopfung." }
+          ];
+        } else {
+          return [
+            { slotKey: "reiniger", slotName: "1. Klärende Reinigung", prodId: "isanaPure", why: "Befreit die Poren ohne Austrocknung." },
+            { slotKey: "active", slotName: "2. Poren-Peeling (BHA)", prodId: "bhaLiquid", why: "Salicylsäure beugt Mitessern und Glanz vor." },
+            { slotKey: "creme", slotName: "3. Leichtes Gel", prodId: "baleaAqua", why: "Ölfreie Feuchtigkeit ohne Porenverstopfung." }
+          ];
+        }
       } else if (id === "dry_fragile") {
-        return [
-          { slotKey: "reiniger", slotName: "1. Barriere-Reinigung", prodId: "ceraveWash", why: "Schonende Reinigung mit Ceramiden." },
-          { slotKey: "serum", slotName: "2. Tiefen-Hydrator", prodId: "liquidHydrator", why: "Füllt die Feuchtigkeitsspeicher der Haut auf." },
-          { slotKey: "creme", slotName: "3. Ceramid-Creme", prodId: "ceraveCreme", why: "3 essenzielle Ceramide reparieren die Barriere über Nacht." }
-        ];
+        if (currentPmMode === "b") {
+          return [
+            { slotKey: "reiniger", slotName: "1. Barriere-Reinigung", prodId: "ceraveWash", why: "Schonende Reinigung mit Ceramiden." },
+            { slotKey: "serum", slotName: "2. Tiefen-Hydrator", prodId: "liquidHydrator", why: "Füllt die Feuchtigkeitsspeicher der Haut auf." },
+            { slotKey: "creme", slotName: "3. Ceramid-Creme", prodId: "ceraveCreme", why: "3 essenzielle Ceramide reparieren die Barriere über Nacht." }
+          ];
+        } else if (currentPmMode === "c") {
+          return [
+            { slotKey: "reiniger", slotName: "1. Barriere-Reinigung", prodId: "ceraveWash", why: "Reizarme Reinigung für die Ruhe-Nacht." },
+            { slotKey: "serum", slotName: "2. Hyaluron-Puffer", prodId: "ha", why: "Plumpt die Haut und mindert Trockenheitsfältchen." },
+            { slotKey: "creme", slotName: "3. SOS-Lipidbalsam", prodId: "mixaPanthenol", why: "13% Glycerin + Panthenol versiegelt die Haut." }
+          ];
+        } else {
+          return [
+            { slotKey: "reiniger", slotName: "1. Barriere-Reinigung", prodId: "ceraveWash", why: "Schonende Reinigung mit Ceramiden." },
+            { slotKey: "active", slotName: "2. Milder Wirkstoff (PAD)", prodId: "apad", why: "PAD (Azelain-Derivat): Beruhigt Rötungen ohne Schuppung." },
+            { slotKey: "creme", slotName: "3. Ceramid-Pflege", prodId: "ceraveMoist", why: "MVE-Technologie schützt die Lipidbarriere." }
+          ];
+        }
       } else {
-        return [
-          { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "baleaWash", why: "Milde, rückstandsfreie Gesichtsreinigung." },
-          { slotKey: "serum", slotName: "2. Feuchtigkeitspuffer", prodId: "ha", why: "Hyaluronsäure bindet Feuchtigkeit im Gewebe." },
-          { slotKey: "creme", slotName: "3. Regenerationscreme", prodId: "baleaCreme", why: "Stärkt die Barriere für den nächsten Tag." }
-        ];
+        // healthy_glow
+        if (currentPmMode === "b") {
+          return [
+            { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "baleaWash", why: "Schonende Vorbereitung für die Vitalisierung." },
+            { slotKey: "serum", slotName: "2. Feuchtigkeit & Vitalisierung", prodId: "noHydrator", why: "Ectoin & Feuchtigkeitsfaktoren stärken die Barriere." },
+            { slotKey: "creme", slotName: "3. Pflegecreme", prodId: "isanaCreme", why: "Leichte Versiegelung ohne Fettglanz." }
+          ];
+        } else if (currentPmMode === "c") {
+          return [
+            { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "baleaWash", why: "Milde, rückstandsfreie Gesichtsreinigung." },
+            { slotKey: "serum", slotName: "2. Feuchtigkeitspuffer", prodId: "ha", why: "Hyaluronsäure bindet Feuchtigkeit im Gewebe." },
+            { slotKey: "creme", slotName: "3. Regenerationscreme", prodId: "baleaCreme", why: "Stärkt die Barriere für den nächsten Tag." }
+          ];
+        } else {
+          return [
+            { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "baleaWash", why: "Milde, rückstandsfreie Gesichtsreinigung." },
+            { slotKey: "active", slotName: "2. Sanftes Peeling (BHA)", prodId: "bhaLiquid", why: "Entfernt abgestorbene Hautschüppchen für glatte Textur & Glow." },
+            { slotKey: "creme", slotName: "3. Regenerationscreme", prodId: "baleaCreme", why: "Stärkt die Barriere für den nächsten Tag." }
+          ];
+        }
       }
     }
   } else {
@@ -415,6 +579,12 @@ function syncAdultRoutineToComplexity(comp, targetRoutineId, isTypeSwitch = fals
   const routineId = targetRoutineId || getSelectedIdealRoutineId();
   const routine = IDEAL_ROUTINES[routineId] || IDEAL_ROUTINES.acne_barrier;
   if (!routine) return;
+
+  if (comp === "minimal") {
+    appState.useSkinCycling = false;
+  } else if (comp === "comprehensive" || routineId === "acne_barrier" || isTypeSwitch) {
+    appState.useSkinCycling = true;
+  }
 
   // AM
   const stepsAM = getIdealRoutineSteps(routine, "am", comp);

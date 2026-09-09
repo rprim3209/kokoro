@@ -748,9 +748,12 @@ function openBabySafetyGuideModal() {
 
 
 function getActivePMList() {
-  if (appState.pmMode === "a") return appState.pm_a;
-  if (appState.pmMode === "b") return appState.pm_b;
-  return appState.pm_c;
+  if (appState.useSkinCycling) {
+    if (appState.pmMode === "a") return appState.pm_a;
+    if (appState.pmMode === "b") return appState.pm_b;
+    return appState.pm_c;
+  }
+  return appState.pm_a;
 }
 
 // Galenische & dermatologische Routine-Sortierung:
@@ -977,30 +980,57 @@ function renderMain(autoSave = true) {
     </div>
   `;
 
-  // If PM, show Skin Cycling Modes
+  // If PM, show Skin Cycling Modes (or simple evening routine bar)
   if (!isAM) {
-    html += `
-      <div class="mode-switcher">
-        <div class="mode-switcher-title">
-          <span>Skin Cycling / Wechsel-Abende</span>
-          <span style="color:var(--rx);font-weight:600">Kein Reiz-Stacking</span>
+    if (appState.useSkinCycling) {
+      const routineId = typeof getSelectedIdealRoutineId === "function" ? getSelectedIdealRoutineId() : "acne_barrier";
+      const cyclingCfg = typeof getSkinCyclingConfig === "function" ? getSkinCyclingConfig(routineId) : null;
+      const modes = (cyclingCfg && cyclingCfg.modes) || {
+        a: { name: "Modus A: Retinoid", desc: "Standard-Active-Nacht" },
+        b: { name: "Modus B: Akut / Wechsel", desc: "Zweit-Wirkstoff im Wechsel" },
+        c: { name: "Modus C: Barriere-Pause", desc: "Nur Feuchtigkeit & Erholung" }
+      };
+      const title = (cyclingCfg && cyclingCfg.title) || "Skin Cycling / Wechsel-Abende";
+
+      html += `
+        <div class="mode-switcher">
+          <div class="mode-switcher-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div>
+              <span>${escapeHtml(title)}</span>
+              <span style="color:var(--rx);font-weight:600;font-size:0.75rem;margin-left:6px">🛡️ Kein Reiz-Stacking</span>
+            </div>
+            <button type="button" class="btn-text" onclick="toggleSkinCycling(false)" style="font-size:0.72rem;color:var(--muted);text-decoration:underline">
+              Einfache Routine nutzen
+            </button>
+          </div>
+          <div class="mode-pills">
+            <div class="mode-pill ${appState.pmMode === 'a' ? 'active' : ''}" onclick="setPmMode('a')">
+              <span class="m-name">${escapeHtml(modes.a.name)}</span>
+              <span class="m-desc">${escapeHtml(modes.a.desc)}</span>
+            </div>
+            <div class="mode-pill ${appState.pmMode === 'b' ? 'active' : ''}" onclick="setPmMode('b')">
+              <span class="m-name">${escapeHtml(modes.b.name)}</span>
+              <span class="m-desc">${escapeHtml(modes.b.desc)}</span>
+            </div>
+            <div class="mode-pill ${appState.pmMode === 'c' ? 'active' : ''}" onclick="setPmMode('c')">
+              <span class="m-name">${escapeHtml(modes.c.name)}</span>
+              <span class="m-desc">${escapeHtml(modes.c.desc)}</span>
+            </div>
+          </div>
         </div>
-        <div class="mode-pills">
-          <div class="mode-pill ${appState.pmMode === 'a' ? 'active' : ''}" onclick="setPmMode('a')">
-            <span class="m-name">Modus A: Adapalen</span>
-            <span class="m-desc">Standard-Retinoid-Nacht</span>
+      `;
+    } else {
+      html += `
+        <div class="simple-pm-bar" style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:8px 0 12px">
+          <div style="font-size:0.8rem;color:var(--muted)">
+            🌙 <strong>Feste Abend-Routine</strong> (gleiche Pflege jeden Abend)
           </div>
-          <div class="mode-pill ${appState.pmMode === 'b' ? 'active' : ''}" onclick="setPmMode('b')">
-            <span class="m-name">Modus B: Clienzo / Spot</span>
-            <span class="m-desc">BPO bei akuten Pickeln</span>
-          </div>
-          <div class="mode-pill ${appState.pmMode === 'c' ? 'active' : ''}" onclick="setPmMode('c')">
-            <span class="m-name">Modus C: Barriere-Pause</span>
-            <span class="m-desc">Nur Feuchtigkeit & Ruhe</span>
-          </div>
+          <button type="button" class="btn-text" onclick="toggleSkinCycling(true)" style="font-size:0.78rem;color:var(--rx);font-weight:600;display:flex;align-items:center;gap:4px">
+            🔀 Wechsel-Abende einrichten
+          </button>
         </div>
-      </div>
-    `;
+      `;
+    }
   }
 
   // Render Step-by-Step Cards or Empty Shelf (KEINE leeren Placeholder!)
@@ -1132,12 +1162,40 @@ function setPmMode(mode) {
   renderMain();
 }
 
+function toggleSkinCycling(enable) {
+  appState.useSkinCycling = Boolean(enable);
+  if (appState.useSkinCycling) {
+    if ((!appState.pm_b || appState.pm_b.length === 0) && (!appState.pm_c || appState.pm_c.length === 0)) {
+      const routineId = typeof getSelectedIdealRoutineId === "function" ? getSelectedIdealRoutineId() : "acne_barrier";
+      const routine = (typeof IDEAL_ROUTINES === "object" && IDEAL_ROUTINES[routineId]) || (typeof IDEAL_ROUTINES === "object" && IDEAL_ROUTINES.acne_barrier);
+      const comp = appState.routineComplexity || "basis";
+      if (routine && typeof getIdealRoutineSteps === "function" && typeof syncListToSteps === "function") {
+        const stepsPMB = getIdealRoutineSteps(routine, "pm", comp, "b");
+        appState.pm_b = syncListToSteps(appState.pm_b, stepsPMB, false, false);
+        const stepsPMC = getIdealRoutineSteps(routine, "pm", comp, "c");
+        appState.pm_c = syncListToSteps(appState.pm_c, stepsPMC, false, false);
+      }
+    }
+  } else {
+    appState.pmMode = "a";
+  }
+  saveState();
+  renderMain();
+  if (appState.useSkinCycling) {
+    showToast("🔀 <strong>Wechsel-Abende (Skin Cycling)</strong> aktiviert: Wirkstoffe werden schonend auf getrennte Abende verteilt!");
+  } else {
+    showToast("🌙 Auf <strong>einfache Abend-Routine</strong> umgestellt!");
+  }
+}
+window.toggleSkinCycling = toggleSkinCycling;
+
 function removeProduct(prodId, tab) {
   if (tab === "am") {
     appState.am = sortRoutine(appState.am.filter(x => x !== prodId), true);
   } else {
-    if (appState.pmMode === "a") appState.pm_a = sortRoutine(appState.pm_a.filter(x => x !== prodId), false);
-    else if (appState.pmMode === "b") appState.pm_b = sortRoutine(appState.pm_b.filter(x => x !== prodId), false);
+    const activeMode = appState.useSkinCycling ? appState.pmMode : "a";
+    if (activeMode === "a") appState.pm_a = sortRoutine(appState.pm_a.filter(x => x !== prodId), false);
+    else if (activeMode === "b") appState.pm_b = sortRoutine(appState.pm_b.filter(x => x !== prodId), false);
     else appState.pm_c = sortRoutine(appState.pm_c.filter(x => x !== prodId), false);
   }
   saveState();
@@ -1151,11 +1209,17 @@ function addProductToSlot(prodId, target) {
     appState.am = sortRoutine(appState.am, true);
     appState.tab = "am";
   } else {
-    const activeList = getActivePMList();
-    if (!activeList.includes(prodId)) activeList.push(prodId);
-    if (appState.pmMode === "a") appState.pm_a = sortRoutine(appState.pm_a, false);
-    else if (appState.pmMode === "b") appState.pm_b = sortRoutine(appState.pm_b, false);
-    else appState.pm_c = sortRoutine(appState.pm_c, false);
+    const activeMode = appState.useSkinCycling ? appState.pmMode : "a";
+    if (activeMode === "a") {
+      if (!appState.pm_a.includes(prodId)) appState.pm_a.push(prodId);
+      appState.pm_a = sortRoutine(appState.pm_a, false);
+    } else if (activeMode === "b") {
+      if (!appState.pm_b.includes(prodId)) appState.pm_b.push(prodId);
+      appState.pm_b = sortRoutine(appState.pm_b, false);
+    } else {
+      if (!appState.pm_c.includes(prodId)) appState.pm_c.push(prodId);
+      appState.pm_c = sortRoutine(appState.pm_c, false);
+    }
     appState.tab = "pm";
   }
   saveState();
@@ -1252,8 +1316,9 @@ function adoptDmProductToSlot(prodOrIdOrIdx, target = "am") {
       }
       if (!activeList.includes(prod.id)) activeList.push(prod.id);
       if (typeof sortRoutine === "function") {
-        if (appState.pmMode === "a") appState.pm_a = sortRoutine(appState.pm_a, false);
-        else if (appState.pmMode === "b") appState.pm_b = sortRoutine(appState.pm_b, false);
+        const activeMode = appState.useSkinCycling ? appState.pmMode : "a";
+        if (activeMode === "a") appState.pm_a = sortRoutine(appState.pm_a, false);
+        else if (activeMode === "b") appState.pm_b = sortRoutine(appState.pm_b, false);
         else appState.pm_c = sortRoutine(appState.pm_c, false);
       }
       appState.tab = "pm";

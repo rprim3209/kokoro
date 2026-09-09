@@ -1691,7 +1691,7 @@ function classifyProductClasses(p) {
 
   var isRxRetName =
     /\b(adapalen|adapalene|tretinoin|trifaroten|trifarotene|tazaroten|tazarotene)\b/.test(blob) ||
-    /\b(epiduo|differin|retin-?a\b|acnatac|clienzo)\b/.test(blob);
+    /\b(epiduo|differin|retin-?a\b|acnatac)\b/.test(blob);
   var isCosRetName =
     /\b(retinol|retinaldehyd|retinaldehyde|retinal|retinyl|retistar|a-game)\b/.test(blob);
 
