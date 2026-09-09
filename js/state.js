@@ -50,10 +50,12 @@ let appState = {
       subtitle: "Akne & Barriere",
       complexity: "basis",
       tags: ["Eigene Routine"],
+      country: "AT",
       data: { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a" }
     }
   ],
-  customProducts: {}
+  customProducts: {},
+  hideUnknownCountries: true
 };
 
 function escapeHtml(str) {
@@ -97,12 +99,13 @@ if (saved) {
       if (!appState.customProducts || typeof appState.customProducts !== "object") {
         appState.customProducts = {};
       }
-      // Restore dynamic & live-dm products into DB
+      // Restore dynamic & live-dm products into DB (+ Klassen-Heuristik)
       for (const [cid, cprod] of Object.entries(appState.customProducts)) {
+        if (typeof enrichProductClasses === "function" && cprod) enrichProductClasses(cprod);
         if (typeof DB === "object" && cprod) DB[cid] = cprod;
         if (typeof TEEN_DB === "object" && cprod && !TEEN_DB[cid]) {
           TEEN_DB[cid] = Object.assign({}, cprod, {
-            slot: cprod.kat === "reiniger" ? "reiniger" : (cprod.kat === "spf" ? "spf" : (cprod.kat === "serum" ? "active" : "creme"))
+            slot: cprod.kat === "reiniger" ? "reiniger" : (cprod.kat === "spf" ? "spf" : (cprod.kat === "serum" || cprod.kat === "active" ? "active" : "creme"))
           });
         }
         if (typeof BABY_DB === "object" && cprod && !BABY_DB[cid]) {
@@ -111,6 +114,7 @@ if (saved) {
           });
         }
       }
+      if (typeof enrichAllDbProducts === "function") enrichAllDbProducts();
       // Migration / Initialisierung von profiles
       if (!appState.profiles || !Array.isArray(appState.profiles) || appState.profiles.length === 0) {
         appState.profiles = [
@@ -131,6 +135,14 @@ if (saved) {
           }
         ];
         appState.activeProfileId = "p_adult_1";
+      }
+
+      // Länder-Migration: fehlendes Land → AT (Prim/DACH-Demo), leicht änderbar
+      if (appState.hideUnknownCountries === undefined) appState.hideUnknownCountries = true;
+      if (Array.isArray(appState.profiles)) {
+        appState.profiles.forEach(function (pr) {
+          if (!pr.country) pr.country = "AT";
+        });
       }
       const activeP = getActiveProfile();
       if (activeP) {
@@ -192,11 +204,16 @@ function resetSchrank() {
         subtitle: "Akne & Barriere",
         complexity: "basis",
         tags: ["Eigene Routine"],
+        country: "AT",
         data: { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a" }
       }
     ],
-    customProducts: {}
+    customProducts: {},
+    hideUnknownCountries: true
   };
+  if (appState.profiles && appState.profiles[0] && !appState.profiles[0].country) {
+    appState.profiles[0].country = "AT";
+  }
   updateCategoryNav();
   renderMain(false);
 }
@@ -229,8 +246,15 @@ function computeAdultSubtitleFromTags(tags) {
   const isMixed = t.some(x => x.includes("Mischhaut"));
   const isHealthy = t.some(x => x.includes("Gesunde Haut") || x.includes("Normale Haut"));
   const isBarrier = t.some(x => x.includes("Barriere"));
+  const isPih = t.some(x => x.includes("PIH") || x.includes("Skin-of-Color"));
 
-  // 1. Akne-Kombinationen
+  // 1. Akne- & PIH-Kombinationen
+  if (isAcne && isPih) return "Akne & PIH-Schutz";
+  if (isPih && isSensibel) return "PIH & Sensibel";
+  if (isPih && isDry) return "PIH & Trocken";
+  if (isPih && isOily) return "Ölig & PIH-Schutz";
+  if (isPih) return "PIH & Melanin-Schutz";
+
   if (isAcne && isSensibel) return "Akne & Sensibel";
   if (isAcne && isDry) return "Akne & Trocken";
   if (isAcne && isOily) return "Ölig & Akne";
@@ -283,6 +307,7 @@ function getActiveProfile() {
         subtitle: "Akne & Barriere",
         complexity: "basis",
         tags: ["Eigene Routine"],
+        country: "AT",
         data: { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a" }
       }
     ];
@@ -385,6 +410,7 @@ function switchProfile(profileIdOrCategory) {
       subtitle: defaultSubs[cat],
       complexity: "basis",
       tags: cat === "adult" ? ["Eigene Routine"] : [],
+      country: getProfileCountry(),
       data: cat === "adult" ? { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a" } :
             cat === "baby" ? { reiniger: [], creme: [], windel: [], spf: [] } :
             cat === "child" ? { reiniger: [], creme: [], spf: [], haar: [] } :
@@ -585,6 +611,7 @@ function submitCreateProfile() {
     subtitle: defaultSubs[cat],
     complexity: "basis",
     tags: cat === "adult" ? ["Eigene Routine"] : [],
+    country: getProfileCountry(),
     data: cat === "adult" ? { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a" } :
           cat === "baby" ? { reiniger: [], creme: [], windel: [], spf: [] } :
           cat === "child" ? { reiniger: [], creme: [], spf: [], haar: [] } :
@@ -615,6 +642,12 @@ function openRenameProfileModal(profileId) {
       <input type="text" id="renameProfileInput" value="${p.name.replace(/"/g, '&quot;')}" style="width:100%;padding:0.75rem 0.85rem;border:1.5px solid var(--line);border-radius:10px;font-size:0.95rem;font-family:inherit" onkeydown="if(event.key==='Enter'){ submitRenameProfile('${p.id}'); }">
     </div>
 
+    <div style="margin:0.7rem 0 0.2rem">
+      <label style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">Land (Produktfilter)</label>
+      <input type="hidden" id="renameCountryValue" value="${p.country || 'AT'}">
+      ${typeof renderCountryPickerHtml === "function" ? renderCountryPickerHtml(p.country || 'AT', "window._setRenameCountry", { uid: "renameCountryPicker", maxHeight: "200px" }) : ""}
+    </div>
+
     <div style="display:flex;gap:8px;margin-top:1.1rem">
       <button class="ghost-btn" style="width:auto;margin-top:0;padding:0.75rem 1.2rem" onclick="closeModal()">Abbrechen</button>
       <button class="primary" style="margin-top:0;flex:1" onclick="submitRenameProfile('${p.id}')">Speichern</button>
@@ -633,9 +666,11 @@ function openRenameProfileModal(profileId) {
 function submitRenameProfile(profileId) {
   const inp = document.getElementById("renameProfileInput");
   const newName = inp ? inp.value.trim() : "";
+  const cInp = document.getElementById("renameCountryValue");
   const p = appState.profiles.find(x => x.id === profileId);
   if (p && newName) {
     p.name = newName;
+    if (cInp && cInp.value) p.country = String(cInp.value).toUpperCase();
     saveState();
   }
   closeModal();
@@ -664,6 +699,81 @@ function deleteProfile(profileId) {
   renderMain();
 }
 
+
+
+function getProfileCountry(profileOrId) {
+  var p = null;
+  if (profileOrId && typeof profileOrId === "object") p = profileOrId;
+  else if (profileOrId) p = (appState.profiles || []).find(function (x) { return x.id === profileOrId; });
+  if (!p) p = getActiveProfile();
+  var cc = (p && p.country) ? String(p.country).toUpperCase() : "AT";
+  return cc || "AT";
+}
+
+function setProfileCountry(code, profileId) {
+  var cc = String(code || "AT").trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) cc = "AT";
+  var p = profileId
+    ? (appState.profiles || []).find(function (x) { return x.id === profileId; })
+    : getActiveProfile();
+  if (!p) return;
+  p.country = cc;
+  saveState();
+  if (typeof showToast === "function") {
+    var label = cc;
+    if (typeof PROFILE_COUNTRY_OPTIONS !== "undefined") {
+      var opt = PROFILE_COUNTRY_OPTIONS.find(function (o) { return o.code === cc; });
+      if (opt) label = opt.label + " (" + cc + ")";
+    }
+    showToast("🌍 Land: <strong>" + label + "</strong> — Katalog gefiltert");
+  }
+  if (typeof renderCurrentScreen === "function") renderCurrentScreen();
+  else if (typeof renderMain === "function") renderMain(false);
+}
+
+function shouldHideUnknownCountries() {
+  return appState.hideUnknownCountries !== false;
+}
+
+function setHideUnknownCountries(on) {
+  appState.hideUnknownCountries = !!on;
+  saveState();
+}
+
+function toggleHideUnknownCountries() {
+  setHideUnknownCountries(!shouldHideUnknownCountries());
+  if (typeof showToast === "function") {
+    showToast(shouldHideUnknownCountries()
+      ? "Unklare Herkunft ausgeblendet"
+      : "Unklare Herkunft eingeblendet (Badge „Land offen“)");
+  }
+  const modal = document.getElementById("modalContainer");
+  const modalOpen = modal && modal.innerHTML && modal.innerHTML.trim().length > 0;
+  if (modalOpen) {
+    // Liste im offenen Sheet neu aufbauen, ohne Modal zu schließen
+    if (typeof window._refreshOpenCountryFilteredList === "function") {
+      window._refreshOpenCountryFilteredList();
+    }
+    return;
+  }
+  if (typeof renderCurrentScreen === "function") renderCurrentScreen();
+}
+
+function countryLabel(code) {
+  var cc = String(code || "").toUpperCase();
+  if (typeof PROFILE_COUNTRY_OPTIONS !== "undefined") {
+    var opt = PROFILE_COUNTRY_OPTIONS.find(function (o) { return o.code === cc; });
+    if (opt) return opt.label;
+  }
+  return cc || "—";
+}
+
+window.getProfileCountry = getProfileCountry;
+window.setProfileCountry = setProfileCountry;
+window.shouldHideUnknownCountries = shouldHideUnknownCountries;
+window.setHideUnknownCountries = setHideUnknownCountries;
+window.toggleHideUnknownCountries = toggleHideUnknownCountries;
+window.countryLabel = countryLabel;
 
 function showToast(msg) {
   let toast = document.getElementById("appToast");

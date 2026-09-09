@@ -2,12 +2,31 @@
 // Cabinet Screen Module (Mein Schrank)
 // ==========================================
 
+
+function resolveProfileCabinetProduct(id) {
+  if (!id) return null;
+  if (typeof resolveCabinetProduct === "function") {
+    var resolved = resolveCabinetProduct(id);
+    if (resolved) return resolved;
+  }
+  if (typeof TEEN_DB === "object" && TEEN_DB[id]) return TEEN_DB[id];
+  if (typeof BABY_DB === "object" && BABY_DB[id]) return BABY_DB[id];
+  if (typeof DB === "object" && DB[id]) return DB[id];
+  if (typeof appState === "object" && appState.customProducts && appState.customProducts[id]) {
+    return appState.customProducts[id];
+  }
+  return null;
+}
+
 function loadBabyPreset() {
+  const pick = (prefs, slot) => (typeof pickCountryAvailableId === "function"
+    ? pickCountryAvailableId(prefs, BABY_DB, slot)
+    : prefs[0]);
   appState.baby = {
-    reiniger: ["b_ean_3560071348069"], // Gel lavant 2 in 1 (Carrefour Bebe / OBF - ff, u3)
-    creme: ["b_item_10"],               // Calendula Gesichtscreme parfümfrei (Weleda Baby - ff, u3)
-    windel: ["b_ean_3286011092310"],    // Crème change (Biolane - ff, u3)
-    spf: ["b_ean_3760075074227"]       // Spray solaire bébé 50 sensible (Alphanova Sun - ff, u3, AAP SPF note)
+    reiniger: [pick(["b_ean_3560071348069", "b_item_10"], "reiniger")].filter(Boolean),
+    creme: [pick(["b_item_10", "b_ean_3282779300551", "b_ean_3337872412998"], "creme")].filter(Boolean),
+    windel: [pick(["b_ean_3286011092310", "b_item_23"], "windel")].filter(Boolean),
+    spf: [pick(["b_ean_3760075074227", "b_ean_20231460"], "spf")].filter(Boolean)
   };
   saveState();
   renderMain();
@@ -70,6 +89,72 @@ function removeBabyProduct(prodId, profile, slot) {
   }
 }
 
+
+/** Shared TOP verdict banner for Baby/Child/Teen — product-driven, no static info wall. */
+function renderCategoryPrognosisBanner(prog, opts) {
+  opts = opts || {};
+  var accent = opts.accent || "#1d4ed8";
+  var countLabel = opts.countLabel || "Produkte";
+  var totalCount = opts.totalCount || 0;
+  if (!prog || prog.empty) {
+    return `
+    <div class="prognosis-card empty" style="border-left-color:${accent}">
+      <div class="prognosis-header">
+        <div class="prognosis-title">Noch keine Produkte — Scan oder Beispiel</div>
+        <span style="font-size:0.75rem;color:var(--muted);font-weight:600">0 ${countLabel}</span>
+      </div>
+      <ul class="prognosis-list">
+        <li>Füge Produkte hinzu oder tippe auf <strong>Beispiel</strong> — dann erscheint hier passt / eher nicht / Konflikt.</li>
+      </ul>
+    </div>`;
+  }
+  var statusClass = prog.status || "ok";
+  var bannerExtra = "";
+  if (prog.verdict === "konflikt" || prog.verdict === "eher_nicht") {
+    var topReason = (prog.points && prog.points[0]) ? prog.points[0] : "";
+    bannerExtra = `
+      <div class="schrank-conflict-banner ${prog.verdict === "konflikt" ? "is-konflikt" : "is-warn"}">
+        ${topReason || (prog.verdict === "konflikt" ? "Konflikt im Schrank — siehe Produkte unten." : "Hinweis: Profile-Priorität nicht erfüllt.")}
+      </div>`;
+  }
+  var whyBlock = "";
+  if ((prog.eduNotes || []).length && (prog.verdict === "konflikt" || prog.verdict === "eher_nicht")) {
+    whyBlock = `
+      <details style="margin-top:0.45rem">
+        <summary style="cursor:pointer;font-size:0.8rem;font-weight:650;color:var(--muted)">Warum?</summary>
+        <ul class="prognosis-list" style="margin-top:0.35rem">
+          ${prog.eduNotes.map(function (n) { return "<li>" + n + "</li>"; }).join("")}
+        </ul>
+      </details>`;
+  }
+  var pointsHtml = (prog.points || []).map(function (pt) {
+    return "<li>" + pt + "</li>";
+  }).join("");
+  return `
+    <div class="prognosis-card ${statusClass}">
+      <div class="prognosis-header">
+        <div class="prognosis-title">${prog.title}</div>
+        <span style="font-size:0.75rem;color:var(--muted);font-weight:600">${totalCount} ${totalCount === 1 ? "Produkt" : countLabel}</span>
+      </div>
+      ${bannerExtra}
+      <ul class="prognosis-list">${pointsHtml}</ul>
+      ${whyBlock}
+    </div>`;
+}
+
+function conflictBadgeHtml(flag) {
+  if (!flag || !flag.outcome) return "";
+  var reason = String(flag.reason || "").replace(/"/g, "&quot;");
+  if (flag.outcome === "konflikt") {
+    return `<span class="tag conflict-flag konflikt" title="${reason}">🔴 Konflikt</span>`;
+  }
+  if (flag.outcome === "eher_nicht") {
+    return `<span class="tag conflict-flag warn" title="${reason}">🟡 eher nicht</span>`;
+  }
+  return "";
+}
+
+
 // Render Baby Cabinet View
 function renderBabyCabinet(container) {
   const b = appState.baby;
@@ -83,11 +168,18 @@ function renderBabyCabinet(container) {
   const allBabyProds = [];
   ["reiniger", "creme", "windel", "spf"].forEach(k => {
     (b[k] || []).forEach(id => {
-      const p = BABY_DB[id];
-      if (p) allBabyProds.push({ ...p, slotKey: k, slotTitle: slotLabels[k] });
+      const p = resolveProfileCabinetProduct(id);
+      if (p) {
+        if (typeof enrichProductClasses === "function") enrichProductClasses(p);
+        allBabyProds.push({ ...p, slotKey: k, slotTitle: slotLabels[k] });
+      }
     });
   });
   const totalCount = allBabyProds.length;
+  const babyProg = typeof calculateCategoryCabinetPrognosis === "function"
+    ? calculateCategoryCabinetPrognosis(allBabyProds, "baby")
+    : { empty: totalCount === 0, flagged: {}, points: [], title: "", status: "ok", verdict: "passt", eduNotes: [] };
+  const babyFlagged = (babyProg && babyProg.flagged) || {};
 
   const activeP = getActiveProfile();
 
@@ -108,19 +200,7 @@ function renderBabyCabinet(container) {
       </div>
     </div>
 
-    <!-- Pädiatrisches Sicherheits-Banner -->
-    <div class="prognosis-card ok" style="border-left-color:#3b82f6;background:#f4f8fe">
-      <div class="prognosis-header">
-        <div class="prognosis-title" style="color:#1d4ed8">👶 Pädiatrischer Barriere- & Sicherheitsstandard</div>
-        <span style="font-size:0.75rem;color:#1d4ed8;font-weight:700">${totalCount} ${totalCount === 1 ? 'Produkt' : 'Produkte'} im Schrank</span>
-      </div>
-      <ul class="prognosis-list" style="color:#253c5e">
-        <li>🌸 <strong>Priorität 1: Parfümfrei</strong> – Duftstoffe sind der häufigste Allergieauslöser bei Säuglingen. Im Katalog priorisiert.</li>
-        <li>👶 <strong>EU VO 1223/2009 Anh. I Teil B</strong> – Gesetzlich verpflichtende spezifische Sicherheitsbewertung für Kinder unter 3 Jahren.</li>
-        <li>☀️ <strong>AAP/AAD-Leitlinie Sonnenschutz</strong> – Unter 6 Monaten ist Sonnencreme nicht first-line: Schatten & Kleidung haben stets Vorrang.</li>
-        <li>🩺 <strong>Kinderarzt-Wegweiser</strong> – Bei nässender Windeldermatitis (Verdacht auf Candida-Superinfektion) oder starkem Ekzem stets ärztlich abklären.</li>
-      </ul>
-    </div>
+    ${renderCategoryPrognosisBanner(babyProg, { accent: "#3b82f6", totalCount: totalCount, countLabel: "Produkte" })}
 
     <!-- Hero Search Bar -->
     <div class="scan-hero" style="background:linear-gradient(135deg, #1e293b, #2e4166)">
@@ -143,7 +223,7 @@ function renderBabyCabinet(container) {
     html += `
       <div style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #bfdbfe;border-radius:14px;margin:0.8rem 0 1.2rem">
         <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">👶</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Baby-Schrank ist noch leer</div>
+        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Noch keine Produkte — Scan oder Beispiel</div>
         <div style="font-size:0.85rem;color:var(--muted);max-width:420px;margin:4px auto 14px;line-height:1.45">
           Wähle milde, babygerechte Produkte für deinen Liebling oder übernimm geprüfte Empfehlungen mit 1 Klick aus dem Pädiatrie-Ideal-Vergleich darunter.
         </div>
@@ -160,8 +240,11 @@ function renderBabyCabinet(container) {
   } else {
     html += `<div class="step-list" style="margin-top:1.1rem">`;
     allBabyProds.forEach((p, idx) => {
+      const flag = babyFlagged[p.id];
+      const flagOutcome = flag && flag.outcome;
+      const cardConflictClass = flagOutcome === "konflikt" ? "has-konflikt" : (flagOutcome === "eher_nicht" ? "has-warn" : "");
       html += `
-        <div class="step-card" onclick="openBabyProductDetail('${p.id}')">
+        <div class="step-card ${cardConflictClass}" onclick="openBabyProductDetail('${p.id}')">
           <div class="step-num" style="background:#dbeafe;color:#1e40af">${idx + 1}</div>
           <div class="bottle-icon">
             <div class="bottle-neck"></div>
@@ -174,6 +257,7 @@ function renderBabyCabinet(container) {
             <div class="step-prod-name">${p.name}</div>
             <div class="step-active-desc" style="font-size:0.78rem;color:var(--muted)">Marke: <strong>${p.brand}</strong></div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">
+              ${conflictBadgeHtml(flag)}
               ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Parfümiert</span>' : '')}
               ${p.u3 === true ? '<span class="tag ped-blue" style="font-size:0.66rem;padding:1px 5px">👶 EU &lt;3 Jahre</span>' : ''}
               ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : ''}
@@ -216,11 +300,18 @@ function renderChildCabinet(container) {
   const allChildProds = [];
   ["reiniger", "creme", "spf", "haar"].forEach(k => {
     (c[k] || []).forEach(id => {
-      const p = BABY_DB[id];
-      if (p) allChildProds.push({ ...p, slotKey: k, slotTitle: slotLabels[k] });
+      const p = resolveProfileCabinetProduct(id);
+      if (p) {
+        if (typeof enrichProductClasses === "function") enrichProductClasses(p);
+        allChildProds.push({ ...p, slotKey: k, slotTitle: slotLabels[k] });
+      }
     });
   });
   const totalCount = allChildProds.length;
+  const childProg = typeof calculateCategoryCabinetPrognosis === "function"
+    ? calculateCategoryCabinetPrognosis(allChildProds, "child")
+    : { empty: totalCount === 0, flagged: {}, points: [], title: "", status: "ok", verdict: "passt", eduNotes: [] };
+  const childFlagged = (childProg && childProg.flagged) || {};
 
   const activeP = getActiveProfile();
 
@@ -241,18 +332,7 @@ function renderChildCabinet(container) {
       </div>
     </div>
 
-    <!-- Kinder-Sicherheits-Banner -->
-    <div class="prognosis-card ok" style="border-left-color:#f59e0b;background:#fefbf4">
-      <div class="prognosis-header">
-        <div class="prognosis-title" style="color:#92580a">🧒 Kinderhaut im Schulalter (3–11 Jahre)</div>
-        <span style="font-size:0.75rem;color:#92580a;font-weight:700">${totalCount} ${totalCount === 1 ? 'Produkt' : 'Produkte'} im Schrank</span>
-      </div>
-      <ul class="prognosis-list" style="color:#5c3e1e">
-        <li>💧 <strong>Sanfte Barrierepflege</strong> – Vor der Pubertät benötigt Kinderhaut keine aggressiven Säuren oder Retinoide, sondern Schutz vor Austrocknung.</li>
-        <li>☀️ <strong>Breitspektrum-Sonnenschutz LSF 50+</strong> – Bei Aktivitäten im Freien großzügig eincremen; hoher UVA- und UVB-Schutz ist essenziell.</li>
-        <li>🌸 <strong>Duftstoffarm bevorzugt</strong> – Reduziert das Risiko für Irritationen und Neurodermitis-Schübe.</li>
-      </ul>
-    </div>
+    ${renderCategoryPrognosisBanner(childProg, { accent: "#f59e0b", totalCount: totalCount, countLabel: "Produkte" })}
 
     <!-- Hero Search Bar -->
     <div class="scan-hero" style="background:linear-gradient(135deg, #382d1d, #57462c)">
@@ -275,7 +355,7 @@ function renderChildCabinet(container) {
     html += `
       <div style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #fde68a;border-radius:14px;margin:0.8rem 0 1.2rem">
         <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">🧒</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Kinder-Schrank ist noch leer</div>
+        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Noch keine Produkte — Scan oder Beispiel</div>
         <div style="font-size:0.85rem;color:var(--muted);max-width:420px;margin:4px auto 14px;line-height:1.45">
           Wähle sanfte, kindgerechte Produkte für Haut & Haar oder übernimm geprüfte Empfehlungen mit 1 Klick aus dem Kinder-Ideal-Vergleich darunter.
         </div>
@@ -292,8 +372,11 @@ function renderChildCabinet(container) {
   } else {
     html += `<div class="step-list" style="margin-top:1.1rem">`;
     allChildProds.forEach((p, idx) => {
+      const flag = childFlagged[p.id];
+      const flagOutcome = flag && flag.outcome;
+      const cardConflictClass = flagOutcome === "konflikt" ? "has-konflikt" : (flagOutcome === "eher_nicht" ? "has-warn" : "");
       html += `
-        <div class="step-card" onclick="openBabyProductDetail('${p.id}')">
+        <div class="step-card ${cardConflictClass}" onclick="openBabyProductDetail('${p.id}')">
           <div class="step-num" style="background:#fef3c7;color:#b45309">${idx + 1}</div>
           <div class="bottle-icon">
             <div class="bottle-neck"></div>
@@ -306,6 +389,7 @@ function renderChildCabinet(container) {
             <div class="step-prod-name">${p.name}</div>
             <div class="step-active-desc" style="font-size:0.78rem;color:var(--muted)">Marke: <strong>${p.brand}</strong></div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">
+              ${conflictBadgeHtml(flag)}
               ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Parfümiert</span>' : '')}
               ${p.u3 === true ? '<span class="tag ped-blue" style="font-size:0.66rem;padding:1px 5px">👶 EU &lt;3 Jahre</span>' : ''}
               ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : ''}
@@ -338,12 +422,15 @@ function renderChildCabinet(container) {
 // Modal: Search and add Baby / Child products from BABY_DB
 
 function loadTeenPreset() {
-  // Evidenzbasierte Teenie-Starterauswahl (aus TEEN_DB)
+  const pick = (prefs, slot) => (typeof pickCountryAvailableId === "function"
+    ? pickCountryAvailableId(prefs, TEEN_DB, slot)
+    : prefs[0]);
+  // Evidenzbasierte Teenie-Starterauswahl — landesabhängig (DE/AT Preferenzen zuerst)
   appState.teen = {
-    reiniger: ["t_item_24"],               // CeraVe Ausgleichender Reinigungsschaum (ff:true, nc:true)
-    active: ["t_item_52"],                // Eucerin DERMOPURE CLINICAL Klärendes Tonic (BHA/Salicylsäure, nc:true)
-    creme: ["t_item_25"],                 // CeraVe Feuchtigkeitsspendendes HA Water Gel (ff:true, nc:true)
-    spf: ["t_ean_4005900261038"]          // NIVEA SUN Protect & Sensitive Sun Lotion SPF 30 (ff:true)
+    reiniger: [pick(["t_item_24", "t_item_18", "t_item_30"], "reiniger")].filter(Boolean),
+    active: [pick(["t_item_52", "t_item_17"], "active")].filter(Boolean),
+    creme: [pick(["t_item_25", "t_item_29", "t_item_31"], "creme")].filter(Boolean),
+    spf: [pick(["t_item_17", "t_ean_4056489405191", "t_ean_20382933", "t_ean_4005900261038"], "spf")].filter(Boolean)
   };
   saveState();
   renderMain();
@@ -357,8 +444,20 @@ function clearTeenCabinet() {
 }
 
 function addTeenProduct(prodId, slot) {
-  const p = TEEN_DB[prodId];
+  let p = TEEN_DB[prodId] || (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(prodId) : null);
   if (!p) return;
+  if (typeof enrichProductClasses === "function") enrichProductClasses(p);
+  if (typeof TEEN_DB === "object" && !TEEN_DB[prodId]) {
+    TEEN_DB[prodId] = Object.assign({}, p, {
+      slot: p.slot || (p.kat === "reiniger" ? "reiniger" : (p.kat === "spf" ? "spf" : (p.kat === "serum" || p.kat === "active" || p.kat === "spot" ? "active" : "creme")))
+    });
+  }
+  if (typeof appState === "object") {
+    if (!appState.customProducts) appState.customProducts = {};
+    if (!appState.customProducts[prodId]) appState.customProducts[prodId] = p;
+  }
+  if (typeof DB === "object" && !DB[prodId]) DB[prodId] = p;
+  p = TEEN_DB[prodId] || p;
   let targetSlot = slot;
   if (!targetSlot || targetSlot === "all") {
     if (p.slot === "reiniger") targetSlot = "reiniger";
@@ -398,11 +497,18 @@ function renderTeenCabinet(container) {
   const allTeenProds = [];
   ["reiniger", "active", "creme", "spf"].forEach(k => {
     (t[k] || []).forEach(id => {
-      const p = TEEN_DB[id];
-      if (p) allTeenProds.push({ ...p, slotKey: k, slotTitle: slotLabels[k] });
+      const p = resolveProfileCabinetProduct(id);
+      if (p) {
+        if (typeof enrichProductClasses === "function") enrichProductClasses(p);
+        allTeenProds.push({ ...p, slotKey: k, slotTitle: slotLabels[k] });
+      }
     });
   });
   const totalCount = allTeenProds.length;
+  const teenProg = typeof calculateCategoryCabinetPrognosis === "function"
+    ? calculateCategoryCabinetPrognosis(allTeenProds, "teen")
+    : { empty: totalCount === 0, flagged: {}, points: [], title: "", status: "ok", verdict: "passt", eduNotes: [] };
+  const teenFlagged = (teenProg && teenProg.flagged) || {};
 
   const activeP = getActiveProfile();
 
@@ -424,19 +530,7 @@ function renderTeenCabinet(container) {
       </div>
     </div>
 
-    <!-- Teenie Sicherheits- & Leitlinien-Banner -->
-    <div class="prognosis-card ok" style="border-left-color:#0d9488;background:#f0fdfa">
-      <div class="prognosis-header">
-        <div class="prognosis-title" style="color:#0f766e">🧑‍🦱 Teenie-Haut & Evidenzbasierte Basis-Routine (12–17 Jahre)</div>
-        <span style="font-size:0.75rem;color:#0f766e;font-weight:700">${totalCount} ${totalCount === 1 ? 'Produkt' : 'Produkte'} im Schrank</span>
-      </div>
-      <ul class="prognosis-list" style="color:#134e4a">
-        <li>🌿 <strong>AAD-Basis-Trio vor Überpflege:</strong> 1. Sanfte Reinigung → 2. Leichte Feuchte → 3. Täglicher LSF. Weniger ist mehr: Keine 10-Schritte-Social-Media-Stacks!</li>
-        <li>🛑 <strong>Schutz vor Anti-Aging-Hype:</strong> Retinol und aggressive Falten-Seren haben auf jugendlicher Haut keinen Nutzen und führen zu Barriere-Schäden.</li>
-        <li>🎯 <strong>Gezielte Akne-Wirkstoffe bei Bedarf:</strong> Salicylsäure (BHA) oder Niacinamid bei verstopften Poren. Bei Adapalen: In Deutschland verschreibungspflichtig (Rx) – Arzt konsultieren!</li>
-        <li>🛡️ <strong>Nicht-komedogen bevorzugt:</strong> Poren werden nicht verstopft; leichte Formulierungen verhindern Talg-Stau.</li>
-      </ul>
-    </div>
+    ${renderCategoryPrognosisBanner(teenProg, { accent: "#0d9488", totalCount: totalCount, countLabel: "Produkte" })}
 
     <!-- Hero Search Bar -->
     <div class="scan-hero" style="background:linear-gradient(135deg, #134e4a, #115e59)">
@@ -459,7 +553,7 @@ function renderTeenCabinet(container) {
     html += `
       <div style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #99f6e4;border-radius:14px;margin:0.8rem 0 1.2rem">
         <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">🧑‍🦱</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Teenie-Schrank ist noch leer</div>
+        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Noch keine Produkte — Scan oder Beispiel</div>
         <div style="font-size:0.85rem;color:var(--muted);max-width:420px;margin:4px auto 14px;line-height:1.45">
           Stelle deine täglichen Pflegeprodukte zusammen oder übernimm geprüfte Empfehlungen mit 1 Klick aus dem Teenie-Ideal-Vergleich darunter.
         </div>
@@ -476,8 +570,11 @@ function renderTeenCabinet(container) {
   } else {
     html += `<div class="step-list" style="margin-top:1.1rem">`;
     allTeenProds.forEach((p, idx) => {
+      const flag = teenFlagged[p.id];
+      const flagOutcome = flag && flag.outcome;
+      const cardConflictClass = flagOutcome === "konflikt" ? "has-konflikt" : (flagOutcome === "eher_nicht" ? "has-warn" : "");
       html += `
-        <div class="step-card" onclick="openTeenProductDetail('${p.id}')">
+        <div class="step-card ${cardConflictClass}" onclick="openTeenProductDetail('${p.id}')">
           <div class="step-num" style="background:#ccfbf1;color:#0f766e">${idx + 1}</div>
           <div class="bottle-icon">
             <div class="bottle-neck"></div>
@@ -490,6 +587,7 @@ function renderTeenCabinet(container) {
             <div class="step-prod-name">${p.name}</div>
             <div class="step-active-desc" style="font-size:0.78rem;color:var(--muted)">Marke: <strong>${p.brand}</strong></div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">
+              ${conflictBadgeHtml(flag)}
               ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Parfümiert</span>' : '')}
               ${p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px">🛡️ NC</span>' : ''}
               ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : ''}
@@ -792,7 +890,9 @@ function renderMain(autoSave = true) {
   appState.pm_c = sortRoutine(appState.pm_c, false);
 
   const currentList = isAM ? appState.am : getActivePMList();
+  if (typeof enrichAllDbProducts === "function") enrichAllDbProducts();
   const prog = calculatePrognosis();
+  const flaggedMap = (prog && prog.flagged) || {};
 
   const stepLabels = {
     reiniger: "Reinigung",
@@ -820,12 +920,18 @@ function renderMain(autoSave = true) {
       </div>
     </div>
 
-    <!-- Live Routine-Prognose Banner -->
+    <!-- Live Routine-Prognose Banner (inkl. Intra-Schrank Klassen-Konflikte) -->
     <div class="prognosis-card ${prog.status}">
       <div class="prognosis-header">
         <div class="prognosis-title">${prog.title}</div>
-        <span style="font-size:0.75rem;color:var(--muted);font-weight:600">${appState.am.length + getActivePMList().length} Flaschen</span>
+        <span style="font-size:0.75rem;color:var(--muted);font-weight:600">${(typeof getFullCabinetProductIds === "function" ? getFullCabinetProductIds().length : (appState.am.length + getActivePMList().length))} Flaschen</span>
       </div>
+      ${(prog.verdict === "konflikt" || prog.verdict === "eher_nicht") ? `
+      <div class="schrank-conflict-banner ${prog.verdict === "konflikt" ? "is-konflikt" : "is-warn"}">
+        ${prog.verdict === "konflikt"
+          ? "Klarer Hinweis: Im Schrank stecken Wirkstoffe derselben Klasse oder ein hartes Stacking — siehe Punkte unten."
+          : "Hinweis: Einige Wirkstoffe passen besser im Wechsel (nicht am selben Abend)."}
+      </div>` : ""}
       <ul class="prognosis-list">
         ${prog.points.map(pt => `<li>${pt}</li>`).join("")}
       </ul>
@@ -916,9 +1022,22 @@ function renderMain(autoSave = true) {
     currentList.forEach((prodId, idx) => {
       const p = DB[prodId];
       if (!p) return;
+      if (typeof enrichProductClasses === "function") enrichProductClasses(p);
       const catLabel = stepLabels[p.kat] || p.kat;
+      const flag = flaggedMap[p.id];
+      const flagOutcome = flag && flag.outcome;
+      const cardConflictClass = flagOutcome === "konflikt" ? "has-konflikt" : (flagOutcome === "eher_nicht" ? "has-warn" : "");
+      const flagBadge = flagOutcome === "konflikt"
+        ? `<span class="tag conflict-flag konflikt" title="${String(flag.reason || "").replace(/"/g, "&quot;")}">🔴 Konflikt</span>`
+        : (flagOutcome === "eher_nicht"
+          ? `<span class="tag conflict-flag warn" title="${String(flag.reason || "").replace(/"/g, "&quot;")}">🟡 im Wechsel</span>`
+          : "");
+      const classChips = (Array.isArray(p.klassen) ? p.klassen : [])
+        .filter(k => ["retinoid_rx","retinoid_cos","aha","bha","bpo","ascorbic","azelaic"].indexOf(k) !== -1)
+        .map(k => `<span class="tag class-chip" style="font-size:0.66rem;padding:1px 5px">${k}</span>`)
+        .join("");
       html += `
-        <div class="step-card" onclick="openProductDetail('${p.id}')">
+        <div class="step-card ${cardConflictClass}" onclick="openProductDetail('${p.id}')">
           <div class="step-num">${idx + 1}</div>
           ${renderBottle(p)}
           <div class="step-info">
@@ -926,9 +1045,14 @@ function renderMain(autoSave = true) {
             <div class="step-prod-name" style="font-size:0.92rem;font-weight:700;color:var(--ink);margin:1px 0 2px">${p.name}</div>
             <div class="step-active-desc">Marke: <strong>${p.brand}</strong> · Wirkstoff: <strong>${p.wirk}</strong> ${p.rx ? '<span class="tag rx">Rx-Arzneimittel</span>' : ''}</div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+              ${flagBadge}
+              ${classChips}
               ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px" title="Frei von Duftstoffen">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Enthält Parfüm/Duftstoffe">⚠️ Parfümiert</span>' : '')}
               ${p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px" title="Nicht-komedogen ausgelobt">🛡️ NC</span>' : ''}
               ${p.cf === true ? '<span class="tag cf" style="font-size:0.66rem;padding:1px 5px" title="Zertifiziert tierversuchsfrei (CFI/Leaping Bunny)">🐰 Cruelty-Free</span>' : ''}
+              ${p.no_white_cast === true ? '<span class="tag soc-nwc" style="font-size:0.66rem;padding:1px 5px" title="Hinterlässt keinen weißen Kreideschleier">✨ Zero White-Cast</span>' : ''}
+              ${p.iron_ox === true ? '<span class="tag soc-iron" style="font-size:0.66rem;padding:1px 5px" title="Enthält Eisenoxide zum Schutz vor sichtbarem Licht/HEV">🛡️ Eisenoxide</span>' : ''}
+              ${p.pih === true ? '<span class="tag soc-pih" style="font-size:0.66rem;padding:1px 5px" title="Evidenzbasierter Wirkstoff gegen Pickelmale/PIH">🎯 PIH-Fokus</span>' : ''}
             </div>
           </div>
           <div class="step-actions">
@@ -1065,7 +1189,9 @@ function adoptDmProductToSlot(prodOrIdOrIdx, target = "am") {
   if (!prod.shape) prod.shape = shapes[kat] || "tube";
   if (!prod.wirk) prod.wirk = (prod.ff === true ? "Parfümfrei · " : "") + (prod.price ? prod.price + " · " : "") + (prod.brand || "dm");
   if (!prod.store) prod.store = `dm (${prod.price || "Drogerie"})`;
-  if (!Array.isArray(prod.klassen) || prod.klassen.length === 0) {
+  if (typeof enrichProductClasses === "function") {
+    enrichProductClasses(prod);
+  } else if (!Array.isArray(prod.klassen) || prod.klassen.length === 0) {
     prod.klassen = kat === "spf" ? ["uv"] : (kat === "serum" ? ["humectant"] : ["support"]);
   }
   if (!prod.schiene) prod.schiene = "support";

@@ -3,6 +3,107 @@
 // Dedicated Scan Screen & Unified Evidence Modals
 // ==========================================
 
+
+/** Shared Live-dm block for Teen/Baby/Child add modals — adds into ACTIVE profile Schrank. */
+function mountProfileDmLiveSearch(opts) {
+  opts = opts || {};
+  const inputId = opts.inputId;
+  const resultsId = opts.resultsId;
+  const chipId = opts.chipId || null;
+  const catalogListId = opts.catalogListId || null;
+  let dmTimer = null;
+
+  async function runDm(q) {
+    const box = document.getElementById(resultsId);
+    if (!box) return;
+    const query = String(q || "").trim();
+    if (query.length < 2) {
+      box.innerHTML = `<div style="font-size:0.8rem;color:var(--muted);padding:8px 0">Tippe mindestens 2 Zeichen für die Live-Suche bei dm.</div>`;
+      return;
+    }
+    box.innerHTML = `<div style="font-size:0.8rem;color:#991b1b;padding:8px 0;font-weight:600">⏳ Frage live bei dm nach „${escapeHtml(query)}“…</div>`;
+    const prods = await searchDmLive(query);
+    window.currentLiveDmResults = prods;
+    window.dmResultsMap = window.dmResultsMap || {};
+    prods.forEach(pr => { if (pr && pr.id) window.dmResultsMap[pr.id] = pr; });
+    if (!prods.length) {
+      const errMsg = window.lastDmError || (`Kein Live-Treffer bei dm für „${escapeHtml(query)}“.`);
+      box.innerHTML = `<div style="font-size:0.8rem;color:var(--muted);padding:6px 0">${errMsg}</div>`;
+      return;
+    }
+    const honesty = (typeof getLiveDmHonesty === "function") ? getLiveDmHonesty() : { showWarn: false, short: "Live dm = Deutschland-Shop", badge: "" };
+    const honestyBanner = honesty.showWarn
+      ? `<div style="font-size:0.74rem;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:6px 8px;margin-bottom:6px;line-height:1.35"><strong>${(typeof getLiveSearchHonesty==='function'&&getLiveSearchHonesty().short)?getLiveSearchHonesty().short:'Live-Suche'}</strong> ${honesty.badge}</div>`
+      : `<div style="font-size:0.72rem;color:#991b1b;margin-bottom:4px">Live dm = Deutschland-Shop</div>`;
+    box.innerHTML = honestyBanner + prods.slice(0, 8).map(p => `
+      <div style="background:#fff;border:1px solid #fca5a5;border-radius:8px;padding:8px 10px;margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;cursor:pointer" onclick="window.open('${p.url || '#'}', '_blank')">
+          ${p.img ? `<img src="${p.img}" alt="" style="width:38px;height:38px;object-fit:cover;border-radius:6px;border:1px solid #f1f5f9;flex-shrink:0">` : '<div style="width:38px;height:38px;border-radius:6px;background:#fee2e2;color:#b91c1c;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">🛒</div>'}
+          <div style="min-width:0;flex:1">
+            <div style="font-weight:700;font-size:0.84rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.brand)} ${escapeHtml(p.name)}</div>
+            <div style="font-size:0.74rem;color:var(--muted)">
+              <span style="color:#16a34a;font-weight:700">${escapeHtml(p.price || "dm")}</span>
+              ${p.ff === true ? ' · <span style="color:#16a34a;font-weight:600">🌸 Parfümfrei</span>' : (p.ff === false ? ' · <span style="color:#d97706">⚠️ Parfümiert</span>' : '')}
+              · ${typeof liveDmHonestyBadgeHtml==="function" ? liveDmHonestyBadgeHtml() : '<span style="color:#991b1b;font-weight:600">Live dm</span>'}
+            </div>
+          </div>
+        </div>
+        ${p._deeplinkOnly ? `<a class="btn-text" style="background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:700;flex-shrink:0;text-decoration:none" href="${p.url||'#'}" target="_blank" rel="noopener">Im Shop oeffnen</a>` : `<button type="button" class="btn-text" style="background:var(--ok);color:#F7F4D5;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:700;flex-shrink:0" onclick="adoptDmProductToSlot('${p.id}', 'pm')">+ Schrank</button>`}
+      </div>
+    `).join("");
+  }
+
+  function showDmMode(on) {
+    const box = document.getElementById(resultsId);
+    const list = catalogListId ? document.getElementById(catalogListId) : null;
+    const chip = chipId ? document.getElementById(chipId) : null;
+    if (chip) chip.classList.toggle("active", !!on);
+    if (list) list.style.display = on ? "none" : "";
+    if (box) {
+      box.style.display = on ? "block" : "none";
+      if (on) {
+        const inp = document.getElementById(inputId);
+        runDm(inp ? inp.value : "");
+      }
+    }
+    window._profileDmLiveMode = !!on;
+  }
+
+  const inp = document.getElementById(inputId);
+  if (inp) {
+    const prev = inp.oninput;
+    inp.oninput = (e) => {
+      if (window._profileDmLiveMode) {
+        clearTimeout(dmTimer);
+        dmTimer = setTimeout(() => runDm(e.target.value), 350);
+      } else if (typeof prev === "function") {
+        prev(e);
+      }
+    };
+  }
+  if (chipId) {
+    const chip = document.getElementById(chipId);
+    if (chip) {
+      chip.onclick = () => {
+        const next = !window._profileDmLiveMode;
+        showDmMode(next);
+      };
+    }
+  }
+  window._profileDmLiveMode = false;
+  const box = document.getElementById(resultsId);
+  if (box) box.style.display = "none";
+}
+
+function openActiveProfileAddModal() {
+  const cat = typeof getActiveProfileCategory === "function" ? getActiveProfileCategory() : (appState.profile || "adult");
+  if (cat === "teen") return openAddTeenProductModal("all");
+  if (cat === "baby") return openAddBabyProductModal("all", "baby");
+  if (cat === "child") return openAddBabyProductModal("all", "child");
+  return openAddProductModal("am");
+}
+window.openActiveProfileAddModal = openActiveProfileAddModal;
+
 function openAddBabyProductModal(targetSlot = "all", profileType = "baby") {
   let searchVal = "";
   let currentSlot = targetSlot;
@@ -12,6 +113,9 @@ function openAddBabyProductModal(targetSlot = "all", profileType = "baby") {
 
   function renderSearchList() {
     const keys = Object.keys(BABY_DB);
+    const cc = typeof getProfileCountry === "function" ? getProfileCountry() : "";
+    const hideUnknown = typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : true;
+    let hiddenCountry = 0, hiddenUnknown = 0;
     const filtered = keys.filter(id => {
       const p = BABY_DB[id];
       // Search text
@@ -29,12 +133,26 @@ function openAddBabyProductModal(targetSlot = "all", profileType = "baby") {
       if (filterU3 && p.u3 !== true) return false;
       if (filterCF && p.cf !== true) return false;
 
+      // Country filter
+      if (cc && typeof productAvailableInCountry === "function") {
+        const list = typeof parseEuCountries === "function" ? parseEuCountries(p.countries) : (p.countries || []);
+        if (!list.length) {
+          if (hideUnknown) { hiddenUnknown++; return false; }
+        } else if (!productAvailableInCountry(p, cc, { hideUnknown: false })) {
+          hiddenCountry++; return false;
+        }
+      }
+
       return true;
     });
 
     const listEl = document.getElementById("babyProdList");
     const countEl = document.getElementById("babyProdCount");
-    if (countEl) countEl.innerText = `${filtered.length} von ${keys.length} Produkten`;
+    const noteEl = document.getElementById("babyCountryNote");
+    if (countEl) countEl.innerText = `${filtered.length} von ${keys.length} · Land ${cc || "—"}`;
+    if (noteEl && typeof countryFilterNoteHtml === "function") {
+      noteEl.innerHTML = countryFilterNoteHtml({ hiddenCountry, hiddenUnknown }, cc);
+    }
 
     if (!listEl) return;
 
@@ -72,6 +190,7 @@ function openAddBabyProductModal(targetSlot = "all", profileType = "baby") {
               ${p.u3 === true ? '<span class="tag ped-blue" style="font-size:0.64rem;padding:1px 5px">👶 EU &lt;3 Jahre</span>' : ''}
               ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.64rem;padding:1px 5px">🐰 Cruelty-Free</span>' : ''}
               ${p.spfNote ? '<span class="tag ped-amber" style="font-size:0.64rem;padding:1px 5px">☀️ AAP &lt;6m</span>' : ''}
+              ${(!p.countries || (Array.isArray(p.countries) && !p.countries.length)) ? '<span class="tag" style="background:#f1f5f9;color:#475569;font-size:0.64rem;padding:1px 5px">Land offen</span>' : ''}
               ${p.ean ? `<span style="font-size:0.64rem;color:#888;background:#f5f0e6;padding:1px 4px;border-radius:4px">EAN ${p.ean}</span>` : ''}
             </div>
           </div>
@@ -137,7 +256,9 @@ function openAddBabyProductModal(targetSlot = "all", profileType = "baby") {
         <button class="cat-chip" id="chipFF" style="font-size:0.72rem;padding:3px 8px">🌸 Nur Parfümfrei</button>
         <button class="cat-chip" id="chipU3" style="font-size:0.72rem;padding:3px 8px">👶 Spezifisch &lt;3 Jahre</button>
         <button class="cat-chip" id="chipCF" style="font-size:0.72rem;padding:3px 8px">🐰 Cruelty-Free</button>
+        <button class="cat-chip" id="chipBabyDmLive" style="font-size:0.72rem;padding:3px 8px;border-color:#fca5a5;color:#991b1b;background:#fef2f2">${(typeof getLiveSearchChipLabel==='function'?getLiveSearchChipLabel():'Live-Suche')}</button>
       </div>
+      <div id="babyCountryNote"></div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
         <span id="babyProdCount" style="font-size:0.74rem;font-weight:700;color:var(--muted)">606 Produkte</span>
@@ -146,6 +267,7 @@ function openAddBabyProductModal(targetSlot = "all", profileType = "baby") {
 
       <!-- Trefferliste -->
       <div id="babyProdList" style="max-height:48vh;overflow-y:auto;border:1px solid var(--line);border-radius:10px;background:#fff"></div>
+      <div id="babyDmLiveResults" style="display:none;max-height:48vh;overflow-y:auto;border:1px solid #fecaca;border-radius:10px;background:#fff7f7;padding:8px;margin-top:8px"></div>
     </div>
   `;
 
@@ -202,6 +324,14 @@ function openAddBabyProductModal(targetSlot = "all", profileType = "baby") {
   }
 
   renderSearchList();
+  window._refreshOpenCountryFilteredList = renderSearchList;
+
+  mountProfileDmLiveSearch({
+    inputId: "babySearchInput",
+    resultsId: "babyDmLiveResults",
+    chipId: "chipBabyDmLive",
+    catalogListId: "babyProdList"
+  });
 }
 
 // Modal: Product Detail & Evidence Verdict for Baby / Child Product
@@ -342,6 +472,9 @@ function openAddTeenProductModal(targetSlot = "all") {
 
   function renderSearchList() {
     const keys = Object.keys(TEEN_DB);
+    const cc = typeof getProfileCountry === "function" ? getProfileCountry() : "";
+    const hideUnknown = typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : true;
+    let hiddenCountry = 0, hiddenUnknown = 0;
     const filtered = keys.filter(id => {
       const p = TEEN_DB[id];
       // Search text
@@ -357,12 +490,25 @@ function openAddTeenProductModal(targetSlot = "all") {
       if (filterCF && p.cf !== true) return false;
       if (filterTeenOnly && p.notForMinors) return false;
 
+      if (cc && typeof productAvailableInCountry === "function") {
+        const list = typeof parseEuCountries === "function" ? parseEuCountries(p.countries) : (p.countries || []);
+        if (!list.length) {
+          if (hideUnknown) { hiddenUnknown++; return false; }
+        } else if (!productAvailableInCountry(p, cc, { hideUnknown: false })) {
+          hiddenCountry++; return false;
+        }
+      }
+
       return true;
     });
 
     const listEl = document.getElementById("teenProdList");
     const countEl = document.getElementById("teenProdCount");
-    if (countEl) countEl.innerText = `${filtered.length} von ${keys.length} Produkten`;
+    const noteEl = document.getElementById("teenCountryNote");
+    if (countEl) countEl.innerText = `${filtered.length} von ${keys.length} · Land ${cc || "—"}`;
+    if (noteEl && typeof countryFilterNoteHtml === "function") {
+      noteEl.innerHTML = countryFilterNoteHtml({ hiddenCountry, hiddenUnknown }, cc);
+    }
 
     if (!listEl) return;
 
@@ -455,7 +601,9 @@ function openAddTeenProductModal(targetSlot = "all") {
         <button class="cat-chip" id="chipTeenFF" style="font-size:0.72rem;padding:3px 8px">🌸 Parfümfrei</button>
         <button class="cat-chip" id="chipTeenNC" style="font-size:0.72rem;padding:3px 8px">🛡️ Nicht komedogen</button>
         <button class="cat-chip" id="chipTeenCF" style="font-size:0.72rem;padding:3px 8px">🐰 Cruelty-Free</button>
+        <button class="cat-chip" id="chipTeenDmLive" style="font-size:0.72rem;padding:3px 8px;border-color:#fca5a5;color:#991b1b;background:#fef2f2">${(typeof getLiveSearchChipLabel==='function'?getLiveSearchChipLabel():'Live-Suche')}</button>
       </div>
+      <div id="teenCountryNote"></div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
         <span id="teenProdCount" style="font-size:0.74rem;font-weight:700;color:var(--muted)">96 Produkte</span>
@@ -464,6 +612,7 @@ function openAddTeenProductModal(targetSlot = "all") {
 
       <!-- Trefferliste -->
       <div id="teenProdList" style="max-height:48vh;overflow-y:auto;border:1px solid var(--line);border-radius:10px;background:#fff"></div>
+      <div id="teenDmLiveResults" style="display:none;max-height:48vh;overflow-y:auto;border:1px solid #fecaca;border-radius:10px;background:#fff7f7;padding:8px;margin-top:8px"></div>
     </div>
   `;
 
@@ -529,6 +678,14 @@ function openAddTeenProductModal(targetSlot = "all") {
   }
 
   renderSearchList();
+  window._refreshOpenCountryFilteredList = renderSearchList;
+
+  mountProfileDmLiveSearch({
+    inputId: "teenSearchInput",
+    resultsId: "teenDmLiveResults",
+    chipId: "chipTeenDmLive",
+    catalogListId: "teenProdList"
+  });
 }
 
 // Modal: Product Detail & Evidence Verdict for Teenie Product
@@ -663,7 +820,10 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
 
   function getFilteredProducts() {
     const keys = Object.keys(DB).filter(k => k !== "water");
-    return keys.filter(id => {
+    const cc = typeof getProfileCountry === "function" ? getProfileCountry() : "";
+    const hideUnknown = typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : true;
+    let hiddenCountry = 0, hiddenUnknown = 0;
+    const filtered = keys.filter(id => {
       const p = DB[id];
       const matchesSearch = (p.name + " " + p.brand + " " + p.wirk + " " + (p.store || "") + " " + (p.ean || "")).toLowerCase().includes(searchVal.toLowerCase());
       const matchesCat = currentCat === "all" || p.kat === currentCat || (currentCat === "serum" && (p.kat === "active" || p.kat === "spot"));
@@ -671,9 +831,23 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
         || (currentFlag === "clean" && p.ff !== false) 
         || (currentFlag === "ff" && p.ff === true) 
         || (currentFlag === "nc" && p.nc === true) 
-        || (currentFlag === "cf" && p.cf === true);
-      return matchesSearch && matchesCat && matchesFlag;
+        || (currentFlag === "cf" && p.cf === true)
+        || (currentFlag === "nwc" && p.no_white_cast === true)
+        || (currentFlag === "iron" && p.iron_ox === true)
+        || (currentFlag === "pih" && p.pih === true);
+      if (!(matchesSearch && matchesCat && matchesFlag)) return false;
+      if (cc && typeof productAvailableInCountry === "function") {
+        const list = typeof parseEuCountries === "function" ? parseEuCountries(p.countries) : (p.countries || []);
+        if (!list.length) {
+          if (hideUnknown) { hiddenUnknown++; return false; }
+        } else if (!productAvailableInCountry(p, cc, { hideUnknown: false })) {
+          hiddenCountry++; return false;
+        }
+      }
+      return true;
     });
+    window._adultCountryFilterStats = { hiddenCountry, hiddenUnknown, total: keys.length };
+    return filtered;
   }
 
   function renderListHtml() {
@@ -717,7 +891,10 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
                 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">
                   ${p.ff === true ? '<span class="tag ff" style="font-size:0.65rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.65rem;padding:1px 5px">⚠️ Parfümiert</span>' : '')}
                   ${p.cf === true ? '<span class="tag cf" style="font-size:0.65rem;padding:1px 5px">🐰 CF</span>' : ''}
-                  <span class="tag" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-size:0.65rem;padding:1px 5px">Live dm</span>
+                  ${p.no_white_cast === true ? '<span class="tag soc-nwc" style="font-size:0.65rem;padding:1px 5px">✨ Zero White-Cast</span>' : ''}
+                  ${p.iron_ox === true ? '<span class="tag soc-iron" style="font-size:0.65rem;padding:1px 5px">🛡️ Eisenoxide</span>' : ''}
+                  ${p.pih === true ? '<span class="tag soc-pih" style="font-size:0.65rem;padding:1px 5px">🎯 PIH</span>' : ''}
+                  ${typeof liveDmHonestyBadgeHtml==="function" ? liveDmHonestyBadgeHtml() : '<span class="tag" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-size:0.65rem;padding:1px 5px">Live dm</span>'}
                 </div>
               </div>
             </div>
@@ -732,7 +909,12 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
 
     const filtered = getFilteredProducts();
     const countEl = document.getElementById("searchCountLabel");
-    if (countEl) countEl.innerText = `${filtered.length} Produkte`;
+    const ccNow = typeof getProfileCountry === "function" ? getProfileCountry() : "";
+    if (countEl) countEl.innerText = `${filtered.length} Produkte · ${ccNow || "—"}`;
+    const noteEl = document.getElementById("adultCountryNote");
+    if (noteEl && typeof countryFilterNoteHtml === "function") {
+      noteEl.innerHTML = countryFilterNoteHtml(window._adultCountryFilterStats || {}, ccNow);
+    }
 
     if (filtered.length === 0) {
       return `
@@ -756,6 +938,10 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
       if (p.ff === true) badges.push('<span class="tag ff" style="font-size:0.68rem;padding:1px 5px">🌸 Parfümfrei</span>');
       if (p.cf === true) badges.push('<span class="tag cf" style="font-size:0.68rem;padding:1px 5px">🐰 Cruelty-Free (CFI)</span>');
       if (p.ff === false) badges.push('<span class="tag warn" style="font-size:0.68rem;padding:1px 5px">⚠️ Parfümiert</span>');
+      if (p.no_white_cast === true) badges.push('<span class="tag soc-nwc" style="font-size:0.68rem;padding:1px 5px">✨ Zero White-Cast</span>');
+      if (p.iron_ox === true) badges.push('<span class="tag soc-iron" style="font-size:0.68rem;padding:1px 5px">🛡️ Eisenoxide (Visible Light)</span>');
+      if (p.pih === true) badges.push('<span class="tag soc-pih" style="font-size:0.68rem;padding:1px 5px">🎯 PIH / Anti-Pickelmale</span>');
+      if (!p.countries || (Array.isArray(p.countries) && p.countries.length === 0)) badges.push('<span class="tag" style="background:#f1f5f9;color:#475569;font-size:0.68rem;padding:1px 5px">Land offen</span>');
       if (p.ean) badges.push(`<span class="tag ean" style="font-size:0.68rem;padding:1px 5px">EAN: ${p.ean}</span>`);
 
       return `
@@ -789,7 +975,11 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
       <div class="cat-chip ${currentCat === 'serum' ? 'active' : ''}" id="chip_serum" onclick="window.setAddCat('serum')">Seren & Actives</div>
       <div class="cat-chip ${currentCat === 'creme' ? 'active' : ''}" id="chip_creme" onclick="window.setAddCat('creme')">Cremes</div>
       <div class="cat-chip ${currentCat === 'spf' ? 'active' : ''}" id="chip_spf" onclick="window.setAddCat('spf')">Sonnenschutz</div>
-      <div class="cat-chip ${currentCat === 'dm' ? 'active' : ''}" id="chip_dm" style="border-color:#fca5a5;color:#991b1b;background:#fef2f2" onclick="window.setAddCat('dm')">🛒 Live dm</div>
+      <div class="cat-chip ${currentCat === 'dm' ? 'active' : ''}" id="chip_dm" style="border-color:#fca5a5;color:#991b1b;background:#fef2f2" onclick="window.setAddCat('dm')">${(typeof getLiveSearchChipLabel==='function'?getLiveSearchChipLabel():'Live-Suche')}</div>
+    </div>
+    <div id="adultCountryNote"></div>
+    <div id="adultDmHonesty" style="display:${currentCat === 'dm' ? 'block' : 'none'};font-size:0.74rem;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:6px 8px;margin:0 0 0.55rem;line-height:1.35">
+      <strong>${(typeof getLiveSearchHonesty==='function'&&getLiveSearchHonesty().short)?getLiveSearchHonesty().short:'Live-Suche'}</strong> ${(typeof getLiveDmHonesty==='function' && getLiveDmHonesty().showWarn && getLiveDmHonesty().badge) ? getLiveDmHonesty().badge : 'Preise/Sortiment gelten für DE — in anderen Ländern ggf. anders.'}
     </div>
 
     <div id="modalFilterChipsRow" style="display:${currentCat === 'dm' ? 'none' : 'flex'};gap:5px;flex-wrap:wrap;margin-bottom:0.7rem">
@@ -798,6 +988,9 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
       <div class="cat-chip ${currentFlag === 'ff' ? 'active' : ''}" id="fchip_ff" style="font-size:0.74rem;padding:3px 9px" onclick="window.setAddFlag('ff')">🌸 Parfümfrei</div>
       <div class="cat-chip ${currentFlag === 'nc' ? 'active' : ''}" id="fchip_nc" style="font-size:0.74rem;padding:3px 9px" onclick="window.setAddFlag('nc')">🛡️ Nicht-komedogen</div>
       <div class="cat-chip ${currentFlag === 'cf' ? 'active' : ''}" id="fchip_cf" style="font-size:0.74rem;padding:3px 9px" onclick="window.setAddFlag('cf')">🐰 Cruelty-Free (CFI)</div>
+      <div class="cat-chip ${currentFlag === 'nwc' ? 'active' : ''}" id="fchip_nwc" style="font-size:0.74rem;padding:3px 9px" onclick="window.setAddFlag('nwc')">✨ Zero White-Cast</div>
+      <div class="cat-chip ${currentFlag === 'iron' ? 'active' : ''}" id="fchip_iron" style="font-size:0.74rem;padding:3px 9px" onclick="window.setAddFlag('iron')">🛡️ Visible Light (Eisenoxid)</div>
+      <div class="cat-chip ${currentFlag === 'pih' ? 'active' : ''}" id="fchip_pih" style="font-size:0.74rem;padding:3px 9px" onclick="window.setAddFlag('pih')">🎯 PIH / Anti-Pickelmale</div>
     </div>
 
     <div id="addResultsList" style="display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow-y:auto;padding-bottom:10px">
@@ -847,6 +1040,8 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
     });
     const filterRow = document.getElementById("modalFilterChipsRow");
     if (filterRow) filterRow.style.display = cat === "dm" ? "none" : "flex";
+    const dmHonesty = document.getElementById("adultDmHonesty");
+    if (dmHonesty) dmHonesty.style.display = cat === "dm" ? "block" : "none";
 
     if (cat === "dm") {
       if (searchVal && searchVal.trim().length >= 2) {
@@ -860,6 +1055,7 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
         liveDmLoading = false;
         if (resEl) resEl.innerHTML = renderListHtml();
       } else {
+        liveDmItems = [];
         const resEl = document.getElementById("addResultsList");
         if (resEl) resEl.innerHTML = renderListHtml();
       }
@@ -869,9 +1065,14 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
     }
   };
 
+  window._refreshOpenCountryFilteredList = () => {
+    const resEl = document.getElementById("addResultsList");
+    if (resEl) resEl.innerHTML = renderListHtml();
+  };
+
   window.setAddFlag = (fl) => {
     currentFlag = fl;
-    ['all', 'clean', 'ff', 'nc', 'cf'].forEach(f => {
+    ['all', 'clean', 'ff', 'nc', 'cf', 'nwc', 'iron', 'pih'].forEach(f => {
       const chip = document.getElementById(`fchip_${f}`);
       if (chip) chip.className = `cat-chip ${f === fl ? 'active' : ''}`;
     });
@@ -1162,8 +1363,8 @@ function openScanModal() {
           </div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
+          <button type="button" class="btn-text" style="background:var(--ok);color:#F7F4D5;padding:5px 8px;border-radius:6px;font-size:0.74rem;font-weight:700" onclick="adoptDmProductToSlot('${p.id}', 'pm')">+ Schrank</button>
           <button type="button" class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 8px;border-radius:6px;font-size:0.74rem;font-weight:600" onclick="adoptDmProductToSlot('${p.id}', 'am')">+ Morgen</button>
-          <button type="button" class="btn-text" style="background:#f4ece0;color:#5c3e1e;padding:5px 8px;border-radius:6px;font-size:0.74rem;font-weight:600" onclick="adoptDmProductToSlot('${p.id}', 'pm')">+ Abend</button>
         </div>
       </div>
     `).join("");
@@ -1375,6 +1576,9 @@ function saveCustomProductAndCheck() {
     store: "Eigene Erfassung · EU-Handel",
     notes: isCf ? "Marke erfüllt CFI / Leaping Bunny Kriterien." : "Individuell über den Scanner erfasst."
   };
+  if (typeof enrichProductClasses === "function") enrichProductClasses(DB[id]);
+  if (!appState.customProducts) appState.customProducts = {};
+  appState.customProducts[id] = DB[id];
 
   showVerdict(id);
 }
@@ -1599,6 +1803,9 @@ function openProductDetail(prodId) {
       ${p.nc === true ? '<span class="tag nc">🛡️ Nicht-Komedogen Claim</span>' : '<span class="tag" style="background:#f9fafb;color:#6b7280" title="Kein offizieller Nicht-komedogen-Claim deklariert">ℹ️ NC offen</span>'}
       ${p.ff === true ? '<span class="tag ff">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn">⚠️ Enthält Parfüm/Duftstoffe</span>' : '<span class="tag" style="background:#f9fafb;color:#6b7280" title="Keine verifizierten Angaben zur Parfümierung">ℹ️ Parfümierung offen</span>')}
       ${p.cf === true ? `<span class="tag cf">🐰 Cruelty-Free (${p.cf_basis || 'CFI / Leaping Bunny'})</span>` : '<span class="tag" style="background:#f9fafb;color:#6b7280" title="Standard EU-Tierversuchsverbot erfüllt, kein gesondertes Verbandssiegel">ℹ️ CF offen / EU-Standard</span>'}
+      ${p.no_white_cast === true ? '<span class="tag soc-nwc">✨ Zero White-Cast (kein Kreideschleier)</span>' : (p.no_white_cast === false ? '<span class="tag warn">⚠️ Weißelt / White-Cast</span>' : '')}
+      ${p.iron_ox === true ? '<span class="tag soc-iron">🛡️ Eisenoxide (Schutz vor sichtbarem Licht / HEV)</span>' : ''}
+      ${p.pih === true ? '<span class="tag soc-pih">🎯 PIH / Melanin-Regulierung</span>' : ''}
       ${p.ean ? `<span class="tag ean">EAN: ${p.ean}</span>` : ''}
       <span class="tag">PAO: 12 Monate</span>
       <span class="tag">EU-Konform</span>
@@ -1639,7 +1846,7 @@ function renderScanScreen(container) {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
           Kamera-Scanner starten
         </button>
-        <button type="button" class="ghost-btn" onclick="openAddProductModal('am')">
+        <button type="button" class="ghost-btn" onclick="openActiveProfileAddModal()">
           🔎 Katalog &amp; dm Suche
         </button>
       </div>

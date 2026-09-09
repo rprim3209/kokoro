@@ -57,6 +57,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (typeof loadState === "function") {
     loadState();
   }
+  // Klassen-Heuristik für Seeds + gespeicherte Custom-Produkte
+  if (typeof enrichAllDbProducts === "function") {
+    enrichAllDbProducts();
+  }
 
   // 2. Synchronize Category Nav
   updateCategoryNav();

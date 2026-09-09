@@ -26,7 +26,11 @@ const TAG_ALIASES = {
   trocken: ["trocken"],
   oelig: ["ölig", "oelig"],
   misch: ["mischhaut", "misch"],
-  unklar: ["unklar", "ausgeglichen", "eigene routine"]
+  unklar: ["unklar", "ausgeglichen", "eigene routine"],
+  "pih-prone": ["pih-prone", "pih prone", "pih", "hyperpigmentierung", "pickelmale", "post-inflammatory hyperpigmentation", "melasma"],
+  "skin-of-color": ["skin-of-color", "skin of color", "soc", "fitzpatrick", "fototyp", "phototyp"],
+  "zero-white-cast": ["zero-white-cast", "zero white cast", "zero_white_cast_prio", "no-white-cast", "kein weisseln", "kein weißeln"],
+  "iron-oxide-prio": ["iron-oxide-prio", "iron_oxide_prio", "eisenoxid-schutz", "eisenoxide", "visible-light-prio"]
 };
 
 const SOFT_PREF_LABELS = {
@@ -204,7 +208,7 @@ function getCabinetProductIds() {
 function getLayeringProductIds() {
   return getCabinetProductIds().filter(function (id) {
     if (!id || id === "wasser" || id === "water") return false;
-    var p = typeof DB !== "undefined" ? DB[id] : null;
+    var p = typeof resolveCabinetProduct === "function" ? resolveCabinetProduct(id) : (typeof DB !== "undefined" ? DB[id] : null);
     if (!p) return !!id;
     if (p.placeholder || p.wasser) return false;
     if (String(p.name || "").toLowerCase() === "wasser") return false;
@@ -217,8 +221,35 @@ function isCabinetEmptyForLayering() {
 }
 
 /** Lightweight Reiz-Gewicht aus vorhandenen klassen/kat (kein CosIng). */
+function ensureClassesForRules(p) {
+  if (!p || typeof p !== "object") return p;
+  if (typeof enrichProductClasses === "function") {
+    enrichProductClasses(p);
+  } else if (Array.isArray(p.klassen)) {
+    // Fallback-Remap falls catalog.js Helper noch nicht geladen
+    var next = [];
+    p.klassen.forEach(function (k) {
+      if (k === "retinoid") {
+        next.push(p.rx || p.schiene === "arzneimittel" ? "retinoid_rx" : "retinoid_cos");
+      } else if (k) {
+        next.push(k);
+      }
+    });
+    p.klassen = next;
+  }
+  return p;
+}
+
 function productHasClass(p, klass) {
-  return !!(p && Array.isArray(p.klassen) && p.klassen.indexOf(klass) !== -1);
+  if (!p) return false;
+  ensureClassesForRules(p);
+  if (!Array.isArray(p.klassen)) return false;
+  if (p.klassen.indexOf(klass) !== -1) return true;
+  // Legacy-Alias
+  if ((klass === "retinoid_cos" || klass === "retinoid_rx") && p.klassen.indexOf("retinoid") !== -1) {
+    return klass === "retinoid_rx" ? !!(p.rx || p.schiene === "arzneimittel") : !(p.rx || p.schiene === "arzneimittel");
+  }
+  return false;
 }
 
 function isRetinoidProduct(p) {
@@ -233,7 +264,9 @@ function isRxRetinoid(p) {
 
 function isCosmeticRetinoid(p) {
   if (!p) return false;
-  return productHasClass(p, "retinoid_cos") && !p.rx;
+  // Prefer class over sticky rx flag (enrich may set rx on mixed blobs)
+  if (productHasClass(p, "retinoid_rx")) return false;
+  return productHasClass(p, "retinoid_cos");
 }
 
 function isBpoProduct(p) {
@@ -424,6 +457,20 @@ const PAIR_MATRIX = [
       if (!other) return false;
       if (isAhaProduct(cand) && isAhaProduct(other)) {
         return "Gleiche Wirkstoffklasse (AHA-Fruchtsäure) schon vorhanden — zwei AHA-Peelings doppeln sich nur und strapazieren die Barriere.";
+      }
+      return false;
+    }
+  },
+  // 11b. same_class: bha + bha
+  {
+    id: "rule_same_class_bha_bha",
+    code: "same_class",
+    prio: 30,
+    outcome: "konflikt",
+    match: function (cand, other, ctx) {
+      if (!other) return false;
+      if (isBhaProduct(cand) && isBhaProduct(other)) {
+        return "Gleiche Wirkstoffklasse (BHA) schon vorhanden — zwei BHA-Produkte doppeln sich nur und erhöhen das Reizrisiko.";
       }
       return false;
     }
@@ -785,7 +832,7 @@ function filterAltsForArztThema(alts) {
 
 function assessZuDir(candidate) {
   var hooks = inciHooksFromProduct(candidate);
-  var hasPerfume = candidate.ff === false;
+  var hasPerfume = typeof productLooksPerfumed === "function" ? productLooksPerfumed(candidate) : candidate.ff === false;
   var fragranceFree = candidate.ff === true;
 
   if (hasArztThema() && isCosmeticActiveUpsell(candidate)) {
@@ -872,12 +919,51 @@ function assessZuDir(candidate) {
     return makeDim("passt", "Basispflege ok bei Arzt-Thema.", "arzt_basis");
   }
 
+  // Evidence-based Phototyp & Melanin-Regeln (Skin of Color / Fitzpatrick IV–VI / PIH)
+  if ((hasTag("pih-prone") || hasTag("skin-of-color")) && isAhaProduct(candidate)) {
+    var candBlob = ((candidate.name || "") + " " + (candidate.wirk || "")).toLowerCase();
+    var isGlycolic = candBlob.indexOf("glycol") !== -1 || candBlob.indexOf("glykol") !== -1 || candidate.id === "glycolic";
+    if (isGlycolic) {
+      return makeDim(
+        "eher_nicht",
+        "Bei Neigung zu PIH/dunklen Pickelmalen kann tief eindringende Glykolsäure Entzündungen und Rebound-Pigmentierung auslösen (AAD-Konsens). Sanftere Alternativen: Azelainsäure, Mandelsäure oder PHA.",
+        "pih_acid_caution"
+      );
+    }
+  }
+
+  if ((hasTag("skin-of-color") || hasTag("zero-white-cast")) && candidate.no_white_cast === false) {
+    return makeDim(
+      "eher_nicht",
+      "Ungetönte mineralische Filter (Zinkoxid/Titandioxid) hinterlassen auf dunkleren Hauttönen oft einen sichtbaren Grauschleier (White-Cast).",
+      "white_cast_caution"
+    );
+  }
+
+  if ((hasTag("pih-prone") || hasTag("skin-of-color") || hasTag("iron-oxide-prio")) && candidate.iron_ox === true) {
+    return makeDim(
+      "passt",
+      "Enthält Eisenoxide: Schützt nachweislich vor sichtbarem Licht (HEV / Blue Light), dem Haupttrigger für persistierende Pigmentflecken bei Melanin-reicher Haut.",
+      "soc_iron_praise"
+    );
+  }
+
+  if (hasTag("pih-prone") && candidate.pih === true) {
+    return makeDim(
+      "passt",
+      "Evidenzbasierte Pflege gegen Pickelmale (PIH): Reguliert Melaninbildung und Melanosomen-Transfer (z. B. Azelainsäure / Niacinamid).",
+      "pih_target_match"
+    );
+  }
+
   var quizSparse =
     !hasTag("trocken") &&
     !hasTag("oelig") &&
     !hasTag("misch") &&
     !hasTag("sensibel") &&
-    !hasTag("akne-prone");
+    !hasTag("akne-prone") &&
+    !hasTag("pih-prone") &&
+    !hasTag("skin-of-color");
   if (quizSparse) {
     return makeDim(
       "passt",
@@ -1071,13 +1157,473 @@ function evaluateCandidate(candidate) {
   };
 }
 
+
+/** Alle Produkte im Profil-Schrank (AM + alle PM-Modi), ohne Wasser-Platzhalter. */
+/** Resolve a cabinet product from DB / custom / Teen / Baby catalogs. */
+function resolveCabinetProduct(id) {
+  if (!id) return null;
+  if (typeof DB !== "undefined" && DB && DB[id]) return DB[id];
+  if (typeof appState !== "undefined" && appState && appState.customProducts && appState.customProducts[id]) {
+    return appState.customProducts[id];
+  }
+  if (typeof TEEN_DB !== "undefined" && TEEN_DB && TEEN_DB[id]) return TEEN_DB[id];
+  if (typeof BABY_DB !== "undefined" && BABY_DB && BABY_DB[id]) return BABY_DB[id];
+  return null;
+}
+
+function getFullCabinetProductIds() {
+  if (typeof appState === "undefined" || !appState) return [];
+  var ids = [].concat(
+    appState.am || [],
+    appState.pm_a || [],
+    appState.pm_b || [],
+    appState.pm_c || []
+  );
+  var seen = {};
+  var out = [];
+  ids.forEach(function (id) {
+    if (!id || id === "wasser" || id === "water" || seen[id]) return;
+    var p = resolveCabinetProduct(id);
+    if (p && (p.placeholder || p.wasser || String(p.name || "").toLowerCase() === "wasser")) return;
+    seen[id] = true;
+    out.push(id);
+  });
+  return out;
+}
+
+
+/** True if catalog says not fragrance-free, or basis text indicates perfume. */
+function productLooksPerfumed(p) {
+  if (!p) return false;
+  if (p.ff === true) return false;
+  if (p.ff === false) return true;
+  var basis = String(p.ff_basis || p.fragrance_basis || "").toLowerCase();
+  var notes = String(p.notes || "").toLowerCase();
+  var blob = basis + " " + notes;
+  var freeHint = /parf[uü]mfrei|parfumfrei|fragrance[\s-]?free|unparf[uü]miert|ohne duft|ohne parf|duftstofffrei|ff=yes|ff:true/;
+  var perfumeHint = /parf[uü]m(?!frei)|fragrance|perfume|duftstoff|duft\/|\bduft\b|ätherisch|etherisch|essential oil|essential oils|leichten? (frischen )?duft/;
+  if (freeHint.test(blob) && !perfumeHint.test(basis)) return false;
+  if (perfumeHint.test(basis)) return true;
+  if (/oft mit duft|nicht parf[uü]mfrei|ff nur parf[uü]mfrei|ff=no|ff:false|parf[uü]miert/.test(notes)) return true;
+  return false;
+}
+
+/**
+ * Profile×product constraints for ANY cabinet (Baby/Child/Teen/Adult).
+ * Class-general — no demo ID hardcodes. Worst-wins per product.
+ */
+function assessCabinetProfileConstraints(products, opts) {
+  opts = opts || {};
+  var cat = opts.category || (typeof getActiveProfileCategory === "function" ? getActiveProfileCategory() : "adult");
+  var list = (products || []).filter(Boolean);
+  var hits = [];
+  var flagged = {};
+  var seenKey = {};
+
+  function pushHit(hit, prod) {
+    if (!hit || !hit.outcome) return;
+    var key = hit.code + "|" + hit.reason;
+    if (!seenKey[key]) {
+      var productIds = {};
+      if (prod && prod.id) productIds[prod.id] = true;
+      var row = {
+        code: hit.code,
+        outcome: hit.outcome,
+        reason: hit.reason,
+        prio: hit.prio || 50,
+        productIds: productIds,
+        edu: hit.edu || null
+      };
+      seenKey[key] = row;
+      hits.push(row);
+    } else if (prod && prod.id) {
+      seenKey[key].productIds[prod.id] = true;
+    }
+    if (prod && prod.id) {
+      var prev = flagged[prod.id];
+      var rank = OUTCOME_RANK[hit.outcome] || 0;
+      if (!prev || rank > (OUTCOME_RANK[prev.outcome] || 0)) {
+        flagged[prod.id] = { outcome: hit.outcome, code: hit.code, reason: hit.reason };
+      }
+    }
+  }
+
+  var wantsFf =
+    cat === "baby" ||
+    hasTag("sensibel") ||
+    hasTag("duftstofffrei") ||
+    (typeof appState !== "undefined" &&
+      appState &&
+      /parf[uü]mfrei|duftstofffrei/i.test(String((appState.profileSubtitles && appState.profileSubtitles[cat]) || "")));
+
+  list.forEach(function (p) {
+    var perfumed = productLooksPerfumed(p);
+
+    // Baby / under-3: perfume = Konflikt (leave-on AND cleansers under Parfümfrei-Prio)
+    if (cat === "baby" && perfumed) {
+      pushHit(
+        {
+          code: "baby_perfume",
+          outcome: "konflikt",
+          reason: "Parfüm bei Baby <3: häufigster Allergie-Trigger — Konflikt.",
+          prio: 20,
+          edu: "Duftstoffe (auch ätherische Öle) sind der häufigste Allergieauslöser bei Säuglingen. Parfümfrei-Prio im Baby-Profil."
+        },
+        p
+      );
+    }
+
+    // Child: perfume = eher nicht (duftstoffarm)
+    if (cat === "child" && perfumed) {
+      pushHit(
+        {
+          code: "child_perfume",
+          outcome: "eher_nicht",
+          reason: "Duftstoffarm bevorzugt bei Kinderhaut — eher nicht.",
+          prio: 40,
+          edu: "Weniger Duftstoffe reduzieren Irritationsrisiko bei Schulkindern."
+        },
+        p
+      );
+    }
+
+    // Teen: Parfümfrei-Prio (editorial) → eher nicht
+    if (cat === "teen" && perfumed) {
+      pushHit(
+        {
+          code: "teen_perfume",
+          outcome: "eher_nicht",
+          reason: "Parfümfrei-Prio: Duftstoffe eher meiden.",
+          prio: 45,
+          edu: null
+        },
+        p
+      );
+    }
+
+    // Adult / any: sensibel or duftstofffrei → eher nicht
+    if ((cat === "adult" || !cat) && perfumed && (hasTag("sensibel") || hasTag("duftstofffrei"))) {
+      pushHit(
+        {
+          code: "perfume_sensibel",
+          outcome: "eher_nicht",
+          reason: hasTag("duftstofffrei")
+            ? "Du willst Duft meiden — dieses Produkt hat Parfüm."
+            : "Enthält Duftstoffe — bei sensibler Haut oft Reiz.",
+          prio: 42,
+          edu: null
+        },
+        p
+      );
+    }
+
+    // Soft NC preference (akne-prone / pref_nc): known comedogenic only
+    if ((hasTag("pref_nc") || hasTag("akne-prone") || cat === "teen") && p.nc === false) {
+      pushHit(
+        {
+          code: "pref_nc_miss",
+          outcome: "eher_nicht",
+          reason: "Als komedogen bekannt — bei NC-Preference eher nicht.",
+          prio: 60,
+          edu: null
+        },
+        p
+      );
+    }
+
+    // Teen: anti-aging / not for minors
+    if (cat === "teen" && p.notForMinors) {
+      pushHit(
+        {
+          code: "not_for_minors",
+          outcome: "eher_nicht",
+          reason: "Anti-Aging / nicht für Jugendliche als Default.",
+          prio: 35,
+          edu: null
+        },
+        p
+      );
+    }
+
+    // Baby: missing under-3 intent when known false
+    if (cat === "baby" && p.u3 === false) {
+      pushHit(
+        {
+          code: "baby_under3",
+          outcome: "eher_nicht",
+          reason: "Nicht klar für unter 3 Jahre ausgewiesen.",
+          prio: 38,
+          edu: "EU VO 1223/2009: spezifische Sicherheitsbewertung für Kinder unter 3 Jahren."
+        },
+        p
+      );
+    }
+  });
+
+  hits.sort(function (a, b) {
+    return (a.prio || 50) - (b.prio || 50);
+  });
+
+  var outcomes = hits.map(function (h) {
+    return h.outcome;
+  });
+  var overall = outcomes.length ? worstWins.apply(null, outcomes) : "passt";
+
+  return {
+    hits: hits,
+    flagged: flagged,
+    verdict: overall,
+    status: statusFromOutcome(overall),
+    eduNotes: hits
+      .filter(function (h) {
+        return !!h.edu && (h.outcome === "konflikt" || h.outcome === "eher_nicht");
+      })
+      .map(function (h) {
+        return h.edu;
+      })
+      .filter(function (v, i, arr) {
+        return arr.indexOf(v) === i;
+      })
+  };
+}
+
+function mergeCabinetFlagged(baseFlagged, extraFlagged) {
+  var out = {};
+  Object.keys(baseFlagged || {}).forEach(function (id) {
+    out[id] = baseFlagged[id];
+  });
+  Object.keys(extraFlagged || {}).forEach(function (id) {
+    var prev = out[id];
+    var next = extraFlagged[id];
+    if (!prev || (OUTCOME_RANK[next.outcome] || 0) > (OUTCOME_RANK[prev.outcome] || 0)) {
+      out[id] = next;
+    }
+  });
+  return out;
+}
+
+/** Category Schrank prognosis (Baby/Child/Teen) — profile constraints + intra-cabinet matrix. */
+function calculateCategoryCabinetPrognosis(products, category) {
+  var list = (products || []).filter(Boolean);
+  if (!list.length) {
+    return {
+      status: "empty",
+      verdict: null,
+      title: "Noch keine Produkte — Scan oder Beispiel",
+      points: [],
+      flagged: {},
+      eduNotes: [],
+      empty: true
+    };
+  }
+  list.forEach(ensureClassesForRules);
+
+  // 1) Intra-Schrank Matrix (same_class retinoids, skip_stack, …) — must not be skipped
+  var cabinet = assessCabinetConflicts(list, list);
+  var outcomes = [];
+  var points = [];
+  (cabinet.hits || []).forEach(function (hit) {
+    if (hit.code === "bleach") return;
+    outcomes.push(hit.outcome);
+    points.push(cabinetConflictOneLook(hit));
+  });
+
+  // 2) Profile constraints (Baby perfume, Teen not-for-minors, …)
+  var profile = assessCabinetProfileConstraints(list, { category: category });
+  (profile.hits || []).forEach(function (h) {
+    if (h.outcome === "konflikt" || h.outcome === "eher_nicht") {
+      outcomes.push(h.outcome);
+      points.push(formatVerdictOneLook(h.outcome, h.reason));
+    }
+  });
+
+  var flagged = mergeCabinetFlagged(cabinet.flagged, profile.flagged);
+  var seenPt = {};
+  points = points.filter(function (pt) {
+    var k = String(pt);
+    if (seenPt[k]) return false;
+    seenPt[k] = true;
+    return true;
+  });
+
+  var overall = outcomes.length ? worstWins.apply(null, outcomes) : "passt";
+  var title;
+  if (overall === "konflikt") {
+    title = "🔴 Konflikt — Schrank prüfen";
+  } else if (overall === "eher_nicht") {
+    title = "🟡 eher nicht — kleine Anpassung";
+  } else {
+    title = "🟢 passt — Produkte passen zum Profil";
+  }
+  if (!points.length) {
+    points = [formatVerdictOneLook("passt", "Kein bekannter Konflikt in diesem Schrank.")];
+  }
+  return {
+    status: statusFromOutcome(overall),
+    verdict: overall,
+    title: title,
+    points: points,
+    flagged: flagged,
+    eduNotes: profile.eduNotes || [],
+    empty: false,
+    hits: (cabinet.hits || []).concat(profile.hits || []),
+    cabinetHits: cabinet.hits || []
+  };
+}
+
+
+/**
+ * Intra-Schrank Konfliktpass: jedes Paar gegen PAIR_MATRIX.
+ * same_class / inactivate über gesamten Schrank;
+ * skip_stack mit slot=pm wenn beide in der aktiven Abend-Liste liegen;
+ * alternate_days als gelber Hinweis.
+ * Worst-wins Aggregation.
+ */
+function assessCabinetConflicts(allProds, pmProds) {
+  var products = (allProds || []).filter(Boolean);
+  products.forEach(ensureClassesForRules);
+  var pmSet = {};
+  (pmProds || []).forEach(function (p) {
+    if (p && p.id) pmSet[p.id] = true;
+  });
+
+  var hits = [];
+  var seenKey = {};
+
+  function pushHit(hit, a, b) {
+    if (!hit) return;
+    var key = hit.code + "|" + hit.reason;
+    if (seenKey[key]) {
+      // product ids ergänzen
+      if (a && a.id) seenKey[key].productIds[a.id] = true;
+      if (b && b.id) seenKey[key].productIds[b.id] = true;
+      return;
+    }
+    var productIds = {};
+    if (a && a.id) productIds[a.id] = true;
+    if (b && b.id) productIds[b.id] = true;
+    var row = {
+      code: hit.code,
+      outcome: hit.outcome,
+      reason: hit.reason,
+      prio: hit.prio,
+      productIds: productIds
+    };
+    seenKey[key] = row;
+    hits.push(row);
+  }
+
+  for (var i = 0; i < products.length; i++) {
+    for (var j = i + 1; j < products.length; j++) {
+      var a = products[i];
+      var b = products[j];
+      var bothPm = !!(a.id && b.id && pmSet[a.id] && pmSet[b.id]);
+      var ctx = { slot: bothPm ? "pm" : null, allCabinetProducts: products };
+
+      PAIR_MATRIX.forEach(function (rule) {
+        // Pairwise only for product×product codes
+        if (rule.code === "not_cosmetic" || rule.code === "bleach" || rule.code === "resistance") {
+          return;
+        }
+        var hitAb = rule.match(a, b, ctx);
+        if (hitAb) {
+          pushHit(
+            { code: rule.code, outcome: rule.outcome, reason: hitAb, prio: rule.prio },
+            a,
+            b
+          );
+        }
+        // skip_stack may need pm slot even if not both currently in active PM —
+        // for Schrank overview also flag if both are leave-on actives in cabinet
+        if (!hitAb && (rule.code === "skip_stack") && !bothPm) {
+          var hitCab = rule.match(a, b, { slot: "pm", allCabinetProducts: products });
+          if (hitCab) {
+            pushHit(
+              {
+                code: rule.code,
+                outcome: rule.outcome,
+                reason: hitCab,
+                prio: rule.prio
+              },
+              a,
+              b
+            );
+          }
+        }
+      });
+    }
+  }
+
+  // resistance: antibiotic without BPO (cabinet-level)
+  var hasAb = products.some(isAntibioticProduct);
+  var hasBpo = products.some(isBpoProduct);
+  if (hasAb && !hasBpo) {
+    pushHit(
+      {
+        code: "resistance",
+        outcome: "eher_nicht",
+        reason:
+          "Topisches Antibiotikum ohne BPO in der Routine — Resistenzgefahr, ärztlich abklären.",
+        prio: 55
+      },
+      products.filter(isAntibioticProduct)[0],
+      null
+    );
+  }
+
+  hits.sort(function (x, y) {
+    return x.prio - y.prio;
+  });
+
+  var flagged = {};
+  hits.forEach(function (h) {
+    Object.keys(h.productIds || {}).forEach(function (id) {
+      var prev = flagged[id];
+      var rank = OUTCOME_RANK[h.outcome] || 0;
+      if (!prev || rank > (OUTCOME_RANK[prev.outcome] || 0)) {
+        flagged[id] = { outcome: h.outcome, code: h.code, reason: h.reason };
+      }
+    });
+  });
+
+  return { hits: hits, flagged: flagged };
+}
+
+function cabinetConflictOneLook(hit) {
+  if (!hit) return "";
+  var reason = hit.reason || "";
+  // Kurz & sichtbar für Schrank-Banner
+  if (hit.code === "same_class") {
+    if (/Retinoid/i.test(reason) || /Retinol/i.test(reason)) {
+      reason =
+        "Zwei Retinoide im Schrank (mehr Reiz ohne Zusatznutzen)";
+    } else if (/AHA/i.test(reason)) {
+      reason = "mehrere AHA-Peelings derselben Wirkstoffklasse im Schrank";
+    } else if (/BHA/i.test(reason)) {
+      reason = "mehrere BHA-Produkte derselben Wirkstoffklasse im Schrank";
+    } else {
+      reason = "gleiche Wirkstoffklasse mehrfach im Schrank (mehr Reiz ohne Zusatznutzen)";
+    }
+  } else if (hit.code === "alternate_days") {
+    reason = "im Wechsel — nicht am selben Abend schichten";
+  }
+  return formatVerdictOneLook(hit.outcome, reason);
+}
+
+
 function calculatePrognosis() {
   var am = (typeof appState !== "undefined" && appState.am) || [];
   var pm = typeof getActivePMList === "function" ? getActivePMList() : [];
   var all = am.concat(pm);
-  var layering = getLayeringProductIds();
+  var resolve = typeof resolveCabinetProduct === "function" ? resolveCabinetProduct : function (id) {
+    return typeof DB !== "undefined" && DB ? DB[id] : null;
+  };
 
-  if (layering.length === 0) {
+  // Always judge the FULL adult cabinet (AM + all PM modes), not only the active tab.
+  // Active-tab-only checks caused a red→green flash when navigation/re-render narrowed the list.
+  var fullIds = typeof getFullCabinetProductIds === "function" ? getFullCabinetProductIds() : getLayeringProductIds();
+
+  if (fullIds.length === 0) {
     return {
       status: "empty",
       title: "ℹ️ Schrank leer — Scan trotzdem möglich",
@@ -1089,7 +1635,7 @@ function calculatePrognosis() {
     };
   }
 
-  if (layering.length === 1) {
+  if (fullIds.length === 1) {
     return {
       status: "warn",
       verdict: "eher_nicht",
@@ -1104,86 +1650,57 @@ function calculatePrognosis() {
   var points = [];
   var outcomes = [];
 
-  var allProds = all.map(function (id) {
-    return typeof DB !== "undefined" ? DB[id] : null;
-  }).filter(Boolean);
-  var pmProds = pm.map(function (id) {
-    return typeof DB !== "undefined" ? DB[id] : null;
-  }).filter(Boolean);
-  var amProds = am.map(function (id) {
-    return typeof DB !== "undefined" ? DB[id] : null;
-  }).filter(Boolean);
+  var allProds = fullIds.map(resolve).filter(Boolean);
+  allProds.forEach(ensureClassesForRules);
+
+  var pmProds = pm.map(resolve).filter(Boolean);
+  var amProds = am.map(resolve).filter(Boolean);
 
   var hasSPF = amProds.some(function (p) {
     return p && p.kat === "spf";
+  }) || allProds.some(function (p) {
+    return p && p.kat === "spf";
   });
   var hasActives = allProds.some(function (p) {
-    return p && (p.kat === "active" || p.kat === "serum" || p.kat === "spot" || p.rx);
+    return p && (p.kat === "active" || p.kat === "serum" || p.kat === "spot" || p.rx || isRetinoidProduct(p) || isAcidProduct(p) || isBpoProduct(p));
   });
   var hasMoisturizer = allProds.some(function (p) {
     return p && p.kat === "creme";
   });
 
-  var rxRetinoids = allProds.filter(isRxRetinoid);
-  var cosRetinoids = allProds.filter(isCosmeticRetinoid);
-  var pmHasBpo = pmProds.some(isBpoProduct);
-  var pmHasRet = pmProds.some(isRetinoidProduct);
   var allHasBpo = allProds.some(isBpoProduct);
-  var allHasAbTop = allProds.some(isAntibioticProduct);
 
+  // 1) Intra-Schrank Matrix (same_class, skip_stack, inactivate, alternate_days, …)
+  var cabinet = assessCabinetConflicts(allProds, pmProds);
+  cabinet.hits.forEach(function (hit) {
+    if (hit.code === "bleach") return;
+    outcomes.push(hit.outcome);
+    points.push(cabinetConflictOneLook(hit));
+  });
+
+  // 1b) Profile constraints (Parfüm×sensibel/Baby, NC-Preference, …)
+  var profileCab = assessCabinetProfileConstraints(allProds, {
+    category: typeof getActiveProfileCategory === "function" ? getActiveProfileCategory() : "adult"
+  });
+  profileCab.hits.forEach(function (hit) {
+    if (hit.outcome === "konflikt" || hit.outcome === "eher_nicht") {
+      outcomes.push(hit.outcome);
+      points.push(formatVerdictOneLook(hit.outcome, hit.reason));
+    }
+  });
+  cabinet.flagged = mergeCabinetFlagged(cabinet.flagged, profileCab.flagged);
+
+  // 2) Nacht-Reiz-Budget der aktiven PM-Liste
   var night = assessNightReiz(pm, null);
   if (night.outcome === "konflikt") {
-    outcomes.push("konflikt");
-    points.push(formatVerdictOneLook("konflikt", night.reason));
-  }
-
-  // Redundanz: Retinoide
-  if (rxRetinoids.length > 0 && cosRetinoids.length > 0) {
-    outcomes.push("konflikt");
-    points.push(
-      formatVerdictOneLook(
-        "konflikt",
-        "Zwei Retinoide im Schrank (medizinisches Retinoid + kosmetisches Retinol) — mehr Reiz ohne Zusatznutzen."
-      )
-    );
-  } else if (rxRetinoids.length > 1) {
-    outcomes.push("konflikt");
-    points.push(
-      formatVerdictOneLook(
-        "konflikt",
-        "Zwei medizinische Retinoide im Schrank — doppelte Dosierung ohne Zusatznutzen."
-      )
-    );
-  } else if (cosRetinoids.length > 1) {
-    outcomes.push("konflikt");
-    points.push(
-      formatVerdictOneLook(
-        "konflikt",
-        "Zwei kosmetische Retinoide im Schrank — redundante Wirkung."
-      )
-    );
-  }
-
-  // Gleicher Abend BPO + Retinoid
-  if (pmHasBpo && pmHasRet) {
-    outcomes.push("konflikt");
-    points.push(
-      formatVerdictOneLook(
-        "konflikt",
-        "BPO und Retinoid nicht am selben Abend schichten — lieber an getrennten Tagen im Wechsel anwenden."
-      )
-    );
-  }
-
-  // Resistenz-Gefahr: Topisches Antibiotikum ohne BPO
-  if (allHasAbTop && !allHasBpo) {
-    outcomes.push("eher_nicht");
-    points.push(
-      formatVerdictOneLook(
-        "eher_nicht",
-        "Topisches Antibiotikum ohne BPO in der Routine — Resistenzgefahr, ärztlich abklären."
-      )
-    );
+    var nightKey = "night|" + night.reason;
+    var already = points.some(function (pt) {
+      return String(pt).indexOf("Retinoid") !== -1 && night.code === "same_class";
+    });
+    if (!already) {
+      outcomes.push("konflikt");
+      points.push(formatVerdictOneLook("konflikt", night.reason));
+    }
   }
 
   var day = assessDayReiz(am, pm, null, null);
@@ -1214,20 +1731,51 @@ function calculatePrognosis() {
     return isRxRetinoid(p) || isBpoProduct(p) || (p && (p.rx || p.schiene === "arzneimittel"));
   });
   if (hasRxTherapy) {
-    points.push("ℹ️ Begleitpflege: Rx-Wirkstoff erkannt — Reizstoff-Filter aktiver. Kein Therapie-Schema.");
+    var tipParts = [];
+    tipParts.push("ℹ️ Du hast ein Arzneimittel (z. B. Retinoid oder BPO) im Schrank. Die App filtert dann schärfer auf Duft und starke Reizstoffe — das ist Einkaufs-Hilfe, kein Behandlungsplan.");
+    tipParts.push("Laut gängiger Begleitpflege (AAD / EuroGuiDerm-Praxis): Haut sanft halten — milde Reinigung, reichhaltige Creme als Puffer, morgens LSF. Kein Extra-Retinol und kein starkes Säure-Peeling dazu stapeln.");
+    var missing = [];
+    if (!hasMoisturizer) missing.push("eine milde Feuchtigkeitscreme (z. B. mit Panthenol oder Ceramiden, möglichst parfümfrei)");
+    if (!hasSPF) missing.push("Sonnenschutz LSF 30–50 für den Morgen");
+    var hasGentleWash = allProds.some(function (p) {
+      return p && p.kat === "reiniger" && p.ff !== false;
+    });
+    if (!hasGentleWash) missing.push("eine milde, möglichst parfümfreie Reinigung");
+    if (missing.length) {
+      tipParts.push("Zusätzlich sinnvoll im Schrank: " + missing.join("; ") + ".");
+    } else {
+      tipParts.push("Basis ist da (Reinigung/Creme/SPF). Beim Zukauf: eher Support wie Purito Panthenol, CeraVe Creme oder Bioderma Sébium Hydra — nicht noch ein zweites Retinoid.");
+    }
+    tipParts.forEach(function (t) { points.push(t); });
   }
   if (allHasBpo) {
     points.push("ℹ️ Textil-Hinweis: BPO bleicht Handtücher und Kissenbezüge.");
   }
 
+  // Dedupe identical one-look lines (keep order)
+  var seenPt = {};
+  points = points.filter(function (pt) {
+    var k = String(pt);
+    if (seenPt[k]) return false;
+    seenPt[k] = true;
+    return true;
+  });
+
   var overall = outcomes.length ? worstWins.apply(null, outcomes) : "passt";
   return {
     status: statusFromOutcome(overall),
     verdict: overall,
-    title: overall === "passt" ? "🟢 passt — Routine ohne harten Konflikt" : outcomeTitle(overall),
+    title:
+      overall === "konflikt"
+        ? "🔴 Konflikt — Schrank prüfen"
+        : overall === "eher_nicht"
+          ? "🟡 eher nicht — kleine Anpassung"
+          : "🟢 passt — Routine ohne harten Konflikt",
     points: points.length
       ? points
       : [formatVerdictOneLook("passt", "Kein bekannter harter Konflikt in der aktuellen Routine.")],
-    disclaimer: VERDICT_DISCLAIMER
+    disclaimer: VERDICT_DISCLAIMER,
+    flagged: cabinet.flagged || {},
+    cabinetHits: cabinet.hits || []
   };
 }

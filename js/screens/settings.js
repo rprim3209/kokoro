@@ -22,7 +22,7 @@ function renderSettingsScreen(container) {
                 ${escapeHtml(p.name)} ${isActive ? '<span style="font-size:0.7rem;color:var(--ok);font-weight:700">(Aktiv)</span>' : ''}
               </div>
               <div style="font-size:0.74rem;color:var(--muted)">
-                ${p.category === 'adult' ? 'Erwachsener' : (p.category === 'teen' ? 'Teenie' : (p.category === 'child' ? 'Kind' : 'Baby'))} · ${escapeHtml(p.subtitle || '')}
+                ${p.category === 'adult' ? 'Erwachsener' : (p.category === 'teen' ? 'Teenie' : (p.category === 'child' ? 'Kind' : 'Baby'))} · ${escapeHtml(p.subtitle || '')} · 🌍 ${escapeHtml(p.country || 'AT')}
               </div>
             </div>
           </div>
@@ -48,6 +48,28 @@ function renderSettingsScreen(container) {
         Verwalte mehrere Profile für dich und deine Familie. Jedes Profil besitzt seinen eigenen isolierten Schrank.
       </p>
       ${profileCardsHtml}
+    </div>
+
+
+    <div class="settings-section">
+      <div class="settings-title">
+        <span>🌍 Land & Verfügbarkeit</span>
+      </div>
+      <p style="font-size:0.82rem;color:var(--muted);margin:0 0 0.55rem;line-height:1.4">
+        Aktives Profil: <strong>${typeof countryLabel==="function" ? countryLabel(typeof getProfileCountry==="function" ? getProfileCountry() : "AT") : (typeof getProfileCountry==="function" ? getProfileCountry() : "AT")}</strong>.
+        Katalog und Vorschläge zeigen nur Produkte, die laut <code>eu_countries</code> hier vorkommen (oder <code>EU</code>).
+      </p>
+      ${typeof renderCountryPickerHtml === "function" ? renderCountryPickerHtml((typeof getProfileCountry==="function" ? getProfileCountry() : "AT"), "setProfileCountry", { uid: "settingsCountryPicker", maxHeight: "280px" }) : (typeof renderCountryChipsHtml === "function" ? renderCountryChipsHtml((typeof getProfileCountry==="function" ? getProfileCountry() : "AT"), "setProfileCountry") : "")}
+      <div style="margin-top:0.7rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <label style="font-size:0.8rem;color:var(--ink);display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" ${typeof shouldHideUnknownCountries==="function" && shouldHideUnknownCountries() ? "checked" : ""} onchange="setHideUnknownCountries(this.checked); renderSettingsScreen();">
+          Unklare Herkunft ausblenden
+        </label>
+        <span style="font-size:0.72rem;color:var(--muted)">Standard: an — Produkte ohne Land-Angabe verstecken</span>
+      </div>
+      <p style="font-size:0.72rem;color:var(--muted);margin:0.55rem 0 0;line-height:1.35">
+        Hinweis: Live-dm-Suche bleibt der <strong>Deutschland-Shop</strong>. Bei Land ≠ DE erscheint ein ehrlicher Badge.
+      </p>
     </div>
 
     <div class="settings-section">

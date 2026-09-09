@@ -14,12 +14,110 @@ function selectStartCategory(cat) {
   renderStartScreen();
 }
 
+function selectStartCountry(code) {
+  if (typeof setProfileCountry === "function") {
+    setProfileCountry(code);
+  } else {
+    const p = typeof getActiveProfile === "function" ? getActiveProfile() : null;
+    if (p) p.country = code;
+    if (typeof saveState === "function") saveState();
+  }
+  appState.view = "start";
+  renderStartScreen();
+}
+
+/** Alle EU-27 (+ CH/NO/IS) als durchsuchbares, scrollbar Grid. */
+function getProfileCountryOptionsList() {
+  if (typeof PROFILE_COUNTRY_OPTIONS !== "undefined" && Array.isArray(PROFILE_COUNTRY_OPTIONS) && PROFILE_COUNTRY_OPTIONS.length) {
+    return PROFILE_COUNTRY_OPTIONS;
+  }
+  return [
+    { code: "AT", label: "Österreich" }, { code: "DE", label: "Deutschland" }, { code: "IT", label: "Italien" }, { code: "FR", label: "Frankreich" }
+  ];
+}
+
+function renderCountryPickerHtml(selected, onclickName, opts) {
+  opts = opts || {};
+  const uid = opts.uid || ("cp_" + Math.random().toString(36).slice(2, 8));
+  const list = getProfileCountryOptionsList();
+  const sel = String(selected || "AT").toUpperCase();
+  const selObj = list.find(o => o.code === sel);
+  const selLabel = selObj ? selObj.label : sel;
+  const maxH = opts.maxHeight || "220px";
+
+  const eu = list.filter(o => (o.group || "EU") === "EU");
+  const efta = list.filter(o => o.group === "EFTA");
+
+  function chip(o) {
+    const active = o.code === sel;
+    return `<button type="button" class="start-pill-btn country-chip ${active ? "active" : ""}" data-code="${o.code}" data-label="${o.label}" title="${o.label}" style="padding:0.32rem 0.65rem;font-size:0.78rem;justify-content:flex-start" onclick="${onclickName}('${o.code}')">
+      <strong>${o.code}</strong>&nbsp;<span style="opacity:0.8;font-weight:600">${o.label}</span>
+    </button>`;
+  }
+
+  return `
+    <div class="country-picker" id="${uid}" data-onclick="${onclickName}">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:0.4rem">
+        <div style="font-size:0.8rem;color:var(--ink)">
+          Gewählt: <strong>${sel}</strong> · ${selLabel}
+          <span style="color:var(--muted);font-size:0.72rem"> · EU-27 vollständig</span>
+        </div>
+        <input type="search" class="country-picker-search" placeholder="Land suchen (z. B. Italien, PL, Griechen…)" 
+          style="flex:1;min-width:160px;max-width:280px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:0.82rem;background:#fcfaf6"
+          oninput="filterCountryPicker('${uid}', this.value)" autocomplete="off">
+      </div>
+      <div class="country-picker-scroll" style="max-height:${maxH};overflow-y:auto;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px">
+        <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin:0 0 6px">EU-Mitgliedstaaten</div>
+        <div class="start-pills-row country-chip-row" style="margin:0;gap:6px">
+          ${eu.map(chip).join("")}
+        </div>
+        ${efta.length ? `
+          <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin:10px 0 6px">EFTA / Nachbarn</div>
+          <div class="start-pills-row country-chip-row" style="margin:0;gap:6px">
+            ${efta.map(chip).join("")}
+          </div>
+        ` : ''}
+        <div class="country-picker-empty" style="display:none;font-size:0.8rem;color:var(--muted);padding:8px 2px">Kein Land gefunden — anderen Suchbegriff versuchen.</div>
+      </div>
+    </div>
+  `;
+}
+
+function filterCountryPicker(uid, query) {
+  const root = document.getElementById(uid);
+  if (!root) return;
+  const q = String(query || "").trim().toLowerCase();
+  let visible = 0;
+  root.querySelectorAll(".country-chip").forEach(btn => {
+    const code = (btn.getAttribute("data-code") || "").toLowerCase();
+    const label = (btn.getAttribute("data-label") || "").toLowerCase();
+    const ok = !q || code.includes(q) || label.includes(q);
+    btn.style.display = ok ? "" : "none";
+    if (ok) visible++;
+  });
+  root.querySelectorAll(".country-chip-row").forEach(row => {
+    const any = Array.from(row.querySelectorAll(".country-chip")).some(b => b.style.display !== "none");
+    const header = row.previousElementSibling;
+    if (header) header.style.display = any ? "" : "none";
+    row.style.display = any ? "" : "none";
+  });
+  const empty = root.querySelector(".country-picker-empty");
+  if (empty) empty.style.display = visible ? "none" : "block";
+}
+
+/** Alias für Settings / ältere Aufrufe */
+function renderCountryChipsHtml(selected, onclickName) {
+  return renderCountryPickerHtml(selected, onclickName, { uid: "countryPickerMain", maxHeight: "240px" });
+}
+
 function renderStartScreen(container) {
   if (!container) container = document.getElementById("appContent");
   if (!container) return;
 
   const currentProf = appState.profile || "adult";
   const sub = typeof getProfileSubtitle === "function" ? getProfileSubtitle(currentProf) : "";
+  const country = typeof getProfileCountry === "function" ? getProfileCountry() : "AT";
+  const countryName = typeof countryLabel === "function" ? countryLabel(country) : country;
 
   const catMeta = {
     adult: {
@@ -45,30 +143,42 @@ function renderStartScreen(container) {
   };
 
   const meta = catMeta[currentProf] || catMeta.adult;
+  const disclaimer = "Keine Therapie — nur Einkauf & Layering-Hilfe.";
 
   container.innerHTML = `
     <div class="welcome-box">
-      <div style="display:inline-flex;align-items:center;gap:6px;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ok);background:var(--ok-bg);padding:3px 9px;border-radius:99px;margin-bottom:0.6rem">
-        <span>🌿</span> Evidenzbasierter Routine-Check · DACH
+      <div class="start-eyebrow">
+        <span aria-hidden="true">🌿</span> Evidenzbasierter Routine-Check · EU-27 + DACH
       </div>
-      
-      <h1 style="font-family:'Iowan Old Style', Palatino, Georgia, serif;font-size:1.6rem;font-weight:700;line-height:1.2;margin:0 0 0.5rem;letter-spacing:-0.02em">
-        Schluss mit Fehlkäufen & Reiz-Chaos.
+
+      <h1 class="start-hero-title">
+        Schluss mit Fehlkäufen &amp; Reiz-Chaos.
       </h1>
-      
-      <p style="font-size:0.92rem;color:var(--muted);line-height:1.45;margin:0 0 1rem">
-        Prüfe deine Kosmetik in Sekunden auf Reiz-Stacking, Lücken und echte Verträglichkeit. Neutral, unabhängig & ohne Verkaufsabsicht.
+
+      <p class="start-hero-desc">
+        Prüfe deine Kosmetik in Sekunden auf Reiz-Stacking, Lücken und echte Verträglichkeit. Neutral, unabhängig &amp; ohne Verkaufsabsicht.
       </p>
 
-      <!-- Profil- & Kategoriewahl: Sichtbar, aber kompakt & nicht im Weg -->
-      <div style="margin-bottom:1.15rem;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span style="font-size:0.74rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.04em">
-            Kategorie wählen:
-          </span>
-          <span style="font-size:0.74rem;color:var(--muted);font-weight:600">
-            Aktiv: <strong>${meta.icon} ${meta.name}</strong>
-          </span>
+      <div class="start-disclaimer" role="note">
+        <span class="start-disclaimer-icon" aria-hidden="true">⚖️</span>
+        <span class="start-disclaimer-text">${disclaimer}</span>
+      </div>
+
+      <div class="start-profile-card" style="margin-bottom:0.75rem">
+        <div class="start-profile-head">
+          <span class="start-profile-label">1. In welchem Land einkaufen?</span>
+          <span class="start-profile-active">Aktiv: <strong>${country}</strong> · ${countryName}</span>
+        </div>
+        <p style="font-size:0.78rem;color:var(--muted);margin:0 0 0.45rem;line-height:1.4">
+          Alle <strong>27 EU-Länder</strong> (+ Schweiz/Norwegen/Island). Nur Produkte zeigen, die laut Katalog dort vorkommen. Vorschlag für Prim: <strong>AT</strong>.
+        </p>
+        ${renderCountryPickerHtml(country, "selectStartCountry", { uid: "startCountryPicker", maxHeight: "260px" })}
+      </div>
+
+      <div class="start-profile-card">
+        <div class="start-profile-head">
+          <span class="start-profile-label">2. Kategorie wählen</span>
+          <span class="start-profile-active">Aktiv: <strong>${meta.icon} ${meta.name}</strong></span>
         </div>
 
         <div class="start-pills-row">
@@ -86,14 +196,12 @@ function renderStartScreen(container) {
           </button>
         </div>
 
-        <div style="font-size:0.77rem;color:var(--muted);line-height:1.35;margin-top:4px">
+        <div class="start-profile-focus">
           ${sub ? `<strong>${sub}</strong> · ` : ''}${meta.focus}
         </div>
       </div>
 
-      <!-- Die zwei klaren Wege: Schrank füllen vs. Quiz -->
-      <div style="display:flex;flex-direction:column;gap:4px">
-        <!-- Hauptaktion 1: Schrank füllen -->
+      <div class="start-actions">
         <div class="start-action-card primary" onclick="switchScreen('cabinet')">
           <div class="start-action-icon">🧴</div>
           <div class="start-action-body">
@@ -107,7 +215,6 @@ function renderStartScreen(container) {
           </div>
         </div>
 
-        <!-- Hauptaktion 2: 1-Minuten-Quiz -->
         <div class="start-action-card secondary" onclick="openQuizModal()">
           <div class="start-action-icon">🌱</div>
           <div class="start-action-body">
@@ -122,21 +229,23 @@ function renderStartScreen(container) {
         </div>
       </div>
 
-      <!-- Sekundär-Aktion: Direkt Scan -->
-      <div style="text-align:center;margin-top:1.1rem;padding-top:0.85rem;border-top:1px solid var(--line)">
-        <button class="btn-text" style="font-size:0.84rem;color:var(--muted);font-weight:600" onclick="switchScreen('scan')">
+      <div class="start-secondary">
+        <button type="button" class="btn-text start-scan-link" onclick="switchScreen('scan')">
           📷 Oder Barcode direkt im Laden scannen →
         </button>
-      </div>
-
-      <div style="text-align:center;margin-top:1.2rem;font-size:0.75rem;color:var(--muted)">
-        ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
       </div>
     </div>
   `;
 }
 
-// Alias for backward compatibility
 function renderWelcome(container) {
   renderStartScreen(container);
+}
+
+if (typeof window !== "undefined") {
+  window.selectStartCountry = selectStartCountry;
+  window.renderCountryChipsHtml = renderCountryChipsHtml;
+  window.renderCountryPickerHtml = renderCountryPickerHtml;
+  window.filterCountryPicker = filterCountryPicker;
+  window.getProfileCountryOptionsList = getProfileCountryOptionsList;
 }

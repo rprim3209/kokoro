@@ -94,7 +94,7 @@ const TEEN_IDEAL_ROUTINE = [
   { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "t_item_24", title: "CeraVe Ausgleichender Reinigungsschaum", why: "Befreit von Talg & Schmutz ohne die Barriere anzugreifen · Ohne aggressives Alkohol-Gel" },
   { slotKey: "active", slotName: "2. Gezielter Wirkstoff", prodId: "t_item_52", title: "Eucerin DERMOPURE Klärendes Tonic", why: "Sanfte Salicylsäure (BHA) gegen Mitesser · Verhindert Pickel ohne aggressive Anti-Aging-Stoffe" },
   { slotKey: "creme", slotName: "3. Leichte Feuchtigkeit", prodId: "t_item_25", title: "CeraVe Feuchtigkeitsspendendes HA Water Gel", why: "Ölfreie Feuchtigkeit mit Hyaluron & Ceramiden – schützt vor Schuppen & Spannungsgefühl" },
-  { slotKey: "spf", slotName: "4. Täglicher Sonnenschutz", prodId: "t_ean_4005900261038", title: "NIVEA SUN Protect & Sensitive LSF 30", why: "Mattierender Schutz gegen Pickelmale (PIH) & UV-Schäden" }
+  { slotKey: "spf", slotName: "4. Täglicher Sonnenschutz", prodId: "t_item_17", title: "Bioderma Photoderm AKN Mat LSF 30", why: "Mattierender Schutz gegen Pickelmale (PIH) & UV-Schäden · DE/AT/EU" }
 ];
 
 function getSelectedIdealRoutineId() {

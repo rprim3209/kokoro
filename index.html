@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Kosmetikschrank — Evidenzbasierter Routine- & Schrank-Wächter</title>
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/screens.css">
+<link rel="stylesheet" href="css/style.css?v=20260909-land3">
+<link rel="stylesheet" href="css/screens.css?v=20260909-land3">
 </head>
 <body>
 
@@ -18,13 +18,13 @@
       Kosmetikschrank
       <span>Evidenzbasierter Wächter · DACH</span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div id="katalogStatusBadge" onclick="showKatalogStatusModal()" style="font-size:0.72rem;padding:3px 9px;border-radius:6px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:5px;background:#F7F4D5;color:#0A3323;border:1px solid rgba(10,51,35,0.25)" title="Katalog-Status">
-        <span style="font-size:0.6rem">●</span> <span id="katalogStatusText">Lade Katalog…</span>
+    <div class="header-badges">
+      <div id="katalogStatusBadge" class="katalog-badge" onclick="showKatalogStatusModal()" title="Katalog-Status">
+        <span aria-hidden="true" style="font-size:0.55rem">●</span> <span id="katalogStatusText">Lade Katalog…</span>
       </div>
-      <div class="guard-badge" id="btnGuardInfo">
-        <div class="pulse-dot"></div>
-        <span id="guardBadgeText">🛡️ Begleitpflege aktiv</span>
+      <div class="guard-badge" id="btnGuardInfo" title="Begleitpflege-Info">
+        <div class="pulse-dot" aria-hidden="true"></div>
+        <span id="guardBadgeText">Begleitpflege</span>
       </div>
     </div>
   </div>
@@ -67,16 +67,17 @@
 <div id="modalContainer"></div>
 
 <!-- Modular JavaScript Files -->
-<script src="js/catalog.js"></script>
-<script src="js/state.js"></script>
-<script src="js/rules.js"></script>
-<script src="js/ideal-routines.js"></script>
-<script src="js/screens/start.js"></script>
-<script src="js/screens/cabinet.js"></script>
-<script src="js/screens/scan.js"></script>
-<script src="js/screens/settings.js"></script>
-<script src="js/screens/quiz.js"></script>
-<script src="js/app.js"></script>
+<script src="js/catalog.js?v=20260909-land3"></script>
+<script src="js/live-retail.js?v=20260909-land3"></script>
+<script src="js/state.js?v=20260909-land3"></script>
+<script src="js/rules.js?v=20260909-land3"></script>
+<script src="js/ideal-routines.js?v=20260909-land3"></script>
+<script src="js/screens/start.js?v=20260909-land3"></script>
+<script src="js/screens/cabinet.js?v=20260909-land3"></script>
+<script src="js/screens/scan.js?v=20260909-land3"></script>
+<script src="js/screens/settings.js?v=20260909-land3"></script>
+<script src="js/screens/quiz.js?v=20260909-land3"></script>
+<script src="js/app.js?v=20260909-land3"></script>
 
 </body>
 </html>

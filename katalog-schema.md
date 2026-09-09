@@ -23,7 +23,7 @@ Die alten Dateien (`eu-flag-katalog-gesicht.csv`, `eu-baby-kind-katalog.csv`, `e
 | `katalog` | Welche Liste? `erwachsen_gesicht` · `baby_kind` · `jugend` |
 | `age_band` | Altersband (z. B. `baby_0_36m`, `tween_teen`, `erwachsen`) |
 | `slot` | Wohin in der Routine? z. B. Reiniger, Creme, SPF, Windel, Akne… |
-| `eu_countries` | In welchen Ländern (laut Quelle) gesehen |
+| `eu_countries` | In welchen Ländern (laut Quelle) gesehen — siehe [land-filter.md](./land-filter.md) (`|` / `;`, `EU` = breit verfügbar) |
 | `flag_fragrance_free` | `yes`/`no` — parfümfrei? |
 | `flag_nc` | `yes`/`no` — Hersteller sagt „nicht komedogen“? (Marketing, keine Garantie) |
 | `flag_cf` | `yes`/`no` — cruelty-free (z. B. CFI)? |
@@ -59,3 +59,8 @@ Shop-Daten (dm / Rossmann) anschließen → mehr EANs, dann Flags nachziehen.
 - `baby_kind`: **606**
 - `erwachsen_gesicht`: **168**
 - `jugend`: **96**
+
+
+## Länder-Filter (App)
+
+Siehe **[land-filter.md](./land-filter.md)**. Profil-Feld `country` (ISO2, Default `AT`) steuert, welche Produkte in Katalog & Vorschlägen erscheinen.

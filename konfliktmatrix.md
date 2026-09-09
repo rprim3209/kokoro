@@ -85,3 +85,17 @@ Wenn im Schrank ein Produkt mit `schiene: arzneimittel` liegt (Adapalen, Clienzo
 * Das System schaltet automatisch in den **Begleitpflege-Modus**.
 * Das oberste Ziel für alle Kosmetik-Kandidaten ist: **Barriere schützen, Feuchtigkeit sichern, Entzündungen beruhigen**.
 * Unnötige Reizstoffe (Alkohol, Peelingkörner, Menthol, Duftbomben) bekommen ein gelbes oder rotes Schutz-Signal.
+
+---
+
+## 6. Schrank-Ansicht (Intra-Cabinet)
+
+Stand: 2026-09-09
+
+Die **Schrank-** und **Eigene-Routine**-Ansicht prüft nicht nur Lücken (SPF, Feuchtigkeit) und Begleitpflege, sondern auch **Klassen-Konflikte zwischen allen Produkten im Profil-Schrank** (AM + alle PM-Modi):
+
+- `same_class`, `skip_stack`, `inactivate` → Ampel **Konflikt** (rot), sichtbar im Prognose-Banner und als Flag auf den Produktkarten
+- `alternate_days` / `split` → **eher nicht** / „im Wechsel“ (gelb)
+- Klassifizierung der Actives ist **klassen-allgemein** (`retinoid_rx` / `retinoid_cos` / `aha` / `bha` / `bpo` / …) über den gemeinsamen Helper `classifyProductClasses` / `enrichProductClasses` — keine Produkt-ID-Hacks
+
+Editorial unverändert: Shopping- & Layering-Hinweis, keine Therapie, keine Dosis.

@@ -153,6 +153,14 @@ const QUIZ_BEGINNER = [
     ]
   },
   {
+    q: "Wie verhält sich deine Haut nach Pickeln, Hautreizungen oder Mückenstichen?",
+    opts: [
+      { k: "Rötungen verblassen zügig", d: "Flüchtige Rötung (PIE), hinterlässt selten dauerhafte braune Flecken (typisch Fitzpatrick I–III)", tags: { pie_prone: 2 } },
+      { k: "Dunkle Flecken bleiben monatelang", d: "Post-inflammatorische Hyperpigmentierung (PIH): Pickel heilen braun/grau ab (typisch Fitzpatrick IV–VI / Melanin-reich)", tags: { "pih-prone": 3, "skin-of-color": 2 } },
+      { k: "Sonnenschutz hinterlässt oft Grauschleier", d: "Störender White-Cast bei LSF; Fokus auf transparente Formulierungen & Pigmentschutz", tags: { zero_white_cast_prio: 2, "skin-of-color": 2 } }
+    ]
+  },
+  {
     q: "Wie aufwendig soll deine tägliche Pflegeroutine sein?",
     opts: [
       { k: "Minimalistisch (2 Produkte)", d: "Morgens: Milde Reinigung & feuchtigkeitsspendender LSF 50+ · Abends: Milde Reinigung & Barrierepflege. Zeitaufwand: max. 2 Min.", tags: { complexity_minimal: 3 } },
@@ -213,6 +221,14 @@ const QUIZ_PRO = [
       { k: "Duftstoffe & Alkohol", d: "Limonene, Linalool, Parfüm & austrocknender Alkohol denat.", tags: { duftstofffrei: 1 } },
       { k: "Cruelty-Free", d: "Offizielle Leaping Bunny oder PETA Zertifizierung", tags: { cruelty_free: 1 } },
       { k: "Keine Filter", d: "Hauptsache wissenschaftlich und evidenzbasiert belegt", tags: {} }
+    ]
+  },
+  {
+    q: "Neigst du zu hartnäckigen Pigmentflecken, Melasma oder post-inflammatorischer Hyperpigmentierung (PIH)?",
+    opts: [
+      { k: "Kaum Pigmentprobleme", d: "Fokus liegt auf Barriere, Textur und Standard-UV-Schutz", tags: {} },
+      { k: "Ja, starke PIH / Melasma", d: "Reaktive Melanozyten · Schutz vor sichtbarem Licht (Eisenoxide) & Tyrosinasehemmer (Azelainsäure, Niacinamid) bevorzugt", tags: { "pih-prone": 3, "skin-of-color": 2, iron_oxide_prio: 2 } },
+      { k: "White-Cast & Reizempfindlich", d: "Mineralische Filter hinterlassen Grauschleier, Säuren triggern Rebound-Pigmentierung", tags: { "pih-prone": 2, "skin-of-color": 3, zero_white_cast_prio: 3 } }
     ]
   },
   {
@@ -509,6 +525,12 @@ function finishQuiz() {
   // Unreinheiten:
   if ((scores["akne-prone"] || 0) >= 2) newTags.push("Akne-prone");
   if ((scores["arzt-thema"] || 0) >= 1) newTags.push("Arzt-Thema");
+
+  // Melanin & Pigmentierung (Skin of Color / Fitzpatrick IV-VI / PIH):
+  if ((scores["pih-prone"] || 0) >= 2) newTags.push("PIH-prone");
+  if ((scores["skin-of-color"] || 0) >= 2) newTags.push("Skin-of-Color");
+  if ((scores["zero_white_cast_prio"] || 0) >= 2) newTags.push("Zero-White-Cast");
+  if ((scores["iron_oxide_prio"] || 0) >= 2) newTags.push("Eisenoxid-Schutz");
 
   // Filter & Werte:
   if (scores.duftstofffrei) newTags.push("Parfümfrei");

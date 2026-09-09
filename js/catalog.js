@@ -11,8 +11,8 @@ const DB = {
   
   ha: { id:"ha", name:"Hyaluronic Acid Serum", brand:"Good Molecules", kat:"serum", schiene:"support", klassen:["humectant"], shape:"serum", c:"#6aa8c9", wirk:"Hyaluron Feuchte", nc:true, ff:true, cf:true, cf_basis:"Leaping Bunny", store:"Online / Import (~12 €)" },
   
-  aza: { id:"aza", name:"Azelaic Acid Suspension 10%", brand:"The Ordinary", kat:"serum", schiene:"kosmetik", klassen:["azelaic"], shape:"serum", c:"#d9c488", wirk:"Azelainsäure 10%", nc:true, ff:true, cf:true, cf_basis:"Leaping Bunny", store:"Douglas / dm (~12 €)", truth:"10% Azelain ist mild keratolytisch und rötungsmindernd. Keine 15-20% Rx-Wirkung, aber gut verträglich." },
-  apad: { id:"apad", name:"aPAD 20% Azelaic Derivat", brand:"Geek & Gorgeous", kat:"serum", schiene:"kosmetik", klassen:["azelaic"], shape:"serum", c:"#d4bf7b", wirk:"PAD (Azelain-Derivat)", nc:true, ff:true, cf:true, cf_basis:"Cruelty-Free", store:"dm / Online (~10,50 €)" },
+  aza: { id:"aza", name:"Azelaic Acid Suspension 10%", brand:"The Ordinary", kat:"serum", schiene:"kosmetik", klassen:["azelaic"], shape:"serum", c:"#d9c488", wirk:"Azelainsäure 10%", nc:true, ff:true, cf:true, cf_basis:"Leaping Bunny", store:"Douglas / dm (~12 €)", pih:true, truth:"10% Azelain ist mild keratolytisch und rötungsmindernd. Keine 15-20% Rx-Wirkung, aber gut verträglich." },
+  apad: { id:"apad", name:"aPAD 20% Azelaic Derivat", brand:"Geek & Gorgeous", kat:"serum", schiene:"kosmetik", klassen:["azelaic"], shape:"serum", c:"#d4bf7b", wirk:"PAD (Azelain-Derivat)", nc:true, ff:true, cf:true, cf_basis:"Cruelty-Free", store:"dm / Online (~10,50 €)", pih:true, truth:"Evidenzbasierter Tyrosinasehemmer: Reduziert post-inflammatorische Hyperpigmentierung (PIH) sanft ohne Barriere-Stress." },
 
   adap: { id:"adap", name:"Adapalen Gel (0.1%)", brand:"Arzneimittel (Rx)", kat:"active", schiene:"arzneimittel", klassen:["retinoid_rx"], shape:"tube", c:"#58408a", wirk:"Adapalen (Rx-Retinoid)", rx:true, nc:true, ff:true, store:"Nur auf Rezept", truth:"Photostabil, stark gegen Komedonen. Nicht mit frei gestapeltem BPO oder starken Säuren kombinieren!" },
   clienzo: { id:"clienzo", name:"Clienzo Gel (Clindamycin + BPO)", brand:"Arzneimittel (Rx)", kat:"spot", schiene:"arzneimittel", klassen:["ab_top","bpo"], shape:"tube", c:"#3d5a80", wirk:"BPO 5% + Clinda 1%", rx:true, nc:true, ff:true, store:"Nur auf Rezept", truth:"Feste Galenik gegen Papeln/Pusteln. Bleicht Kissen. Wechsel mit Adapalen schont die Barriere." },
@@ -22,23 +22,24 @@ const DB = {
   ceraveMoist: { id:"ceraveMoist", name:"Feuchtigkeitsspendende Creme", brand:"CeraVe", kat:"creme", schiene:"support", klassen:["support"], shape:"jar", c:"#8ec4e6", wirk:"3 Ceramide + MVE", nc:true, ff:true, cf:false, store:"dm / Apotheke (~12 €)" },
   sebium: { id:"sebium", name:"Sébium Hydra Begleitpflege", brand:"Bioderma", kat:"creme", schiene:"support", klassen:["support"], shape:"jar", c:"#8fc9c0", wirk:"Akne-Begleitpflege", nc:true, ff:true, cf:false, store:"Apotheke (~16 €)" },
 
-  anthelios: { id:"anthelios", name:"Anthelios UVMune 400 LSF 50+", brand:"La Roche-Posay", kat:"spf", schiene:"support", klassen:["uv"], shape:"tube", c:"#e6c86e", wirk:"Mexoryl 400 UV-Schutz", nc:true, ff:true, cf:false, store:"Apotheke (~19 €)" },
-  baleaSpf: { id:"baleaSpf", name:"Ultra Sensitive Sonnenfluid LSF 50+", brand:"Balea Med", kat:"spf", schiene:"support", klassen:["uv"], shape:"tube", c:"#ecd37b", wirk:"EU Breitbandfilter", nc:true, ff:true, cf:false, store:"dm (~5,95 €)" },
+  anthelios: { id:"anthelios", name:"Anthelios UVMune 400 LSF 50+", brand:"La Roche-Posay", kat:"spf", schiene:"support", klassen:["uv"], shape:"tube", c:"#e6c86e", wirk:"Mexoryl 400 UV-Schutz", nc:true, ff:true, cf:false, no_white_cast:true, store:"Apotheke (~19 €)", truth:"Sehr hohe Breitband-Absorption bis 400nm (Ultra-lange UVA-Strahlen). Zieht rückstandslos ohne Grauschleier ein." },
+  antheliosTinted: { id:"antheliosTinted", name:"Anthelios UVMune 400 Getöntes Fluid LSF 50+", brand:"La Roche-Posay", kat:"spf", schiene:"support", klassen:["uv"], shape:"tube", c:"#d4a359", wirk:"Mexoryl 400 + Eisenoxide", nc:true, ff:true, cf:false, iron_ox:true, no_white_cast:true, pih:true, countries:["DE","AT","FR","EU"], store:"Apotheke (~21 € · DE, AT, EU)", truth:"Enthält Eisenoxide (CI 77491, 77492, 77499) für nachgewiesenen Schutz vor sichtbarem Licht (HEV / Blue Light) — dermatologischer Goldstandard zur Vorbeugung von Melasma und PIH.", notes:"Empfohlen von AAD & EADV bei Fitzpatrick IV–VI zur Vermeidung sichtlicht-induzierter Hyperpigmentierung." },
+  baleaSpf: { id:"baleaSpf", name:"Ultra Sensitive Sonnenfluid LSF 50+", brand:"Balea Med", kat:"spf", schiene:"support", klassen:["uv"], shape:"tube", c:"#ecd37b", wirk:"EU Breitbandfilter", nc:true, ff:true, cf:false, no_white_cast:true, store:"dm (~5,95 €)", truth:"Sehr leichtes, transparentes Fluid ohne Weißeln / White-Cast. Reizarm & parfümfrei." },
 
   // Additional DACH Drugstore & Pharmacy Staples
   isanaWash: { id:"isanaWash", name:"Pure Reinigungsschaum", brand:"Isana", kat:"reiniger", schiene:"support", klassen:[], shape:"pump", c:"#7ebbc4", wirk:"Milde Tenside", nc:true, ff:true, cf:false, store:"Rossmann (~2,95 €)", truth:"Günstig, reizarm und ohne Parfüm." },
   isanaCreme: { id:"isanaCreme", name:"Pure Feuchtigkeitscreme", brand:"Isana", kat:"creme", schiene:"support", klassen:["support"], shape:"tube", c:"#99c2b4", wirk:"Niacinamid + Panthenol", nc:true, ff:true, cf:false, store:"Rossmann (~3,95 €)", truth:"Leichte Formulierung, perfekt als unkomplizierte Basispflege." },
   mixaPanthenol: { id:"mixaPanthenol", name:"Panthenol Comfort SOS Creme", brand:"Mixa", kat:"creme", schiene:"support", klassen:["support"], shape:"jar", c:"#7da8cc", wirk:"13% Glycerin + Panthenol", nc:true, ff:true, cf:false, store:"dm / Rossmann (~6,95 €)", truth:"Hervorragend zur Regeneration einer gestressten Barriere." },
   noHydrator: { id:"noHydrator", name:"120h Liquid Hydrator", brand:"Nø Cosmetics", kat:"serum", schiene:"support", klassen:["humectant"], shape:"pump", c:"#6bb5a3", wirk:"Panthenol + Ectoin", nc:true, ff:true, cf:true, cf_basis:"PETA Approved", store:"dm / Rossmann (~9,95 €)", truth:"Spendet tiefenwirksam Feuchtigkeit ohne die Poren zu belasten." },
-  bbomb: { id:"bbomb", name:"B-Bomb 10% Niacinamide Serum", brand:"Geek & Gorgeous", kat:"serum", schiene:"kosmetik", klassen:["niacinamide"], shape:"serum", c:"#b5b89a", wirk:"Niacinamid 10% + Zink", nc:true, ff:true, cf:true, cf_basis:"Cruelty-Free", store:"dm / Online (~8,50 €)", truth:"Sehr leichte Textur, mattiert und reguliert Sebum." },
-  skinoren: { id:"skinoren", name:"Skinoren 15% / 20% Gel", brand:"Arzneimittel (Rx)", kat:"active", schiene:"arzneimittel", klassen:["azelaic"], shape:"tube", c:"#c2a759", wirk:"Azelainsäure 15–20%", rx:true, nc:true, ff:true, store:"Nur auf Rezept", truth:"Medizinische Azelainsäure ist stark antientzündlich und hemmt Pickelmale (PIH). Sehr gut verträglich." },
+  bbomb: { id:"bbomb", name:"B-Bomb 10% Niacinamide Serum", brand:"Geek & Gorgeous", kat:"serum", schiene:"kosmetik", klassen:["niacinamide"], shape:"serum", c:"#b5b89a", wirk:"Niacinamid 10% + Zink", nc:true, ff:true, cf:true, cf_basis:"Cruelty-Free", store:"dm / Online (~8,50 €)", pih:true, truth:"Sehr leichte Textur, hemmt den Melanosomen-Transfer und reduziert post-inflammatorische Flecken (PIH)." },
+  skinoren: { id:"skinoren", name:"Skinoren 15% / 20% Gel", brand:"Arzneimittel (Rx)", kat:"active", schiene:"arzneimittel", klassen:["azelaic"], shape:"tube", c:"#c2a759", wirk:"Azelainsäure 15–20%", rx:true, nc:true, ff:true, pih:true, store:"Nur auf Rezept", truth:"Medizinische Azelainsäure ist stark antientzündlich und hemmt Pickelmale (PIH). Sehr gut verträglich." },
   epiduo: { id:"epiduo", name:"Epiduo 0.1% / 2.5% Gel", brand:"Arzneimittel (Rx)", kat:"active", schiene:"arzneimittel", klassen:["retinoid_rx", "bpo"], shape:"tube", c:"#4a3c6d", wirk:"Adapalen + BPO Kombi", rx:true, nc:true, ff:true, store:"Nur auf Rezept", truth:"Leitlinien-Goldstandard: Kombiniert Porenregulierung mit antibakteriellem BPO in einer formulierten Galenik." },
 
   // Candidates for scanning simulation
-  glycolic: { id:"glycolic", name:"Glycolic Acid 7% Toning Solution", brand:"The Ordinary", kat:"serum", schiene:"kosmetik", klassen:["aha"], shape:"serum", c:"#e07a68", wirk:"AHA Glykolsäure 7%", ff:true, cf:true, cf_basis:"Leaping Bunny", store:"Douglas / dm (~14 €)", truth:"7% Glykol peelt intensiv und senkt den pH. Zusammen mit Adapalen am selben Abend droht Barriereschaden. Nur an behandlungsfreien Abenden verwenden!" },
+  glycolic: { id:"glycolic", name:"Glycolic Acid 7% Toning Solution", brand:"The Ordinary", kat:"serum", schiene:"kosmetik", klassen:["aha"], shape:"serum", c:"#e07a68", wirk:"AHA Glykolsäure 7%", ff:true, cf:true, cf_basis:"Leaping Bunny", store:"Douglas / dm (~14 €)", truth:"7% Glykol peelt intensiv und senkt den pH. Zusammen mit Adapalen am selben Abend droht Barriereschaden. Bei PIH-Neigung Vorsicht vor Rebound-Hyperpigmentierung!" },
   bha: { id:"bha", name:"Skin Perfecting 2% BHA Liquid", brand:"Paula's Choice", kat:"serum", schiene:"kosmetik", klassen:["bha"], shape:"serum", c:"#3d7b56", wirk:"Salicylsäure 2%", nc:true, ff:true, cf:true, cf_basis:"Leaping Bunny", store:"Douglas / Online (~39 €)", truth:"Dringt fettlöslich in die Pore ein. Nicht am selben Abend wie Adapalen schichten! Als Skin Cycling an Säure-Abenden hervorragend." },
   retinol: { id:"retinol", name:"Retinol 0.2% in Squalane", brand:"The Ordinary", kat:"serum", schiene:"kosmetik", klassen:["retinoid_cos"], shape:"serum", c:"#c8a268", wirk:"Kosmetisches Retinol", ff:true, cf:true, cf_basis:"Leaping Bunny", store:"dm / Online (~9 €)", truth:"Du nutzt bereits Adapalen (Rx). Ein zusätzliches kosmetisches Retinol bringt null Mehrwert, sondern schält nur die Haut ab." },
-  nia10: { id:"nia10", name:"Niacinamide 10% + Zinc 1%", brand:"The Ordinary", kat:"serum", schiene:"kosmetik", klassen:["niacinamide"], shape:"serum", c:"#e3e1cb", wirk:"Niacinamid 10%", ff:true, cf:true, cf_basis:"Leaping Bunny", store:"dm (~7 €)", truth:"Wissenschaftliche Studien zeigen Wirksamkeit bei 2–5%. 10% erhöht bei sensibler Haut vor allem das Risiko für Rötung und Reizung." },
+  nia10: { id:"nia10", name:"Niacinamide 10% + Zinc 1%", brand:"The Ordinary", kat:"serum", schiene:"kosmetik", klassen:["niacinamide"], shape:"serum", c:"#e3e1cb", wirk:"Niacinamid 10%", ff:true, cf:true, cf_basis:"Leaping Bunny", pih:true, store:"dm (~7 €)", truth:"Wissenschaftliche Studien zeigen Wirksamkeit bei 2–5%. 10% hemmt Melanin-Transfer gegen Pickelmale, kann bei empfindlicher Haut aber vorübergehend Rötungen triggern." },
   cleanGlow: { id:"cleanGlow", name:"Glow Miracle Zitrus Peeling-Öl", brand:"Clean Beauty Co.", kat:"serum", schiene:"kosmetik", klassen:["barrier_stress"], shape:"serum", c:"#e69f43", wirk:"Ätherische Öle & Duftstoffe", ff:false, nc:false, cf:true, store:"Douglas (~24 €)", truth:"Enthält Limonene, Linalool und Zitrusöle. Bei aktiver Adapalen-Therapie ein garantierter Reiz-Trigger für deine Barriere!" }
 };
 
@@ -1389,6 +1390,440 @@ Object.keys(TEEN_DB).forEach(id => {
 
 // State
 
+
+
+// ==========================================
+// Länder-Filter (eu_countries → countries[])
+// Annahme Seeds ohne Land: DE|AT|CH (DACH-Demo) — siehe land-filter.md
+// EU-Tag = überall verfügbar, sobald ein Land gewählt ist.
+// ==========================================
+
+const SEED_DEFAULT_COUNTRIES = ["DE", "AT", "CH"];
+
+const PROFILE_COUNTRY_OPTIONS = [
+  // EU-27 fully + EFTA
+  { code: "AT", label: "Österreich", group: "EU" },
+  { code: "BE", label: "Belgien", group: "EU" },
+  { code: "BG", label: "Bulgarien", group: "EU" },
+  { code: "HR", label: "Kroatien", group: "EU" },
+  { code: "CY", label: "Zypern", group: "EU" },
+  { code: "CZ", label: "Tschechien", group: "EU" },
+  { code: "DK", label: "Dänemark", group: "EU" },
+  { code: "EE", label: "Estland", group: "EU" },
+  { code: "FI", label: "Finnland", group: "EU" },
+  { code: "FR", label: "Frankreich", group: "EU" },
+  { code: "DE", label: "Deutschland", group: "EU" },
+  { code: "GR", label: "Griechenland", group: "EU" },
+  { code: "HU", label: "Ungarn", group: "EU" },
+  { code: "IE", label: "Irland", group: "EU" },
+  { code: "IT", label: "Italien", group: "EU" },
+  { code: "LV", label: "Lettland", group: "EU" },
+  { code: "LT", label: "Litauen", group: "EU" },
+  { code: "LU", label: "Luxemburg", group: "EU" },
+  { code: "MT", label: "Malta", group: "EU" },
+  { code: "NL", label: "Niederlande", group: "EU" },
+  { code: "PL", label: "Polen", group: "EU" },
+  { code: "PT", label: "Portugal", group: "EU" },
+  { code: "RO", label: "Rumänien", group: "EU" },
+  { code: "SK", label: "Slowakei", group: "EU" },
+  { code: "SI", label: "Slowenien", group: "EU" },
+  { code: "ES", label: "Spanien", group: "EU" },
+  { code: "SE", label: "Schweden", group: "EU" },
+  { code: "CH", label: "Schweiz", group: "EFTA" },
+  { code: "NO", label: "Norwegen", group: "EFTA" },
+  { code: "IS", label: "Island", group: "EFTA" },
+];
+
+function parseEuCountries(raw) {
+  if (Array.isArray(raw)) {
+    return raw.map(function (c) { return String(c || "").trim().toUpperCase(); })
+      .filter(function (c) { return /^[A-Z]{2}$/.test(c) || c === "EU"; });
+  }
+  if (raw == null) return [];
+  var s = String(raw).trim();
+  if (!s) return [];
+  return s.split(/[|;,\s\/]+/)
+    .map(function (c) { return c.trim().toUpperCase(); })
+    .filter(function (c) { return /^[A-Z]{2}$/.test(c) || c === "EU"; });
+}
+
+function normalizeProductCountries(p, defaultCodes) {
+  if (!p || typeof p !== "object") return p;
+  var list = parseEuCountries(p.countries);
+  if (!list.length && p.eu_countries) list = parseEuCountries(p.eu_countries);
+  if (!list.length && p.store) {
+    var store = String(p.store);
+    var m = store.match(/\(([A-Za-z0-9\s,;|/·.-]+)\)/);
+    if (m) list = parseEuCountries(m[1]);
+    if (!list.length) {
+      // z.B. "Avène · FR" / "7th Heaven · NL"
+      var m2 = store.match(/·\s*([A-Z]{2}(?:\s*[,;/|]\s*[A-Z]{2}|EU)*)\s*$/i);
+      if (m2) list = parseEuCountries(m2[1]);
+    }
+  }
+  if (!list.length) {
+    list = (defaultCodes && defaultCodes.length) ? defaultCodes.slice() : SEED_DEFAULT_COUNTRIES.slice();
+    p._countriesDefaulted = true;
+  } else {
+    p._countriesDefaulted = false;
+  }
+  p.countries = list;
+  return p;
+}
+
+function ensureCatalogCountries() {
+  if (typeof DB === "object" && DB) {
+    Object.keys(DB).forEach(function (id) {
+      normalizeProductCountries(DB[id], SEED_DEFAULT_COUNTRIES);
+    });
+  }
+  if (typeof BABY_DB === "object" && BABY_DB) {
+    Object.keys(BABY_DB).forEach(function (id) {
+      // Offline-Seeds ohne Land: EU (breit), CSV überschreibt später mit echten Codes
+      normalizeProductCountries(BABY_DB[id], ["EU"]);
+    });
+  }
+  if (typeof TEEN_DB === "object" && TEEN_DB) {
+    Object.keys(TEEN_DB).forEach(function (id) {
+      normalizeProductCountries(TEEN_DB[id], SEED_DEFAULT_COUNTRIES);
+    });
+  }
+  if (typeof EU_FLAG_CATALOG === "object" && EU_FLAG_CATALOG) {
+    Object.keys(EU_FLAG_CATALOG).forEach(function (id) {
+      normalizeProductCountries(EU_FLAG_CATALOG[id], ["EU"]);
+    });
+  }
+}
+
+function productCountriesUnknown(p) {
+  if (!p) return true;
+  var list = parseEuCountries(p.countries);
+  return list.length === 0;
+}
+
+function productAvailableInCountry(p, cc, opts) {
+  opts = opts || {};
+  if (!cc) return true;
+  var code = String(cc).trim().toUpperCase();
+  if (!code) return true;
+  var list = parseEuCountries(p && p.countries);
+  if (!list.length) {
+    if (opts.includeUnknown) return true;
+    if (opts.hideUnknown === false) return true;
+    return false;
+  }
+  if (list.indexOf("EU") !== -1) return true;
+  return list.indexOf(code) !== -1;
+}
+
+function filterProductsByCountry(list, cc, opts) {
+  opts = opts || {};
+  var arr = Array.isArray(list) ? list : [];
+  if (!cc) return arr.slice();
+  var hideUnknown = (opts.hideUnknown !== undefined)
+    ? !!opts.hideUnknown
+    : (typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : true);
+  return arr.filter(function (p) {
+    return productAvailableInCountry(p, cc, { hideUnknown: hideUnknown, includeUnknown: !hideUnknown });
+  });
+}
+
+function filterProductIdsByCountry(ids, dbMap, cc, opts) {
+  opts = opts || {};
+  var hideUnknown = (opts.hideUnknown !== undefined)
+    ? !!opts.hideUnknown
+    : (typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : true);
+  var map = dbMap || {};
+  var code = cc || (typeof getProfileCountry === "function" ? getProfileCountry() : "");
+  var kept = [];
+  var hiddenUnknown = 0;
+  var hiddenCountry = 0;
+  (ids || []).forEach(function (id) {
+    var p = map[id];
+    if (!p) { kept.push(id); return; }
+    var list = parseEuCountries(p.countries);
+    if (!code) { kept.push(id); return; }
+    if (!list.length) {
+      if (hideUnknown) hiddenUnknown++;
+      else kept.push(id);
+      return;
+    }
+    if (productAvailableInCountry(p, code, { hideUnknown: false })) kept.push(id);
+    else hiddenCountry++;
+  });
+  return { ids: kept, hiddenUnknown: hiddenUnknown, hiddenCountry: hiddenCountry, total: (ids || []).length };
+}
+
+function countryFilterNoteHtml(stats, cc) {
+  if (!cc || !stats) return "";
+  var parts = [];
+  if (stats.hiddenCountry > 0) parts.push(stats.hiddenCountry + " nicht in " + cc);
+  if (stats.hiddenUnknown > 0) parts.push(stats.hiddenUnknown + " Land offen ausgeblendet");
+  if (!parts.length) return "";
+  return '<div style="font-size:0.72rem;color:var(--muted);margin:4px 0 8px;line-height:1.35">🌍 Filter ' + cc + ': ' + parts.join(" · ") + '. <button type="button" class="btn-text" style="font-size:0.72rem;padding:0;text-decoration:underline;color:#2563eb" onclick="toggleHideUnknownCountries()">Unklare Herkunft ' + (typeof shouldHideUnknownCountries === "function" && shouldHideUnknownCountries() ? "einblenden" : "ausblenden") + "</button></div>";
+}
+
+function getLiveDmHonesty(cc) {
+  var code = String(cc || (typeof getProfileCountry === "function" ? getProfileCountry() : "") || "").toUpperCase();
+  if (!code || code === "DE") {
+    return { short: "Live dm = Deutschland-Shop", badge: null, showWarn: false };
+  }
+  return {
+    short: "Live dm = Deutschland-Shop",
+    badge: "Shop: DE — Verfügbarkeit in " + code + " ggf. anders",
+    showWarn: true
+  };
+}
+
+function liveDmHonestyBadgeHtml(cc) {
+  var h = getLiveDmHonesty(cc);
+  if (!h.showWarn) {
+    return '<span class="tag" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-size:0.65rem;padding:1px 5px">Live dm · DE-Shop</span>';
+  }
+  return '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px" title="' + h.short + '">' + h.badge + "</span>";
+}
+
+function pickCountryAvailableId(preferredIds, dbMap, slot) {
+  var cc = typeof getProfileCountry === "function" ? getProfileCountry() : "";
+  var map = dbMap || {};
+  var prefs = preferredIds || [];
+  for (var i = 0; i < prefs.length; i++) {
+    var p = map[prefs[i]];
+    if (p && productAvailableInCountry(p, cc, { hideUnknown: false })) return prefs[i];
+  }
+  if (slot) {
+    var keys = Object.keys(map);
+    for (var j = 0; j < keys.length; j++) {
+      var q = map[keys[j]];
+      if (!q) continue;
+      if (slot && q.slot && q.slot !== slot && !(slot === "reiniger" && (q.slot === "bad" || q.slot === "reiniger"))) continue;
+      if (productAvailableInCountry(q, cc, { hideUnknown: true })) return keys[j];
+    }
+  }
+  return prefs[0] || null;
+}
+
+if (typeof window !== "undefined") {
+  window.parseEuCountries = parseEuCountries;
+  window.normalizeProductCountries = normalizeProductCountries;
+  window.ensureCatalogCountries = ensureCatalogCountries;
+  window.productAvailableInCountry = productAvailableInCountry;
+  window.filterProductsByCountry = filterProductsByCountry;
+  window.filterProductIdsByCountry = filterProductIdsByCountry;
+  window.countryFilterNoteHtml = countryFilterNoteHtml;
+  window.getLiveDmHonesty = getLiveDmHonesty;
+  window.liveDmHonestyBadgeHtml = liveDmHonestyBadgeHtml;
+  window.pickCountryAvailableId = pickCountryAvailableId;
+  window.PROFILE_COUNTRY_OPTIONS = PROFILE_COUNTRY_OPTIONS;
+  window.SEED_DEFAULT_COUNTRIES = SEED_DEFAULT_COUNTRIES;
+}
+
+// Seeds / Offline-Katalog einmal normalisieren
+ensureCatalogCountries();
+
+// ==========================================
+// Shared active-class classifier (CSV / dm / seeds / custom)
+// Maps name + wirk + existing klassen → matrix classes.
+// Remaps bare "retinoid" → retinoid_cos (or retinoid_rx if Rx).
+// ==========================================
+
+function _classifyBlob(p) {
+  return String((p && p.name) || "") + " " +
+    String((p && p.wirk) || "") + " " +
+    String((p && p.brand) || "") + " " +
+    String((p && p.notes) || "");
+}
+
+function classifyProductClasses(p) {
+  p = p || {};
+  var blob = _classifyBlob(p)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  var existing = Array.isArray(p.klassen) ? p.klassen.slice() : [];
+  var out = {};
+
+  function add(k) {
+    if (k) out[k] = true;
+  }
+  function hasOut(k) {
+    return !!out[k];
+  }
+  function del(k) {
+    delete out[k];
+  }
+
+  existing.forEach(function (k) {
+    if (!k || k === "retinoid") return;
+    add(k);
+  });
+
+  var isRxRetName =
+    /\b(adapalen|adapalene|tretinoin|trifaroten|trifarotene|tazaroten|tazarotene)\b/.test(blob) ||
+    /\b(epiduo|differin|retin-?a\b|acnatac|clienzo)\b/.test(blob);
+  var isCosRetName =
+    /\b(retinol|retinaldehyd|retinaldehyde|retinal|retinyl|retistar|a-game)\b/.test(blob);
+
+  var hadBareRetinoid = existing.indexOf("retinoid") !== -1;
+  var hadRx = existing.indexOf("retinoid_rx") !== -1;
+  var hadCos = existing.indexOf("retinoid_cos") !== -1;
+
+  if (isRxRetName || hadRx || (p.rx && (isCosRetName || hadBareRetinoid || hadCos))) {
+    add("retinoid_rx");
+    del("retinoid_cos");
+  } else if (isCosRetName || hadCos || hadBareRetinoid) {
+    add("retinoid_cos");
+  }
+
+  if (/\b(glycol|glykol|lactic|milchsaure|mandel|mandelic|\baha\b|fruchtsaure)/.test(blob)) add("aha");
+  // Leave-on BHA signal; skip plain wash/cleanser names unless explicitly BHA/serum
+  if (/\b(salicyl|\bbha\b|lipohydroxy|\blha\b)/.test(blob)) {
+    if (!/\b(waschgel|waschschaum|reinigungsschaum|cleanser|waschcreme)\b/.test(blob) ||
+        /\b(serum|liquid|toner|tonic|peeling|leave-?on|\bbha\b)/.test(blob)) {
+      add("bha");
+    }
+  }
+  if (/\b(benzoyl|benzoylperoxid|\bbpo\b)/.test(blob)) add("bpo");
+  if (/\b(ascorb|vitamin\s*c|vit\.?\s*c|\bl-aa\b|ethyl.?ascorb|ascorbyl|c-glow)\b/.test(blob)) add("ascorbic");
+  if (/\b(azelain|azelaic|\bapad\b|azelains)/.test(blob)) add("azelaic");
+  if (/\b(niacinamid)/.test(blob)) add("niacinamide");
+  if (/\b(clindamycin|erythromycin|\bclinda\b)/.test(blob)) add("ab_top");
+  if (/\b(clascoteron|winlevi)/.test(blob)) add("clascoterone");
+  if (/\b(hydrochinon|hydroquinone)/.test(blob)) add("hq_banned");
+
+  var looksWash = /\b(wasch|reinig|cleanser|mizellen|schaum|gel moussant|savon)\b/.test(blob);
+  var looksSerum = /(serum|konzentrat|concentrate)/.test(blob);
+  var looksSpf =
+    /\b(spf\s*\d|lsf\s*\d|sonnenschutz|sunscreen|uv\s*mune|breitbandfilter|sun\s*lotion|sun\s*fluid)\b/.test(blob) ||
+    /\b(gesichtscreme sonnenschutz)\b/.test(blob);
+  var looksActive =
+    hasOut("retinoid_cos") ||
+    hasOut("retinoid_rx") ||
+    hasOut("aha") ||
+    hasOut("bha") ||
+    hasOut("bpo") ||
+    hasOut("ascorbic") ||
+    hasOut("azelaic");
+
+  var kat = p.kat || null;
+  if (looksWash && !looksActive) kat = "reiniger";
+  else if (looksActive && !looksSpf) {
+    if (hasOut("retinoid_rx") || hasOut("bpo")) kat = p.kat === "spot" ? "spot" : "active";
+    else kat = looksSerum || p.kat === "serum" ? "serum" : (p.kat === "active" ? "active" : "serum");
+  } else if (looksSpf && !looksActive) kat = "spf";
+  else if (looksSerum) kat = "serum";
+  else if (!kat) kat = "creme";
+
+  if (kat === "spf" || looksSpf) {
+    add("uv");
+  }
+
+  // Wrong CSV slot basis_spf on retinal/retinol serums → correct
+  if ((p.kat === "spf" || kat === "spf") && looksActive && !looksSpf) {
+    kat = looksSerum ? "serum" : "active";
+    del("uv");
+  }
+  // Name sagt Serum, CSV/Heuristik hat nur generic creme
+  if (looksSerum && looksActive && (kat === "creme" || !kat)) {
+    kat = "serum";
+  }
+
+  if (looksActive) {
+    del("support");
+    del("humectant");
+    if (!looksSpf) del("uv");
+  }
+
+  var schiene = p.schiene || "support";
+  var rx = !!p.rx;
+  if (hasOut("retinoid_rx") || isRxRetName) {
+    rx = true;
+    schiene = "arzneimittel";
+  } else if (looksActive && schiene === "support") {
+    schiene = "kosmetik";
+  } else if (looksActive && schiene === "active") {
+    schiene = "kosmetik";
+  }
+
+  var wirkHint = null;
+  if (hasOut("retinoid_rx") && /adapalen/.test(blob)) wirkHint = "Adapalen (Rx-Retinoid)";
+  else if (hasOut("retinoid_rx") && /tretinoin/.test(blob)) wirkHint = "Tretinoin (Rx-Retinoid)";
+  else if (hasOut("retinoid_rx")) wirkHint = "Rx-Retinoid";
+  else if (hasOut("retinoid_cos") && /retinal/.test(blob)) wirkHint = "Retinal (kosmetisches Retinoid)";
+  else if (hasOut("retinoid_cos")) wirkHint = "Retinol (kosmetisches Retinoid)";
+  else if (hasOut("aha")) wirkHint = "AHA-Fruchtsäure";
+  else if (hasOut("bha")) wirkHint = "BHA / Salicylsäure";
+  else if (hasOut("bpo")) wirkHint = "Benzoylperoxid (BPO)";
+  else if (hasOut("ascorbic")) wirkHint = "Vitamin C / Ascorbinsäure";
+  else if (hasOut("azelaic")) wirkHint = "Azelainsäure";
+
+  return {
+    klassen: Object.keys(out),
+    kat: kat,
+    schiene: schiene,
+    rx: rx,
+    wirkHint: wirkHint,
+    looksActive: looksActive
+  };
+}
+
+function enrichProductClasses(p) {
+  if (!p || typeof p !== "object") return p;
+  var result = classifyProductClasses(p);
+  p.klassen = result.klassen;
+
+  var prevKat = p.kat;
+  if (result.kat && (
+    !prevKat ||
+    prevKat === "spf" && result.kat !== "spf" ||
+    (prevKat === "creme" || prevKat === "support") && (result.kat === "serum" || result.kat === "active" || result.kat === "spot")
+  )) {
+    p.kat = result.kat;
+  }
+
+  if (result.rx) p.rx = true;
+  if (result.schiene === "arzneimittel") p.schiene = "arzneimittel";
+  else if ((!p.schiene || p.schiene === "support" || p.schiene === "active") && result.schiene) {
+    p.schiene = result.schiene;
+  }
+
+  var wirk = String(p.wirk || "");
+  var weakWirk =
+    !wirk ||
+    wirk.indexOf("EU-Katalog") !== -1 ||
+    /^Parf[uü]mfrei/i.test(wirk) ||
+    /^dm\s*\(/i.test(wirk) ||
+    wirk === "Hautbarriere-Pflege" ||
+    wirk === "Hydratisierendes Konzentrat" ||
+    wirk === "Pflegendes Gesichtskonzentrat";
+  if (result.wirkHint && weakWirk) p.wirk = result.wirkHint;
+
+  if (result.looksActive && p.kat === "serum") {
+    p.shape = p.shape || "serum";
+    p.c = p.c && p.c !== "#888888" ? p.c : "#6aa8c9";
+  } else if (result.looksActive && (p.kat === "active" || p.kat === "spot")) {
+    p.shape = p.shape || "tube";
+    p.c = p.c && p.c !== "#888888" ? p.c : "#58408a";
+  }
+
+  return p;
+}
+
+function enrichAllDbProducts() {
+  if (typeof DB === "object" && DB) {
+    Object.keys(DB).forEach(function (id) {
+      enrichProductClasses(DB[id]);
+    });
+  }
+  if (typeof appState === "object" && appState && appState.customProducts) {
+    Object.keys(appState.customProducts).forEach(function (id) {
+      enrichProductClasses(appState.customProducts[id]);
+      if (typeof DB === "object" && DB) DB[id] = appState.customProducts[id];
+    });
+  }
+}
+
+
 // ==========================================
 // LIVE-DM INTEGRATION (Echtzeit-Produktsuche & EAN-Abfrage frisch bei dm)
 // ==========================================
@@ -1472,34 +1907,45 @@ function normalizeDmProduct(p) {
     kat = "creme";
   }
 
-  let klassen = ["support"];
-  let schiene = "support";
-  if (kat === "spf") {
-    klassen = ["uv"];
-  } else if (catStr.includes("bha") || catStr.includes("salicyl")) {
-    klassen = ["bha"];
-    schiene = "active";
-  } else if (catStr.includes("aha") || catStr.includes("glycol") || catStr.includes("milchsäure") || catStr.includes("lactic")) {
-    klassen = ["aha"];
-    schiene = "active";
-  } else if (catStr.includes("retinol") || catStr.includes("retinal")) {
-    klassen = ["retinoid"];
-    schiene = "active";
-  } else if (catStr.includes("azelain") || catStr.includes("azelaic")) {
-    klassen = ["azelaic"];
-    schiene = "active";
-  } else if (catStr.includes("niacinamid")) {
-    klassen = ["niacinamide"];
-  } else if (catStr.includes("vitamin c") || catStr.includes("ascorb")) {
-    klassen = ["ascorbic"];
-    schiene = "active";
-  } else if (kat === "serum") {
-    klassen = ["humectant"];
-  }
+  const draft = {
+    name: title,
+    brand,
+    kat,
+    schiene: "support",
+    klassen: [],
+    wirk: title,
+    ff
+  };
+  const classified = classifyProductClasses(draft);
+  kat = classified.kat || kat;
+  const klassen = classified.klassen.length ? classified.klassen : (kat === "spf" ? ["uv"] : (kat === "serum" ? ["humectant"] : ["support"]));
+  const schiene = classified.schiene || "support";
 
   const cf = typeof isBrandCrueltyFree === "function" && isBrandCrueltyFree(brand) ? true : null;
 
-  return {
+  // Melanin / Phototyp / Skin of Color detection
+  let iron_ox = false;
+  if (titleLower.includes("getönt") || titleLower.includes("tinted") || titleLower.includes("eisenoxid") || titleLower.includes("iron oxide") || titleLower.includes("ci 77491") || titleLower.includes("ci 77492") || titleLower.includes("ci 77499")) {
+    iron_ox = true;
+  }
+
+  let no_white_cast = null;
+  if (kat === "spf" || kat === "creme") {
+    if (titleLower.includes("invisible") || titleLower.includes("unsichtbar") || titleLower.includes("fluid") || titleLower.includes("getönt") || titleLower.includes("tinted") || titleLower.includes("transparent") || titleLower.includes("transparenz")) {
+      no_white_cast = true;
+    } else if (titleLower.includes("mineral") || titleLower.includes("zink") || titleLower.includes("zinc")) {
+      no_white_cast = false;
+    } else {
+      no_white_cast = true;
+    }
+  }
+
+  let pih = false;
+  if (titleLower.includes("azelain") || titleLower.includes("azelaic") || titleLower.includes("niacinamid") || titleLower.includes("tranexam") || titleLower.includes("arbutin") || titleLower.includes("pickelmal") || titleLower.includes("dunkle flecken") || titleLower.includes("anti-pigment")) {
+    pih = true;
+  }
+
+  const prod = {
     id,
     name: title,
     brand,
@@ -1511,15 +1957,20 @@ function normalizeDmProduct(p) {
     kat,
     schiene,
     klassen,
-    shape: kat === "reiniger" ? "pump" : (kat === "serum" ? "serum" : (kat === "spf" ? "tube" : "jar")),
-    c: kat === "reiniger" ? "#76a9c7" : (kat === "serum" ? "#6aa8c9" : (kat === "spf" ? "#ecd37b" : "#a4c8a8")),
-    wirk: (ff === true ? "Parfümfrei · " : "") + (price ? price + " · " : "") + brand,
+    rx: !!classified.rx,
+    shape: kat === "reiniger" ? "pump" : (kat === "serum" || kat === "active" ? "serum" : (kat === "spf" ? "tube" : "jar")),
+    c: kat === "reiniger" ? "#76a9c7" : (kat === "serum" || kat === "active" ? "#6aa8c9" : (kat === "spf" ? "#ecd37b" : "#a4c8a8")),
+    wirk: classified.wirkHint || ((ff === true ? "Parfümfrei · " : "") + (price ? price + " · " : "") + brand),
     nc: null,
     ff,
     cf,
+    no_white_cast,
+    iron_ox,
+    pih,
     store: `dm (${price || 'Online/Filiale'})`,
     source: "dm-live"
   };
+  return enrichProductClasses(prod);
 }
 
 function normalizeDmPilotRow(r) {
@@ -1566,32 +2017,44 @@ function normalizeDmPilotRow(r) {
     kat = "creme";
   }
 
-  let klassen = ["support"];
-  let schiene = "support";
-  if (kat === "spf") {
-    klassen = ["uv"];
-  } else if (catStr.includes("bha") || catStr.includes("salicyl")) {
-    klassen = ["bha"];
-    schiene = "active";
-  } else if (catStr.includes("aha") || catStr.includes("glycol") || catStr.includes("milchsäure") || catStr.includes("lactic")) {
-    klassen = ["aha"];
-    schiene = "active";
-  } else if (catStr.includes("retinol") || catStr.includes("retinal")) {
-    klassen = ["retinoid"];
-    schiene = "active";
-  } else if (catStr.includes("azelain") || catStr.includes("azelaic")) {
-    klassen = ["azelaic"];
-    schiene = "active";
-  } else if (catStr.includes("niacinamid")) {
-    klassen = ["niacinamide"];
-  } else if (catStr.includes("vitamin c") || catStr.includes("ascorb")) {
-    klassen = ["ascorbic"];
-    schiene = "active";
-  } else if (kat === "serum") {
-    klassen = ["humectant"];
+  const draft = {
+    name,
+    brand,
+    kat,
+    schiene: "support",
+    klassen: [],
+    wirk: name,
+    ff,
+    nc
+  };
+  const classified = classifyProductClasses(draft);
+  kat = classified.kat || kat;
+  const klassen = classified.klassen.length ? classified.klassen : (kat === "spf" ? ["uv"] : (kat === "serum" ? ["humectant"] : ["support"]));
+  const schiene = classified.schiene || "support";
+
+  // Melanin / Phototyp / Skin of Color detection
+  let iron_ox = false;
+  if (catStr.includes("getönt") || catStr.includes("tinted") || catStr.includes("eisenoxid") || catStr.includes("iron oxide")) {
+    iron_ox = true;
   }
 
-  return {
+  let no_white_cast = null;
+  if (kat === "spf" || kat === "creme") {
+    if (catStr.includes("invisible") || catStr.includes("unsichtbar") || catStr.includes("fluid") || catStr.includes("getönt") || catStr.includes("tinted") || catStr.includes("transparent")) {
+      no_white_cast = true;
+    } else if (catStr.includes("mineral") || catStr.includes("zink") || catStr.includes("zinc")) {
+      no_white_cast = false;
+    } else {
+      no_white_cast = true;
+    }
+  }
+
+  let pih = false;
+  if (catStr.includes("azelain") || catStr.includes("azelaic") || catStr.includes("niacinamid") || catStr.includes("tranexam") || catStr.includes("arbutin") || catStr.includes("pickelmal") || catStr.includes("anti-pigment")) {
+    pih = true;
+  }
+
+  const prod = {
     id,
     name,
     brand,
@@ -1603,15 +2066,20 @@ function normalizeDmPilotRow(r) {
     kat,
     schiene,
     klassen,
-    shape: kat === "reiniger" ? "pump" : (kat === "serum" ? "serum" : (kat === "spf" ? "tube" : "jar")),
-    c: kat === "reiniger" ? "#76a9c7" : (kat === "serum" ? "#6aa8c9" : (kat === "spf" ? "#ecd37b" : "#a4c8a8")),
-    wirk: (ff === true ? "Parfümfrei · " : "") + (price ? price + " · " : "") + brand,
+    rx: !!classified.rx,
+    shape: kat === "reiniger" ? "pump" : (kat === "serum" || kat === "active" ? "serum" : (kat === "spf" ? "tube" : "jar")),
+    c: kat === "reiniger" ? "#76a9c7" : (kat === "serum" || kat === "active" ? "#6aa8c9" : (kat === "spf" ? "#ecd37b" : "#a4c8a8")),
+    wirk: classified.wirkHint || ((ff === true ? "Parfümfrei · " : "") + (price ? price + " · " : "") + brand),
     nc,
     ff,
     cf,
+    no_white_cast,
+    iron_ox,
+    pih,
     store: `dm (${price || 'Filiale'})`,
     source: "dm-pilot"
   };
+  return enrichProductClasses(prod);
 }
 
 async function searchDmLive(query) {
@@ -1773,7 +2241,7 @@ function applyKatalogRows(rows) {
         cf: cfFromBrand ? true : parseFlagWithSource(r.flag_cf, r.cf_basis),
         cf_basis: (r.cf_basis || "").trim(),
         notForMinors: r.not_for_minors === "yes" || r.not_for_minors === "true",
-        countries: (r.eu_countries || "").trim(),
+        countries: parseEuCountries(r.eu_countries),
         url: (r.source_url || "").trim(),
         notes: (r.notes || "").trim()
       };
@@ -1806,7 +2274,8 @@ function applyKatalogRows(rows) {
         nc_basis: (r.nc_basis || "").trim(),
         spfNote: (r.spf_note || "").trim(),
         url: (r.source_url || "").trim(),
-        notes: (r.notes || "").trim()
+        notes: (r.notes || "").trim(),
+        countries: parseEuCountries(r.eu_countries)
       };
     });
   }
@@ -1821,14 +2290,16 @@ function applyKatalogRows(rows) {
       const brand = (r.brand || "").trim();
       const rawSlot = (r.slot || "").trim();
       let kat = "creme";
-      if (rawSlot.includes("reiniger") || name.toLowerCase().includes("wasch") || name.toLowerCase().includes("cleanser") || name.toLowerCase().includes("reinigung") || name.toLowerCase().includes("savon")) kat = "reiniger";
-      else if (rawSlot.includes("spf") || rawSlot.includes("sun") || name.toLowerCase().includes("spf") || name.toLowerCase().includes("sun") || name.toLowerCase().includes("sonne")) kat = "spf";
-      else if (rawSlot.includes("serum") || rawSlot.includes("active") || name.toLowerCase().includes("serum")) kat = "serum";
+      const nameL = name.toLowerCase();
+      // Name-Heuristik vor falschem CSV-Slot (z.B. basis_spf auf Retinal-Serum)
+      if (rawSlot.includes("reiniger") || nameL.includes("wasch") || nameL.includes("cleanser") || nameL.includes("reinigung") || nameL.includes("savon")) kat = "reiniger";
+      else if (nameL.includes("serum") || nameL.includes("retinol") || nameL.includes("retinal") || rawSlot.includes("serum") || rawSlot.includes("active")) kat = "serum";
+      else if ((rawSlot.includes("spf") || rawSlot.includes("sun") || nameL.includes("spf") || nameL.includes("sun") || nameL.includes("sonne")) && !(nameL.includes("retinol") || nameL.includes("retinal"))) kat = "spf";
       
       const cfFromBrand = typeof isBrandCrueltyFree === "function" && isBrandCrueltyFree(brand);
 
       if (!DB[id]) {
-        DB[id] = {
+        DB[id] = enrichProductClasses({
           id: id,
           name: name,
           brand: brand,
@@ -1846,8 +2317,10 @@ function applyKatalogRows(rows) {
           cf_basis: (r.cf_basis || "").trim(),
           store: "EU (" + (r.eu_countries || "Drogerie/Apo") + ")",
           ean: ean,
-          sourceUrl: (r.source_url || "").trim()
-        };
+          sourceUrl: (r.source_url || "").trim(),
+          notes: (r.notes || "").trim(),
+          countries: parseEuCountries(r.eu_countries)
+        });
       } else {
         // Kern-Produkt mit Nachweisen aus der CSV anreichern
         if (r.fragrance_basis && !DB[id].ff_basis) DB[id].ff_basis = r.fragrance_basis.trim();
@@ -1855,6 +2328,9 @@ function applyKatalogRows(rows) {
         if (r.cf_basis && !DB[id].cf_basis) DB[id].cf_basis = r.cf_basis.trim();
         if (r.source_url && !DB[id].url) DB[id].url = r.source_url.trim();
         if (cfFromBrand && !DB[id].cf) { DB[id].cf = true; DB[id].cf_basis = "CFI Leaping Bunny"; }
+        if (r.notes && !DB[id].notes) DB[id].notes = r.notes.trim();
+        if (r.eu_countries) DB[id].countries = parseEuCountries(r.eu_countries);
+        enrichProductClasses(DB[id]);
       }
     });
   }
@@ -1862,12 +2338,27 @@ function applyKatalogRows(rows) {
   // Eigene und aus Live-dm übernommene Produkte im DB-Katalog absichern
   if (typeof appState === "object" && appState.customProducts) {
     for (const [cid, cprod] of Object.entries(appState.customProducts)) {
-      if (typeof DB === "object" && cprod) DB[cid] = cprod;
+      if (!cprod) continue;
+      const enriched = enrichProductClasses(cprod);
+      if (typeof DB === "object") DB[cid] = enriched;
+      // Keep Teen/Baby cabinets resolvable after CSV overwrite of catalog maps
+      if (typeof TEEN_DB === "object" && TEEN_DB) {
+        const slot = enriched.kat === "reiniger" ? "reiniger" : (enriched.kat === "spf" ? "spf" : (enriched.kat === "serum" || enriched.kat === "active" || enriched.kat === "spot" ? "active" : "creme"));
+        TEEN_DB[cid] = Object.assign({}, enriched, { slot: (TEEN_DB[cid] && TEEN_DB[cid].slot) || slot });
+      }
+      if (typeof BABY_DB === "object" && BABY_DB) {
+        const slot = enriched.kat === "reiniger" ? "reiniger" : (enriched.kat === "spf" ? "spf" : (enriched.kat === "windel" ? "windel" : "creme"));
+        BABY_DB[cid] = Object.assign({}, enriched, { slot: (BABY_DB[cid] && BABY_DB[cid].slot) || slot });
+      }
     }
   }
 
+  // Klassen für Seeds + CSV-Produkte nachziehen (retinoid_cos/rx, aha, …)
+  enrichAllDbProducts();
+  ensureCatalogCountries();
+
   // Wenn Schrank geöffnet ist, Ansicht auffrischen
-  if (appState.view === "cabinet") {
+  if (typeof appState === "object" && appState.view === "cabinet" && typeof renderMain === "function") {
     renderMain();
   }
 }

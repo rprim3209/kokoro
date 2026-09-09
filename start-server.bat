@@ -1,21 +1,23 @@
 @echo off
 cd /d "%~dp0"
 set "PY312=%LocalAppData%\Programs\Python\Python312\python.exe"
-echo Starte Kosmetikschrank-Server...
-echo Danach Browser: http://127.0.0.1:8787/demo.html
-echo Fenster offen lassen. Zum Beenden: Strg+C oder Fenster schliessen.
+echo.
+echo  Kosmetikschrank-Server startet...
+echo  Bitte dieses Fenster offen lassen.
 echo.
 if exist "%PY312%" (
-  start "" http://127.0.0.1:8787/demo.html
-  "%PY312%" server.py %*
-  goto :done
+  start "Kosmetikschrank-Server" "%PY312%" "%~dp0server.py"
+) else if exist "%LocalAppData%\Programs\Python\Python313\python.exe" (
+  start "Kosmetikschrank-Server" "%LocalAppData%\Programs\Python\Python313\python.exe" "%~dp0server.py"
+) else (
+  start "Kosmetikschrank-Server" py -3 "%~dp0server.py"
 )
-start "" http://127.0.0.1:8787/demo.html
-py -3 server.py %* 2>nul && goto :done
-python server.py %*
-:done
-if errorlevel 1 (
-  echo.
-  echo Server starten fehlgeschlagen. Python 3 installiert?
-  pause
-)
+echo Warte 3 Sekunden...
+ping -n 4 127.0.0.1 >nul
+echo Oeffne Browser...
+start "" "http://127.0.0.1:8787/demo.html"
+echo.
+echo Wenn die Seite leer ist: in 5 Sek. nochmal F5.
+echo Zum Stoppen: Fenster "Kosmetikschrank-Server" schliessen.
+echo.
+pause
