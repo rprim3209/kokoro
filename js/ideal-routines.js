@@ -1468,7 +1468,35 @@ const PRODUCT_PRICE_MAP = {
   t_item_51: 16.50,
   t_item_52: 14.50,
   t_item_54: 13.50,
-  t_item_76: 18.50
+  t_item_76: 18.50,
+
+  // Baby Heroes & Pharmacy
+  b_item_1: 2.25,
+  b_item_2: 2.45,
+  b_item_3: 1.95,
+  b_item_4: 6.95,
+  b_item_5: 8.50,
+  b_item_6: 14.00,
+  b_item_7: 8.95,
+  b_item_9: 19.50,
+  b_item_10: 9.50,
+  b_item_23: 6.95,
+  b_ean_3760075074227: 13.50,
+  b_ean_3337872412998: 18.50,
+
+  // Child Heroes & Pharmacy
+  c_item_1: 1.95,
+  c_item_2: 3.45,
+  c_item_3: 1.95,
+  c_item_4: 6.50,
+  c_item_5: 12.00,
+  c_item_6: 9.95,
+  c_item_7: 6.50,
+  c_item_8: 13.50,
+  c_item_9: 18.50,
+  c_item_10: 19.50,
+  c_item_11: 8.95,
+  b_ean_20231460: 4.95
 };
 
 function getProductPrice(prodId) {
@@ -1697,6 +1725,84 @@ const BUDGET_ROUTINE_TIERS = {
       }
     },
     get items() { return this.tiers.budget.items; }
+  },
+  child: {
+    id: "child",
+    name: "Kind (3–11 Jahre)",
+    desc: "Schutz- & Pflege-Routine für Kindergarten- und Schulkinder: Sanfte Reinigung, Barriere-Erhalt & LSF 50+.",
+    badge: "Pädiatrie Kind (3–11J)",
+    tiers: {
+      budget: {
+        tierLevel: "budget",
+        tierName: "Drogerie-Spar",
+        items: [
+          { id: "c_item_1", slot: "reiniger", slotName: "1. Milde Kinder-Dusche", why: "SauBär Ultra Sensitiv: Sanfte Tenside schonen die junge Hautbarriere", essential: true, am: true, pm: true },
+          { id: "c_item_2", slot: "creme", slotName: "2. Schutz- & Feuchtigkeitslotion", why: "Paediprotect Sensitiv: Schützt empfindliche Kinderhaut vor dem Austrocknen", essential: true, am: true, pm: true },
+          { id: "b_ean_20231460", slot: "spf", slotName: "3. Breitspektrum LSF 50+", why: "Cien Sun Kids: Wasserfester Breitbandschutz für Schul- & Spielplatzalltag", essential: true, am: true, pm: false },
+          { id: "c_item_3", slot: "haar", slotName: "4. Mildes Kindershampoo", why: "SauBär Leichtkamm-Formel: Brennt nicht in den Augen und pflegt weiches Haar", priority: 1, am: false, pm: true }
+        ]
+      },
+      mid: {
+        tierLevel: "mid",
+        tierName: "Dermokosmetik & Apotheke",
+        items: [
+          { id: "c_item_4", slot: "reiniger", slotName: "1. Medizinische Waschlotion", why: "Sebamed Kinder-Waschlotion: pH 5,5 fördert den Aufbau des Säureschutzmantels", essential: true, am: true, pm: true },
+          { id: "c_item_5", slot: "creme", slotName: "2. Dermatologische Feuchtigkeitscreme", why: "Cetaphil Feuchtigkeitscreme: Intensive rückfettende Barrierepflege ohne Duftstoffe", essential: true, am: true, pm: true },
+          { id: "c_item_6", slot: "spf", slotName: "3. Spezial-Kinder-LSF 50+", why: "Paediprotect Gebirgs- & Kindersonnencreme: Hoher UV- und Kälteschutz ohne Mikroplastik", essential: true, am: true, pm: false },
+          { id: "c_item_7", slot: "haar", slotName: "4. Bio-Ringelblumen-Shampoo", why: "Urtekram Kids Bio-Shampoo: Sanfte Naturpflege für Kopfhaut und feines Haar", priority: 1, am: false, pm: true }
+        ]
+      },
+      premium: {
+        tierLevel: "premium",
+        tierName: "High-End & Spezial-Apotheke",
+        items: [
+          { id: "c_item_8", slot: "reiniger", slotName: "1. Pädiatrisches Reinigungssyndet", why: "Bioderma ABCDerm Gel moussant: Dermatologische Seifenfreiheit für ultra-sanftes Waschen", essential: true, am: true, pm: true },
+          { id: "c_item_9", slot: "creme", slotName: "2. Medizinischer Barriere-Balsam", why: "La Roche-Posay Lipikar Baume AP+M: Beruhigt Juckreiz & stärkt das Hautmikrobiom", essential: true, am: true, pm: true },
+          { id: "c_item_10", slot: "spf", slotName: "3. High-End Wet-Skin LSF 50+", why: "La Roche-Posay Anthelios Dermo-Pediatrics: Auftragbar auch auf nassem Körper nach dem Schwimmen", essential: true, am: true, pm: false },
+          { id: "c_item_11", slot: "haar", slotName: "4. Naturkosmetik-Pflegeshampoo", why: "Das Boep Kindershampoo: Sanfteste Formel mit Bio-Mandelöl", priority: 1, am: false, pm: true }
+        ]
+      }
+    },
+    get items() { return this.tiers.budget.items; }
+  },
+  baby: {
+    id: "baby",
+    name: "Baby (< 3 Jahre)",
+    desc: "100% parfümfreie Säuglings- & Kleinkindpflege: Schützt die 30% dünnere Baby-Hautbarriere.",
+    badge: "Pädiatrie Baby (<3J)",
+    tiers: {
+      budget: {
+        tierLevel: "budget",
+        tierName: "Drogerie-Spar",
+        items: [
+          { id: "b_item_1", slot: "reiniger", slotName: "1. Milde Baby-Waschlotion", why: "Babylove Ultra Sensitive: Milde Tenside ohne Seife oder Parfüm für das tägliche Waschen", essential: true, am: true, pm: true },
+          { id: "b_item_2", slot: "creme", slotName: "2. Sanfte Gesichts- & Pflegecreme", why: "Babylove Ultra Sensitive: Panthenol schützt vor trockener Haut und rauen Wangen", essential: true, am: true, pm: true },
+          { id: "b_item_3", slot: "windel", slotName: "3. Wundschutzcreme Zink", why: "Babylove Wundschutz: Zinkoxid hält Nässe ab und beugt Windeldermatitis vor", essential: true, am: true, pm: true },
+          { id: "b_item_4", slot: "spf", slotName: "4. Sensitiv-Sonnenschutz LSF 50+", why: "Paediprotect Baby (ab 6 Mon.): Reizarmer mineralisch-sensitiver UV-Schutz", priority: 1, am: true, pm: false }
+        ]
+      },
+      mid: {
+        tierLevel: "mid",
+        tierName: "Dermokosmetik & Apotheke",
+        items: [
+          { id: "b_item_5", slot: "reiniger", slotName: "1. Pflanzliches Babybad", why: "Weleda Baby Calendula Bad: Beruhigende Ringelblume ohne aggressive Schaumbildner", essential: true, am: true, pm: true },
+          { id: "b_item_10", slot: "creme", slotName: "2. Calendula Gesichtscreme", why: "Weleda Calendula parfümfrei: Reine Pflanzenöle nähren zarte Babyhaut intensiv", essential: true, am: true, pm: true },
+          { id: "b_item_23", slot: "windel", slotName: "3. Calendula Wundschutz", why: "Weleda Wundschutzcreme: Zinkoxid & Bio-Calendula lindern Rötungen schnell", essential: true, am: true, pm: true },
+          { id: "b_ean_3760075074227", slot: "spf", slotName: "4. Bio-Baby-Sonnenspray LSF 50+", why: "Alphanova Sun Bébé Bio (ab 6 Mon.): 100% mineralischer Schutz ohne Duftstoffe", priority: 1, am: true, pm: false }
+        ]
+      },
+      premium: {
+        tierLevel: "premium",
+        tierName: "High-End & Spezial-Apotheke",
+        items: [
+          { id: "b_item_6", slot: "reiniger", slotName: "1. Medizinisches Reinigungsöl", why: "Mustela Stelatopia Gel Lavant: Rückfettendes Reinigungsöl gegen atopische Trockenheit", essential: true, am: true, pm: true },
+          { id: "b_ean_3337872412998", slot: "creme", slotName: "2. High-End Lipid-Balsam", why: "La Roche-Posay Lipikar Baume AP+M: Niacinamid & Aqua Posae reparieren die Säuglings-Barriere", essential: true, am: true, pm: true },
+          { id: "b_item_7", slot: "windel", slotName: "3. Sanfte Zink-Wundcreme", why: "Das Boep Baby Wundcreme: Hochwertige Naturkosmetik-Formulierung mit Mandelöl", essential: true, am: true, pm: true },
+          { id: "b_item_9", slot: "spf", slotName: "4. Dermo-Pediatrics LSF 50+", why: "La Roche-Posay Anthelios Dermo-Pediatrics: Speziell für empfindlichste Babyhaut getestet", priority: 1, am: true, pm: false }
+        ]
+      }
+    },
+    get items() { return this.tiers.budget.items; }
   }
 };
 
@@ -1780,6 +1886,7 @@ function calculateBudgetRoutine(budget, skinTypeId = "acne_barrier") {
     products: selected.map(it => {
       const prod = (typeof DB === "object" && DB[it.id]) || 
                    (typeof TEEN_DB === "object" && TEEN_DB[it.id]) || 
+                   (typeof BABY_DB === "object" && BABY_DB[it.id]) ||
                    { name: it.slotName, brand: "Drogerie" };
       return {
         id: it.id,
@@ -1805,10 +1912,13 @@ let currentBudgetAmount = 20;
 
 function openBudgetRoutineModal(preselectedSkinType, preselectedBudget) {
   if (preselectedSkinType) currentBudgetSkinType = preselectedSkinType;
+  else if (appState.profile === "baby") currentBudgetSkinType = "baby";
+  else if (appState.profile === "child") currentBudgetSkinType = "child";
   else if (appState.profile === "teen") currentBudgetSkinType = "teen";
   else if (appState.tags && appState.tags.includes("Ölige Haut")) currentBudgetSkinType = "oily_pores";
   else if (appState.tags && appState.tags.includes("Trockene Haut")) currentBudgetSkinType = "dry_fragile";
   else if (appState.tags && appState.tags.includes("Gesunde Haut")) currentBudgetSkinType = "healthy_glow";
+  else currentBudgetSkinType = "acne_barrier";
 
   if (preselectedBudget) currentBudgetAmount = parseFloat(preselectedBudget) || 20;
 
@@ -1841,7 +1951,9 @@ function renderBudgetRoutineModalContent() {
     { id: "oily_pores", label: "Ölig & Poren" },
     { id: "dry_fragile", label: "Trocken & Sensibel" },
     { id: "healthy_glow", label: "Gesund & Prävention" },
-    { id: "teen", label: "Teenie (12–19J)" }
+    { id: "teen", label: "🧑‍🦱 Teenie (12–19J)" },
+    { id: "child", label: "🧒 Kind (3–11J)" },
+    { id: "baby", label: "👶 Baby (<3J)" }
   ];
 
   const content = `
@@ -1980,12 +2092,48 @@ function renderBudgetRoutineModalContent() {
 function applyBudgetRoutineToCabinet(routineResult) {
   if (!routineResult || !routineResult.products) return;
 
-  if (routineResult.skinTypeId === "teen" || appState.profile === "teen") {
-    // Apply to teen slots
+  const type = routineResult.skinTypeId;
+  let targetCat = "adult";
+  if (type === "baby") targetCat = "baby";
+  else if (type === "child") targetCat = "child";
+  else if (type === "teen") targetCat = "teen";
+  else targetCat = "adult";
+
+  // If the user picked a different category in the modal than current profile, switch to that profile
+  const currentP = getActiveProfile();
+  if (currentP && currentP.category !== targetCat && typeof switchProfile === "function") {
+    switchProfile(targetCat);
+  }
+
+  if (targetCat === "baby") {
+    if (!appState.baby) appState.baby = { reiniger: [], creme: [], windel: [], spf: [] };
+    routineResult.products.forEach(p => {
+      const slot = p.slot;
+      if (appState.baby[slot] !== undefined) {
+        appState.baby[slot] = [p.id];
+      }
+    });
+    const profile = getActiveProfile();
+    if (profile && profile.category === "baby") {
+      profile.data = JSON.parse(JSON.stringify(appState.baby));
+    }
+  } else if (targetCat === "child") {
+    if (!appState.child) appState.child = { reiniger: [], creme: [], spf: [], haar: [] };
+    routineResult.products.forEach(p => {
+      const slot = p.slot;
+      if (appState.child[slot] !== undefined) {
+        appState.child[slot] = [p.id];
+      }
+    });
+    const profile = getActiveProfile();
+    if (profile && profile.category === "child") {
+      profile.data = JSON.parse(JSON.stringify(appState.child));
+    }
+  } else if (targetCat === "teen") {
     if (!appState.teen) appState.teen = { reiniger: [], active: [], creme: [], spf: [] };
     routineResult.products.forEach(p => {
       const slot = p.slot;
-      if (appState.teen[slot]) {
+      if (appState.teen[slot] !== undefined) {
         appState.teen[slot] = [p.id];
       }
     });

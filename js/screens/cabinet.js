@@ -352,6 +352,33 @@ function renderBabyCabinet(container) {
     `;
   }
 
+  // Budget-Hero Card für Baby
+  html += `
+    <div class="budget-hero-card" style="border-color:#bfdbfe;background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:1.5rem;background:#dbeafe;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid #bfdbfe">
+            💰
+          </div>
+          <div>
+            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#1d4ed8;letter-spacing:0.04em">
+              Baby-Budget-Planer
+            </div>
+            <div style="font-family:'Iowan Old Style', Palatino, Georgia, serif;font-size:1.05rem;font-weight:700;color:#1e3a8a">
+              Baby-Routine nach Budget zusammenstellen (z. B. 15 €, 25 €, 40 €)
+            </div>
+            <div style="font-size:0.78rem;color:#1d4ed8;margin-top:1px">
+              100% reizarme, parfümfreie Säuglingspflege — von Drogerie-Spar bis Spezial-Apotheke.
+            </div>
+          </div>
+        </div>
+        <button type="button" id="btnBabyBudgetRoutine" class="btn-adopt" style="background:#2563eb;color:#fff;font-size:0.82rem;padding:8px 14px" onclick="openBudgetRoutineModal('baby')">
+          Budget festlegen ➔
+        </button>
+      </div>
+    </div>
+  `;
+
   html += renderBabyTypRegal();
   html += `
     <div style="text-align:center;margin:1.6rem 0 1rem;font-size:0.75rem;color:var(--muted)">
@@ -483,6 +510,33 @@ function renderChildCabinet(container) {
     </div>
     `;
   }
+
+  // Budget-Hero Card für Kind
+  html += `
+    <div class="budget-hero-card" style="border-color:#fde68a;background:linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:1.5rem;background:#fef3c7;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid #fde68a">
+            💰
+          </div>
+          <div>
+            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#b45309;letter-spacing:0.04em">
+              Kinder-Budget-Planer
+            </div>
+            <div style="font-family:'Iowan Old Style', Palatino, Georgia, serif;font-size:1.05rem;font-weight:700;color:#78350f">
+              Kinder-Routine nach Budget zusammenstellen (z. B. 15 €, 25 €, 40 €)
+            </div>
+            <div style="font-size:0.78rem;color:#b45309;margin-top:1px">
+              Pädiatrisch geprüfte Kinderpflege für Kita & Schule — reizarm, kindergerecht & evidenzbasiert.
+            </div>
+          </div>
+        </div>
+        <button type="button" id="btnChildBudgetRoutine" class="btn-adopt" style="background:#d97706;color:#fff;font-size:0.82rem;padding:8px 14px" onclick="openBudgetRoutineModal('child')">
+          Budget festlegen ➔
+        </button>
+      </div>
+    </div>
+  `;
 
   html += renderChildTypRegal();
   html += `
