@@ -2,19 +2,19 @@
    Screens & App Navigation Styles (Start, Schrank, Scan, Einstellungen)
    ========================================================================== */
 
-/* Modern Bottom Navigation Bar */
+/* Modern Bottom Navigation Bar — cream/rose glass */
 .bottom-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(10, 51, 35, 0.10);
+  background: linear-gradient(180deg, rgba(247, 244, 213, 0.94) 0%, rgba(246, 228, 223, 0.96) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(211, 150, 140, 0.45);
   padding: 8px 10px calc(10px + env(safe-area-inset-bottom));
   z-index: 50;
-  box-shadow: 0 -6px 24px rgba(10, 51, 35, 0.07);
+  box-shadow: 0 -8px 28px rgba(10, 51, 35, 0.12);
 }
 .bottom-nav {
   max-width: 680px;
@@ -53,11 +53,18 @@
   transform: scale(0.97);
 }
 .nav-tab-btn.active {
+  color: #0A3323;
+  background: var(--moss-bg);
+  box-shadow: 0 3px 10px rgba(131, 153, 88, 0.28);
+  border: 1px solid rgba(131, 153, 88, 0.45);
+}
+/* Solid dark-green pill available via .active-solid */
+.nav-tab-btn.active-solid {
   color: #F7F4D5;
   background: var(--primary);
   box-shadow: 0 4px 12px rgba(10, 51, 35, 0.20);
+  border: none;
 }
-/* Soft moss pill alternative kept available via .active-soft */
 .nav-tab-btn.active-soft {
   color: #0A3323;
   background: var(--moss-bg);
@@ -70,17 +77,20 @@
 .nav-tab-btn.active.tab-teen {
   color: #F7F4D5;
   background: #105666;
+  border-color: transparent;
   box-shadow: 0 4px 12px rgba(16, 86, 102, 0.25);
 }
 .nav-tab-btn.active.tab-child {
-  color: #F7F4D5;
-  background: #4A5B2B;
-  box-shadow: 0 4px 12px rgba(74, 91, 43, 0.25);
+  color: #0A3323;
+  background: var(--moss-bg);
+  border: 1px solid rgba(131, 153, 88, 0.5);
+  box-shadow: 0 3px 10px rgba(74, 91, 43, 0.18);
 }
 .nav-tab-btn.active.tab-baby {
-  color: #F7F4D5;
-  background: #8C483E;
-  box-shadow: 0 4px 12px rgba(140, 72, 62, 0.25);
+  color: #8C483E;
+  background: var(--rose-bg);
+  border: 1px solid rgba(211, 150, 140, 0.55);
+  box-shadow: 0 3px 10px rgba(140, 72, 62, 0.16);
 }
 
 /* Screen Wrapper */
@@ -96,6 +106,7 @@
 .settings-section {
   background: var(--card);
   border: 1px solid var(--line);
+  border-left: 3px solid rgba(131, 153, 88, 0.55);
   border-radius: var(--radius);
   padding: 1.15rem 1.2rem;
   margin-bottom: 1rem;
@@ -124,14 +135,16 @@
 }
 .profile-manage-card.active-profile {
   border-color: var(--primary);
-  background: #ffffff;
+  background: var(--card);
   box-shadow: var(--shadow-soft);
+  border-left: 3px solid var(--moss);
 }
 
 /* Dedicated Scan & Verdict Screen Styling */
 .scan-screen-box {
   background: var(--card);
   border: 1px solid var(--line);
+  border-left: 4px solid var(--moss);
   border-radius: var(--radius-lg);
   padding: 1.35rem 1.25rem 1.4rem;
   margin-bottom: 1.2rem;
@@ -204,7 +217,7 @@
   border-radius: 12px;
   font-size: 0.92rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  background: #fff;
+  background: var(--card);
 }
 .scan-ean-row .primary {
   margin-top: 0;
@@ -230,8 +243,9 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--ok);
-  background: var(--ok-bg);
+  color: #0A3323;
+  background: linear-gradient(135deg, #EDF3E4 0%, #E3EFF2 100%);
+  border: 1px solid rgba(131, 153, 88, 0.4);
   padding: 4px 10px;
   border-radius: 99px;
   margin-bottom: 0.75rem;
@@ -256,9 +270,9 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  background: var(--surface);
+  background: var(--surface-mist);
   border: 1px solid var(--line);
-  border-left: 4px solid var(--gold);
+  border-left: 4px solid var(--secondary);
   border-radius: 12px;
   padding: 0.7rem 0.9rem;
   margin: 0 0 1.15rem;
@@ -280,6 +294,7 @@
   margin-bottom: 1.2rem;
   background: var(--surface);
   border: 1px solid var(--line);
+  border-left: 3px solid var(--moss);
   border-radius: 14px;
   padding: 0.85rem 0.95rem 0.9rem;
 }
@@ -328,8 +343,8 @@
   padding: 8px 14px;
   min-height: 36px;
   border-radius: 99px;
-  border: 1px solid var(--line);
-  background: #ffffff;
+  border: 1px solid var(--line-soft);
+  background: var(--card);
   color: var(--ink);
   font-size: 0.82rem;
   font-weight: 600;
@@ -359,9 +374,9 @@
   border-color: #4A5B2B;
 }
 .start-pill-btn.active.pill-baby {
-  background: #8C483E;
-  color: #F7F4D5;
-  border-color: #8C483E;
+  background: var(--rose-bg);
+  color: #8C483E;
+  border-color: rgba(211, 150, 140, 0.7);
 }
 
 .start-actions {
@@ -373,7 +388,7 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  background: #ffffff;
+  background: var(--card);
   border: 1.5px solid var(--line);
   border-radius: var(--radius);
   padding: 1.1rem 1.15rem;
@@ -389,12 +404,14 @@
 }
 .start-action-card.primary {
   border-color: rgba(10, 51, 35, 0.28);
-  background: linear-gradient(180deg, #ffffff 0%, #EDF3E4 100%);
-  box-shadow: 0 4px 16px rgba(10, 51, 35, 0.07);
+  border-left: 4px solid var(--moss);
+  background: linear-gradient(165deg, #F7F4D5 0%, #EDF3E4 100%);
+  box-shadow: 0 6px 18px rgba(10, 51, 35, 0.10);
 }
 .start-action-card.secondary {
   border-color: var(--line);
-  background: #ffffff;
+  border-left: 3px solid rgba(16, 86, 102, 0.35);
+  background: linear-gradient(165deg, #F7F4D5 0%, #E3EFF2 100%);
 }
 .start-action-icon {
   width: 44px;
@@ -409,7 +426,12 @@
   flex-shrink: 0;
 }
 .start-action-card.primary .start-action-icon {
-  background: var(--ok-bg);
+  background: linear-gradient(135deg, #0A3323 0%, #105666 100%);
+  color: #F7F4D5;
+}
+.start-action-card.secondary .start-action-icon {
+  background: var(--rx-bg);
+  color: var(--secondary);
 }
 .start-action-body {
   flex: 1;
@@ -448,7 +470,7 @@
 }
 .start-scan-link {
   font-size: 0.84rem !important;
-  color: var(--muted) !important;
+  color: var(--link) !important;
   font-weight: 600 !important;
 }
 

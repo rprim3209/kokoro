@@ -1443,20 +1443,32 @@ const PRODUCT_PRICE_MAP = {
   apad: 10.50,
   aza: 12.00,
   purito: 18.00,
-  bha: 13.00,
+  sebium: 16.00,
+  anthelios: 19.00,
+  antheliosTinted: 21.00,
+  bha: 39.00,
   glycolic: 14.00,
   retinol: 9.00,
   nia10: 7.00,
   adap: 0.00,
   clienzo: 0.00,
 
-  // Teenie Heroes
+  // Teenie Heroes & Pharmacy
   t_item_1: 2.45,
-  t_item_2: 7.95,
+  t_item_2: 2.45,
   t_item_3: 3.95,
   t_item_4: 5.95,
   t_item_11: 8.50,
-  t_item_24: 2.45
+  t_item_17: 16.00,
+  t_item_18: 12.50,
+  t_item_24: 11.00,
+  t_item_25: 14.00,
+  t_item_29: 12.00,
+  t_item_30: 11.50,
+  t_item_51: 16.50,
+  t_item_52: 14.50,
+  t_item_54: 13.50,
+  t_item_76: 18.50
 };
 
 function getProductPrice(prodId) {
@@ -1484,71 +1496,241 @@ const BUDGET_ROUTINE_TIERS = {
     name: "Akne & Barriere-Schutz (Rx)",
     desc: "Evidenzbasierte Routine bei unreiner Haut, Pickeln, Rötungen oder empfindlicher Barriere.",
     badge: "Rx / Akne / Barriere",
-    items: [
-      { id: "baleaWash", slot: "reiniger", slotName: "1. Milde Reinigung", why: "Tensid-mild & parfümfrei – greift die Säureschutzschicht nicht an", essential: true, am: true, pm: true },
-      { id: "baleaCreme", slot: "creme", slotName: "2. Barriere-Creme", why: "Cica & Panthenol reparieren schälende oder brennende Stellen", essential: true, am: true, pm: true },
-      { id: "baleaSpf", slot: "spf", slotName: "3. LSF 50+ Sonnenschutz", why: "Breitband-UV-Schutz verhindert postinflammatorische Pickelmale (PIH)", essential: true, am: true, pm: false },
-      { id: "apad", slot: "active", slotName: "4. Wirkstoff-Active", why: "PAD (Azelain-Derivat): Hemmt Entzündungen & Rötungen hochverträglich", priority: 1, am: true, pm: false },
-      { id: "noHydrator", slot: "serum", slotName: "5. Tiefen-Hydrator", why: "Panthenol + Ectoin spenden intensive Feuchtigkeit ohne die Poren zu belasten", priority: 2, am: true, pm: true }
-    ]
+    tiers: {
+      budget: {
+        tierLevel: "budget",
+        tierName: "Drogerie-Spar",
+        items: [
+          { id: "baleaWash", slot: "reiniger", slotName: "1. Milde Reinigung", why: "Tensid-mild & parfümfrei – greift die Säureschutzschicht nicht an", essential: true, am: true, pm: true },
+          { id: "baleaCreme", slot: "creme", slotName: "2. Barriere-Creme", why: "Cica & Panthenol reparieren schälende oder brennende Stellen", essential: true, am: true, pm: true },
+          { id: "baleaSpf", slot: "spf", slotName: "3. LSF 50+ Sonnenschutz", why: "Breitband-UV-Schutz verhindert postinflammatorische Pickelmale (PIH)", essential: true, am: true, pm: false },
+          { id: "apad", slot: "active", slotName: "4. Wirkstoff-Active", why: "PAD (Azelain-Derivat): Hemmt Entzündungen & Rötungen hochverträglich", priority: 1, am: true, pm: false },
+          { id: "noHydrator", slot: "serum", slotName: "5. Tiefen-Hydrator", why: "Panthenol + Ectoin spenden intensive Feuchtigkeit ohne die Poren zu belasten", priority: 2, am: true, pm: true }
+        ]
+      },
+      mid: {
+        tierLevel: "mid",
+        tierName: "Dermokosmetik & Apotheke",
+        items: [
+          { id: "ceraveWash", slot: "reiniger", slotName: "1. Physiologische Reinigung", why: "3 essenzielle Ceramide & Hyaluron reinigen sanft ohne Austrocknen", essential: true, am: true, pm: true },
+          { id: "ceraveMoist", slot: "creme", slotName: "2. Ceramid-Feuchtigkeitspflege", why: "MVE-Technologie für kontinuierliche Feuchtigkeitsabgabe & Barrierestärkung", essential: true, am: true, pm: true },
+          { id: "baleaSpf", slot: "spf", slotName: "3. LSF 50+ Schutzfluid", why: "Leichtes Breitband-Sonnenfluid verhindert UV-bedingte Entzündungen", essential: true, am: true, pm: false },
+          { id: "apad", slot: "active", slotName: "4. Rötungs- & Pickelmal-Active", why: "PAD (Azelain-Derivat): Reduziert sanft Rötungen & Hyperpigmentierung (PIH)", priority: 1, am: true, pm: false },
+          { id: "noHydrator", slot: "serum", slotName: "5. Tiefen-Hydrator", why: "Ectoin + Panthenol schützen vor Feuchtigkeitsverlust bei Wirkstoffnutzung", priority: 2, am: true, pm: true }
+        ]
+      },
+      premium: {
+        tierLevel: "premium",
+        tierName: "High-End & Spezial-Apotheke",
+        items: [
+          { id: "ceraveWash", slot: "reiniger", slotName: "1. Milde Barriere-Reinigung", why: "Dermatologische Tensid-freie Reinigung mit 3 Ceramiden", essential: true, am: true, pm: true },
+          { id: "sebium", slot: "creme", slotName: "2. Medizinische Akne-Begleitpflege", why: "Bioderma Sébium Hydra: Speziell formuliert gegen Schuppung & Reizungen unter Aknetherapie", essential: true, am: true, pm: true },
+          { id: "anthelios", slot: "spf", slotName: "3. High-End Breitband-LSF 50+", why: "La Roche-Posay Mexoryl 400: Maximaler Schutz vor ultrawellen UVA-Strahlen & Pickelmalen", essential: true, am: true, pm: false },
+          { id: "apad", slot: "active", slotName: "4. Evidenz-Active (PAD)", why: "PAD (Azelain-Derivat): Sanfte Klärung ohne Austrocknung oder Schälung", priority: 1, am: true, pm: false },
+          { id: "purito", slot: "serum", slotName: "5. Panthenol SOS-Balsam", why: "10% Panthenol repariert akut gereizte Hautstellen über Nacht", priority: 2, am: false, pm: true }
+        ]
+      }
+    },
+    get items() { return this.tiers.budget.items; }
   },
   oily_pores: {
     id: "oily_pores",
     name: "Ölig & Poren-Balance",
     desc: "Fettlösliche Talgkontrolle & Porenverfeinerung ohne austrocknende Alkohole.",
     badge: "Sebum / Mitesser / Glanz",
-    items: [
-      { id: "isanaWash", slot: "reiniger", slotName: "1. Porentiefe Reinigung", why: "Klärt überschüssiges Sebum porentief und reizarm", essential: true, am: true, pm: true },
-      { id: "isanaCreme", slot: "creme", slotName: "2. Leichte Feuchtigkeit", why: "Spendet Feuchtigkeit ohne Fettfilm oder Glanz", essential: true, am: true, pm: true },
-      { id: "baleaSpf", slot: "spf", slotName: "3. Mattierender LSF 50+", why: "Leichtes Sonnenfluid, klebt nicht und verstopft keine Poren", essential: true, am: true, pm: false },
-      { id: "bbomb", slot: "active", slotName: "4. Talg-Regulator", why: "10% Niacinamid + Zink: Reguliert Sebumproduktion & verfeinert Poren", priority: 1, am: true, pm: false },
-      { id: "bha", slot: "serum", slotName: "5. BHA Porenpeeling", why: "2% Salicylsäure dringt fettlöslich in die Pore ein (1–2× wöchentlich)", priority: 2, am: false, pm: true }
-    ]
+    tiers: {
+      budget: {
+        tierLevel: "budget",
+        tierName: "Drogerie-Spar",
+        items: [
+          { id: "isanaWash", slot: "reiniger", slotName: "1. Porentiefe Reinigung", why: "Klärt überschüssiges Sebum porentief und reizarm", essential: true, am: true, pm: true },
+          { id: "isanaCreme", slot: "creme", slotName: "2. Leichte Feuchtigkeit", why: "Spendet Feuchtigkeit ohne Fettfilm oder Glanz", essential: true, am: true, pm: true },
+          { id: "baleaSpf", slot: "spf", slotName: "3. Mattierender LSF 50+", why: "Leichtes Sonnenfluid, klebt nicht und verstopft keine Poren", essential: true, am: true, pm: false },
+          { id: "bbomb", slot: "active", slotName: "4. Talg-Regulator", why: "10% Niacinamid + Zink: Reguliert Sebumproduktion & verfeinert Poren", priority: 1, am: true, pm: false },
+          { id: "glycolic", slot: "serum", slotName: "5. Klärendes Peeling", why: "Sanftes Peeling für glatte Porenstruktur (1–2× wöchentlich)", priority: 2, am: false, pm: true }
+        ]
+      },
+      mid: {
+        tierLevel: "mid",
+        tierName: "Dermokosmetik & Apotheke",
+        items: [
+          { id: "ceraveWash", slot: "reiniger", slotName: "1. Ausgleichende Reinigung", why: "Reinigt gründlich ohne Barriere-Reizung oder Rebound-Talgproduktion", essential: true, am: true, pm: true },
+          { id: "isanaCreme", slot: "creme", slotName: "2. Leichte Feuchtigkeit", why: "Ölfreie Befeuchtung verhindert komedogene Verstopfungen", essential: true, am: true, pm: true },
+          { id: "anthelios", slot: "spf", slotName: "3. Mattierender High-Protection LSF 50+", why: "Sehr leichtes, unsichtbares Apotheken-Fluid ohne Nachfetten", essential: true, am: true, pm: false },
+          { id: "bbomb", slot: "active", slotName: "4. Sebum-Kontroll-Serum", why: "10% Niacinamid + Zink PCA: Normalisiert Talgfluss und Porendurchmesser", priority: 1, am: true, pm: false },
+          { id: "noHydrator", slot: "serum", slotName: "5. Barriere-Hydrator", why: "Versorgt fettige Haut mit schwereloser Feuchtigkeit ohne Lipide", priority: 2, am: true, pm: true }
+        ]
+      },
+      premium: {
+        tierLevel: "premium",
+        tierName: "High-End & Spezial-Apotheke",
+        items: [
+          { id: "ceraveWash", slot: "reiniger", slotName: "1. Porenverfeinernde Reinigung", why: "Dermatologische Reinigung mit Ceramiden gegen Mikrostauungen", essential: true, am: true, pm: true },
+          { id: "sebium", slot: "creme", slotName: "2. Sebum-regulierende Pflege", why: "Bioderma Sébium: Hält Talg flüssig und beugt Verhornungen vor", essential: true, am: true, pm: true },
+          { id: "anthelios", slot: "spf", slotName: "3. High-End LSF 50+ Matt Fluid", why: "La Roche-Posay Mexoryl 400: Kein Weißeln, unsichtbares Finish", essential: true, am: true, pm: false },
+          { id: "bbomb", slot: "active", slotName: "4. Niacinamid & Zink Serum", why: "Geek & Gorgeous B-Bomb: Klinisch bewährte Porenverfeinerung", priority: 1, am: true, pm: false },
+          { id: "bha", slot: "serum", slotName: "5. High-End 2% BHA Liquid", why: "Paula's Choice 2% BHA: Fettlösliche Salicylsäure klärt Porenwände tiefenwirksam", priority: 2, am: false, pm: true }
+        ]
+      }
+    },
+    get items() { return this.tiers.budget.items; }
   },
   dry_fragile: {
     id: "dry_fragile",
     name: "Trocken & Sensibel",
     desc: "Intensive Barriere-Erholung mit Ceramiden und Panthenol gegen Spannungsgefühl.",
     badge: "Spannung / Trockenheit",
-    items: [
-      { id: "baleaWash", slot: "reiniger", slotName: "1. Milde Reinigung", why: "Reizarm & rückfettend, verhindert Spannungsgefühl nach dem Waschen", essential: true, am: true, pm: true },
-      { id: "mixaPanthenol", slot: "creme", slotName: "2. Intensive SOS-Creme", why: "13% Glycerin + Panthenol zur schnellen Barriere-Regeneration", essential: true, am: true, pm: true },
-      { id: "baleaSpf", slot: "spf", slotName: "3. Schutz-LSF 50+", why: "Schützt trockene Haut vor UV-bedingtem Feuchtigkeitsverlust", essential: true, am: true, pm: false },
-      { id: "noHydrator", slot: "serum", slotName: "4. Ectoin-Hydrator", why: "Tiefenwirksame Hydratation bei rauen Stellen und Schuppung", priority: 1, am: true, pm: true },
-      { id: "purito", slot: "active", slotName: "5. Barriere-Balsam", why: "Reichhaltiger Panthenol-Schutz vor transepidermalem Wasserverlust", priority: 2, am: false, pm: true }
-    ]
+    tiers: {
+      budget: {
+        tierLevel: "budget",
+        tierName: "Drogerie-Spar",
+        items: [
+          { id: "baleaWash", slot: "reiniger", slotName: "1. Milde Reinigung", why: "Reizarm & rückfettend, verhindert Spannungsgefühl nach dem Waschen", essential: true, am: true, pm: true },
+          { id: "mixaPanthenol", slot: "creme", slotName: "2. Intensive SOS-Creme", why: "13% Glycerin + Panthenol zur schnellen Barriere-Regeneration", essential: true, am: true, pm: true },
+          { id: "baleaSpf", slot: "spf", slotName: "3. Schutz-LSF 50+", why: "Schützt trockene Haut vor UV-bedingtem Feuchtigkeitsverlust", essential: true, am: true, pm: false },
+          { id: "noHydrator", slot: "serum", slotName: "4. Ectoin-Hydrator", why: "Tiefenwirksame Hydratation bei rauen Stellen und Schuppung", priority: 1, am: true, pm: true },
+          { id: "baleaCreme", slot: "active", slotName: "5. Cica-Zusatzpflege", why: "Extra Portion Cica & Panthenol zur Barriereversiegelung", priority: 2, am: false, pm: true }
+        ]
+      },
+      mid: {
+        tierLevel: "mid",
+        tierName: "Dermokosmetik & Apotheke",
+        items: [
+          { id: "ceraveWash", slot: "reiniger", slotName: "1. Hydratisierende Reinigung", why: "CeraVe Hydrating Cleanser: Reinigt lotionartig ohne Schaum und bewahrt Lipide", essential: true, am: true, pm: true },
+          { id: "ceraveMoist", slot: "creme", slotName: "2. Ceramid-Feuchtigkeitscreme", why: "CeraVe Feuchtigkeitscreme: Füllt fehlende hauteigene Lipide & Ceramide auf", essential: true, am: true, pm: true },
+          { id: "baleaSpf", slot: "spf", slotName: "3. Schutz-LSF 50+", why: "Sanfter Breitbandschutz gegen photooxidativen Lipidabbau", essential: true, am: true, pm: false },
+          { id: "noHydrator", slot: "serum", slotName: "4. Ectoin-Tiefenhydrator", why: "Nø Cosmetics Hydrator: Schützt vor transepidermalem Wasserverlust (TEWL)", priority: 1, am: true, pm: true },
+          { id: "mixaPanthenol", slot: "active", slotName: "5. SOS Panthenol Balsam", why: "Mixa Panthenol Comfort: Akut-Linderung bei brennenden, rauen Wangen", priority: 2, am: false, pm: true }
+        ]
+      },
+      premium: {
+        tierLevel: "premium",
+        tierName: "High-End & Spezial-Apotheke",
+        items: [
+          { id: "ceraveWash", slot: "reiniger", slotName: "1. Barriere-Creme-Reinigung", why: "Physiologische Formulierung mit 3 Ceramiden & Hyaluronsäure", essential: true, am: true, pm: true },
+          { id: "purito", slot: "creme", slotName: "2. High-End Panthenol-Balsam", why: "Purito Mighty Bamboo: 10% Panthenol bildet schützenden Repair-Kokonzustand", essential: true, am: true, pm: true },
+          { id: "anthelios", slot: "spf", slotName: "3. Ultra-Protection LSF 50+", why: "La Roche-Posay Anthelios UVMune 400: Verhindert UV-induzierte Barrierebrüche", essential: true, am: true, pm: false },
+          { id: "noHydrator", slot: "serum", slotName: "4. Ectoin-Zellschutz-Serum", why: "Zellschützendes Ectoin erhöht langanhaltend das Feuchtigkeitsbindevermögen", priority: 1, am: true, pm: true },
+          { id: "ceraveMoist", slot: "active", slotName: "5. Ceramid-Nachtversiegelung", why: "CeraVe Feuchtigkeitscreme: Intensive nächtliche Okklusion", priority: 2, am: false, pm: true }
+        ]
+      }
+    },
+    get items() { return this.tiers.budget.items; }
   },
   healthy_glow: {
     id: "healthy_glow",
     name: "Gesund & Prävention",
     desc: "Ausgewogene Gesunderhaltung: Feuchtigkeits-Balance und #1 Anti-Aging-Schutz.",
     badge: "Glow / Prävention",
-    items: [
-      { id: "baleaWash", slot: "reiniger", slotName: "1. Milde Reinigung", why: "Befreit sanft von Schmutz und Talg, ohne die Haut auszutrocknen", essential: true, am: true, pm: true },
-      { id: "baleaCreme", slot: "creme", slotName: "2. Ausgleichende Creme", why: "Hält die Hautbarriere geschmeidig und hydratisiert", essential: true, am: true, pm: true },
-      { id: "baleaSpf", slot: "spf", slotName: "3. Breitband-LSF 50+", why: "#1 evidenzbasierter Schutz gegen vorzeitige Hautalterung & Zellschäden", essential: true, am: true, pm: false },
-      { id: "bbomb", slot: "active", slotName: "4. Niacinamid-Booster", why: "Niacinamid stärkt die Ceramid-Synthese und sorgt für ebenmäßigen Teint", priority: 1, am: true, pm: false },
-      { id: "noHydrator", slot: "serum", slotName: "5. Feuchtigkeits-Hydrator", why: "Sorgt für pralle Feuchtigkeit und frischen Glow", priority: 2, am: true, pm: true }
-    ]
+    tiers: {
+      budget: {
+        tierLevel: "budget",
+        tierName: "Drogerie-Spar",
+        items: [
+          { id: "baleaWash", slot: "reiniger", slotName: "1. Milde Reinigung", why: "Befreit sanft von Schmutz und Talg, ohne die Haut auszutrocknen", essential: true, am: true, pm: true },
+          { id: "baleaCreme", slot: "creme", slotName: "2. Ausgleichende Creme", why: "Hält die Hautbarriere geschmeidig und hydratisiert", essential: true, am: true, pm: true },
+          { id: "baleaSpf", slot: "spf", slotName: "3. Breitband-LSF 50+", why: "#1 evidenzbasierter Schutz gegen vorzeitige Hautalterung & Zellschäden", essential: true, am: true, pm: false },
+          { id: "bbomb", slot: "active", slotName: "4. Niacinamid-Booster", why: "Niacinamid stärkt die Ceramid-Synthese und sorgt für ebenmäßigen Teint", priority: 1, am: true, pm: false },
+          { id: "noHydrator", slot: "serum", slotName: "5. Feuchtigkeits-Hydrator", why: "Sorgt für pralle Feuchtigkeit und frischen Glow", priority: 2, am: true, pm: true }
+        ]
+      },
+      mid: {
+        tierLevel: "mid",
+        tierName: "Dermokosmetik & Apotheke",
+        items: [
+          { id: "ceraveWash", slot: "reiniger", slotName: "1. Ausgleichende Reinigung", why: "CeraVe Hydrating Cleanser: Mild und pflegend für ein frisches Hautgefühl", essential: true, am: true, pm: true },
+          { id: "ceraveMoist", slot: "creme", slotName: "2. Ceramid-Feuchtigkeitspflege", why: "CeraVe Feuchtigkeitscreme: Stärkt die Schutzbarriere für den ganzen Tag", essential: true, am: true, pm: true },
+          { id: "baleaSpf", slot: "spf", slotName: "3. Breitband-LSF 50+", why: "Leichtes Fluid ohne Weißeln, verlässlicher täglicher UV-Schutz", essential: true, am: true, pm: false },
+          { id: "bbomb", slot: "active", slotName: "4. Niacinamid-Booster", why: "Geek & Gorgeous B-Bomb: 10% Niacinamid verbessert die Hauttextur sichtbar", priority: 1, am: true, pm: false },
+          { id: "noHydrator", slot: "serum", slotName: "5. Tiefen-Hydrator", why: "Nø Cosmetics Liquid Hydrator: Ectoin & Panthenol für strahlenden Feuchtigkeits-Glow", priority: 2, am: true, pm: true }
+        ]
+      },
+      premium: {
+        tierLevel: "premium",
+        tierName: "High-End & Spezial-Apotheke",
+        items: [
+          { id: "ceraveWash", slot: "reiniger", slotName: "1. Premium-Reinigung", why: "CeraVe: Dermatologisch reine Reinigung mit essenziellen Lipiden", essential: true, am: true, pm: true },
+          { id: "purito", slot: "creme", slotName: "2. High-End Bamboo Creme", why: "Purito Mighty Bamboo: Hochwertige Cica- und Bambus-Formulierung für seidiges Hautgefühl", essential: true, am: true, pm: true },
+          { id: "anthelios", slot: "spf", slotName: "3. High-End LSF 50+ UVMune 400", why: "La Roche-Posay Mexoryl 400: Weltbester Schutz vor tiefen UVA-Wellen", essential: true, am: true, pm: false },
+          { id: "bbomb", slot: "active", slotName: "4. Niacinamid 10% Booster", why: "Geek & Gorgeous B-Bomb: Unterstützt Kollagenstruktur und Verfeinerung", priority: 1, am: true, pm: false },
+          { id: "noHydrator", slot: "serum", slotName: "5. Luxus Ectoin-Hydrator", why: "Nø Cosmetics Hydrator: Tiefen-Befeuchtung für maximalen Glow", priority: 2, am: true, pm: true }
+        ]
+      }
+    },
+    get items() { return this.tiers.budget.items; }
   },
   teen: {
     id: "teen",
     name: "Teenie (12–19 Jahre)",
     desc: "Leitliniengerechte AAD-Basispflege: Schutz vor aggressiven Trends & Sanfte Klärung.",
     badge: "AAD Teenie-Leitlinie",
-    items: [
-      { id: "t_item_1", slot: "reiniger", slotName: "1. Milde Teenie-Reinigung", why: "Tensid-mild, schützt die junge Hautbarriere vor Irritationen", essential: true, am: true, pm: true },
-      { id: "t_item_3", slot: "creme", slotName: "2. Leichte Feuchtigkeitscreme", why: "Spendet Feuchtigkeit ohne Poren mit schweren Ölen zu belasten", essential: true, am: true, pm: true },
-      { id: "t_item_4", slot: "spf", slotName: "3. Tägliches Sonnenfluid LSF 50+", why: "Leichte Textur für Schule & Sport, klebt nicht", essential: true, am: true, pm: false },
-      { id: "t_item_2", slot: "active", slotName: "4. Klärendes BHA-Tonic", why: "Sanftes Peeling gegen Mitesser und pubertäre Unreinheiten", priority: 1, am: false, pm: true }
-    ]
+    tiers: {
+      budget: {
+        tierLevel: "budget",
+        tierName: "Drogerie-Spar",
+        items: [
+          { id: "t_item_1", slot: "reiniger", slotName: "1. Milde Teenie-Reinigung", why: "Tensid-mild, schützt die junge Hautbarriere vor Irritationen", essential: true, am: true, pm: true },
+          { id: "t_item_3", slot: "creme", slotName: "2. Leichte Feuchtigkeitscreme", why: "Spendet Feuchtigkeit ohne Poren mit schweren Ölen zu belasten", essential: true, am: true, pm: true },
+          { id: "t_item_4", slot: "spf", slotName: "3. Tägliches Sonnenfluid LSF 50+", why: "Leichte Textur für Schule & Sport, klebt nicht", essential: true, am: true, pm: false },
+          { id: "t_item_2", slot: "active", slotName: "4. Klärendes BHA-Tonic", why: "Sanftes Peeling gegen Mitesser und pubertäre Unreinheiten", priority: 1, am: false, pm: true }
+        ]
+      },
+      mid: {
+        tierLevel: "mid",
+        tierName: "Dermokosmetik & Apotheke",
+        items: [
+          { id: "t_item_24", slot: "reiniger", slotName: "1. Ausgleichende Reinigung", why: "CeraVe Reinigungsschaum: Befreit von Talg mit Ceramiden und Niacinamid", essential: true, am: true, pm: true },
+          { id: "t_item_29", slot: "creme", slotName: "2. Reizarme Feuchtigkeit", why: "Cetaphil Feuchtigkeitscreme: Nicht komedogen, beruhigt junge Problemhaut", essential: true, am: true, pm: true },
+          { id: "t_item_4", slot: "spf", slotName: "3. Tägliches Schutzfluid LSF 50+", why: "Leichtes Sonnenfluid schützt vor Pickelmalen (PIH)", essential: true, am: true, pm: false },
+          { id: "t_item_2", slot: "active", slotName: "4. Klärendes BHA-Tonic", why: "Salicylsäure beugt verstopften Poren vor ohne Alkoholbrennen", priority: 1, am: false, pm: true }
+        ]
+      },
+      premium: {
+        tierLevel: "premium",
+        tierName: "High-End & Spezial-Apotheke",
+        items: [
+          { id: "t_item_24", slot: "reiniger", slotName: "1. Dermokosmetische Reinigung", why: "CeraVe Ausgleichender Schaum: Schont den pH-Wert der Teenager-Haut", essential: true, am: true, pm: true },
+          { id: "t_item_51", slot: "creme", slotName: "2. Klinische Akne-Feuchtigkeitspflege", why: "Eucerin DERMOPURE Hydra Repair: Zieht sofort ein, hemmt Reizungen", essential: true, am: true, pm: true },
+          { id: "t_item_17", slot: "spf", slotName: "3. Mattierender Spezial-LSF 30", why: "Bioderma Photoderm AKN Mat: Mattiert langanhaltend und schützt vor Entzündungen", essential: true, am: true, pm: false },
+          { id: "t_item_52", slot: "active", slotName: "4. Klinisches Klärungs-Tonic", why: "Eucerin DERMOPURE Tonic: Medizinisch fundierte Porenklärung", priority: 1, am: false, pm: true }
+        ]
+      }
+    },
+    get items() { return this.tiers.budget.items; }
   }
 };
 
 function calculateBudgetRoutine(budget, skinTypeId = "acne_barrier") {
   const numBudget = Math.max(5, parseFloat(budget) || 20);
-  const tier = BUDGET_ROUTINE_TIERS[skinTypeId] || BUDGET_ROUTINE_TIERS.acne_barrier;
-  const allItems = tier.items;
+  const skinTier = BUDGET_ROUTINE_TIERS[skinTypeId] || BUDGET_ROUTINE_TIERS.acne_barrier;
+  
+  // Stufen-Ermittlung basierend auf Budget
+  let desiredLevel = "budget";
+  if (numBudget >= 50) desiredLevel = "premium";
+  else if (numBudget >= 30) desiredLevel = "mid";
+
+  // Fallback, falls das Budget die Essentials der Stufe nicht ganz deckt
+  const candidateLevels = desiredLevel === "premium" ? ["premium", "mid", "budget"] 
+                        : desiredLevel === "mid" ? ["mid", "budget"] 
+                        : ["budget"];
+
+  let selectedTierDef = skinTier.tiers ? skinTier.tiers[desiredLevel] : null;
+  if (skinTier.tiers) {
+    for (const lvl of candidateLevels) {
+      const candidate = skinTier.tiers[lvl];
+      if (!candidate) continue;
+      const candidateEssentials = candidate.items.filter(x => x.essential);
+      const cost = candidateEssentials.reduce((sum, item) => sum + getProductPrice(item.id), 0);
+      if (numBudget >= cost || lvl === "budget") {
+        selectedTierDef = candidate;
+        break;
+      }
+    }
+  }
+
+  const allItems = selectedTierDef ? selectedTierDef.items : (skinTier.items || []);
+  const tierLevel = selectedTierDef ? selectedTierDef.tierLevel : "budget";
+  const tierName = selectedTierDef ? selectedTierDef.tierName : "Drogerie-Spar";
 
   const essentials = allItems.filter(x => x.essential);
   const upgrades = allItems.filter(x => !x.essential).sort((a, b) => (a.priority || 99) - (b.priority || 99));
@@ -1588,9 +1770,11 @@ function calculateBudgetRoutine(budget, skinTypeId = "acne_barrier") {
 
   return {
     budget: numBudget,
-    skinTypeId: tier.id,
-    skinTypeName: tier.name,
-    badge: tier.badge,
+    skinTypeId: skinTier.id,
+    skinTypeName: skinTier.name,
+    badge: skinTier.badge,
+    tierLevel: tierLevel,
+    tierName: tierName,
     totalCost: roundedCost,
     savings: savings,
     products: selected.map(it => {
@@ -1647,9 +1831,9 @@ function renderBudgetRoutineModalContent() {
 
   const budgetPills = [
     { amount: 20, label: "💶 20 € (Drogerie-Spar)" },
-    { amount: 30, label: "💶 30 € (Basis + Active)" },
-    { amount: 40, label: "💶 40 € (Erweitert)" },
-    { amount: 50, label: "💶 50 € (Apotheken-Kombi)" }
+    { amount: 35, label: "💶 35 € (Apotheken-Basis)" },
+    { amount: 50, label: "💶 50 € (Dermokosmetik)" },
+    { amount: 75, label: "💶 75 € (High-End & Premium)" }
   ];
 
   const skinTypePills = [
@@ -1666,7 +1850,7 @@ function renderBudgetRoutineModalContent() {
       <h2 style="margin:0;font-family:'Iowan Old Style', Palatino, Georgia, serif;font-size:1.35rem">Evidenzbasierte Budget-Routine</h2>
     </div>
     <p style="font-size:0.83rem;color:var(--muted);margin:3px 0 10px;line-height:1.4">
-      Lege dein maximales Budget fest. Die App stellt dir die wirksamste, verträglichste Drogerie-Routine zusammen — evidenzbasiert ohne Reiz-Stacking.
+      Lege dein maximales Budget fest. Die App stellt dir die wirksamste Routine zusammen — abgestimmt auf deine Budgetstufe von Drogerie bis High-End und evidenzbasiert ohne Reiz-Stacking.
     </p>
 
     <!-- 1. Hauttyp-Wahl -->
@@ -1683,7 +1867,7 @@ function renderBudgetRoutineModalContent() {
       </div>
     </div>
 
-    <!-- 2. Budget-Wahl -->
+    <!-- 2. Budget-Wahl & Stufen-Anzeige -->
     <div style="margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
         <span style="font-size:0.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">
@@ -1704,6 +1888,26 @@ function renderBudgetRoutineModalContent() {
           </button>
         `).join("")}
       </div>
+      <!-- Aktive Kategorie-Badge -->
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px">
+        <span style="font-size:0.75rem;color:var(--muted)">Empfohlene Stufe:</span>
+        <span class="tag" style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;${
+          result.tierLevel === 'premium' ? 'background:#f3e8ff;color:#6b21a8;border:1px solid #d8b4fe' :
+          result.tierLevel === 'mid' ? 'background:#fef3c7;color:#92400e;border:1px solid #fde68a' :
+          'background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd'
+        }">
+          ${result.tierLevel === 'premium' ? '✨ ' : result.tierLevel === 'mid' ? '🏛️ ' : '🛒 '}
+          ${result.tierName}
+        </span>
+      </div>
+    </div>
+
+    <!-- Dermatologischer Preis-Hinweis -->
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:8px;padding:9px 12px;margin:8px 0 12px;font-size:0.78rem;line-height:1.45;color:#78350f">
+      <div style="font-weight:700;display:flex;align-items:center;gap:5px;margin-bottom:3px;color:#92400e">
+        <span>💡</span> <span>Dermatologischer Hinweis zum Preis:</span>
+      </div>
+      Nur weil ein Produkt teurer ist oder als High-End bzw. Apotheken-Kosmetik deklariert ist, ist es aus evidenzbasierter dermatologischer Sicht <strong>nicht automatisch wirksamer</strong> als günstige, reizarme Drogerie-Basispflege (wie z. B. Balea Med oder Isana Pure). Höhere Preise spiegeln vor allem Textur-Raffinesse, Galenik oder Marken-Positionierung wider — nicht zwingend eine stärkere klinische Wirkung auf die Hautgesundheit.
     </div>
 
     <!-- 3. Budget-Balken & Korb-Status -->
@@ -1726,7 +1930,7 @@ function renderBudgetRoutineModalContent() {
     <!-- 4. Produkt-Liste -->
     <div style="margin-bottom:14px">
       <div style="font-size:0.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px">
-        Zusammengestellte Drogerie-Produkte:
+        Zusammengestellte Produkte (${result.tierName}):
       </div>
       <div style="display:flex;flex-direction:column;gap:7px">
         ${result.products.map(p => `

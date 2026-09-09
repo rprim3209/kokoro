@@ -1,65 +1,73 @@
   :root {
-    /* 5-Color Brand Palette (Lotus) — no single color dominates */
+    /* 5-Color Brand Palette (Lotus Pond) — rose water, moss pads, deep green, midnight */
     --color-dark-green: #0A3323;
     --color-moss-green: #839958;
     --color-beige: #F7F4D5;
     --color-rosy-brown: #D3968C;
     --color-midnight-green: #105666;
 
-    /* Semantic Tokens — harmonious surfaces */
-    --ink: #0A3323;              /* Dark green as primary ink */
-    --muted: #4F6456;
-    --paper: #F7F4D5;            /* Beige calm canvas (NOT moss full-bleed) */
-    --card: #FFFFFF;             /* Crisp white card surface */
-    --surface: #EDF3E4;          /* Very light moss tint for nested rails / empty states */
-    --surface-beige: #F7F4D5;    /* Explicit beige surface when needed */
-    --line: rgba(10, 51, 35, 0.14);
-    --line-soft: rgba(211, 150, 140, 0.35); /* Rosy soft borders */
-    --line-card: #DFDBB7;        /* Warm border for elements inside cards */
+    /* Semantic Tokens — whimsical but readable lotus pond */
+    --ink: #0A3323;              /* Dark green ink on cream cards */
+    --muted: #3F5648;
+    --paper: #D3968C;            /* Rosy Brown page wash — READS as rose, not beige */
+    --paper-soft: #E2B4AB;       /* Softer rose for gradients / readability */
+    --card: #F7F4D5;             /* Warm cream cards (lift clearly on rose) */
+    --surface: #EDF3E4;          /* Light moss nested areas */
+    --surface-mist: #E3EFF2;     /* Soft midnight mist alternate nest */
+    --surface-beige: #F7F4D5;
+    --line: rgba(10, 51, 35, 0.16);
+    --line-soft: rgba(211, 150, 140, 0.55); /* Rosy soft borders / pills */
+    --line-card: rgba(10, 51, 35, 0.12);
     --primary: #0A3323;
     --primary-fg: #F7F4D5;
-    --secondary: #105666;        /* Midnight — links / Rx / secondary emphasis */
+    --secondary: #105666;        /* Midnight — links / Rx / secondary */
     --ok: #0A3323;
-    --ok-bg: #E4ECE5;
+    --ok-bg: #EDF3E4;
     --warn: #92580A;
     --warn-bg: #FDF5E7;
     --no: #9C2727;
     --no-bg: #FDF0F0;
     --rx: #105666;
     --rx-bg: #E3EFF2;
-    --moss: #839958;             /* Accents / chips / soft success — NOT page wash */
+    --moss: #839958;             /* Chips / progress / soft success */
     --moss-dark: #4A5B2B;
     --moss-bg: #EDF3E4;
     --rose: #D3968C;
     --rose-dark: #8C483E;
-    --rose-bg: #FBF0ED;
+    --rose-bg: #F6E4DF;
     --gold: #839958;
     --link: #105666;
     --radius: 16px;
     --radius-lg: 18px;
-    --shadow: 0 6px 22px rgba(10, 51, 35, 0.08);
-    --shadow-soft: 0 2px 10px rgba(10, 51, 35, 0.05);
+    --shadow: 0 8px 26px rgba(10, 51, 35, 0.14), 0 2px 8px rgba(140, 72, 62, 0.08);
+    --shadow-soft: 0 3px 12px rgba(10, 51, 35, 0.10), 0 1px 4px rgba(211, 150, 140, 0.18);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--paper);
+    background-color: var(--paper);
+    background-image:
+      radial-gradient(ellipse 70% 50% at 0% 0%, rgba(131, 153, 88, 0.22) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 45% at 100% 8%, rgba(16, 86, 102, 0.18) 0%, transparent 50%),
+      radial-gradient(ellipse 55% 40% at 85% 95%, rgba(10, 51, 35, 0.12) 0%, transparent 55%),
+      linear-gradient(165deg, #D3968C 0%, #E2B4AB 48%, #D3968C 100%);
+    background-attachment: fixed;
     color: var(--ink);
     line-height: 1.5;
     padding-bottom: 96px;
     -webkit-font-smoothing: antialiased;
   }
   header {
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(10, 51, 35, 0.10);
+    background: rgba(247, 244, 213, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(131, 153, 88, 0.28);
     padding: 0.75rem 1.1rem 0.7rem;
     position: sticky;
     top: 0;
     z-index: 20;
-    box-shadow: 0 1px 8px rgba(10, 51, 35, 0.06);
+    box-shadow: 0 2px 14px rgba(10, 51, 35, 0.08), 0 1px 0 rgba(211, 150, 140, 0.35);
   }
   .header-inner {
     max-width: 680px;
@@ -80,10 +88,10 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 0.68rem;
     font-weight: 600;
-    color: #0A3323;
+    color: #105666;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    opacity: 0.78;
+    opacity: 0.9;
     margin-top: 1px;
   }
   .header-badges {
@@ -109,9 +117,9 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(10, 51, 35, 0.88);
+    background: linear-gradient(135deg, #0A3323 0%, #105666 100%);
     color: #F7F4D5;
-    border: 1px solid rgba(10, 51, 35, 0.2);
+    border: 1px solid rgba(16, 86, 102, 0.35);
     padding: 0.32rem 0.62rem;
     border-radius: 99px;
     font-size: 0.7rem;
@@ -183,6 +191,7 @@
   }
   .btn-scan:hover {
     background: #FFFFFF;
+    box-shadow: 0 4px 16px rgba(131, 153, 88, 0.35);
   }
   .btn-scan:active { transform: scale(0.98); }
   .btn-manual {
@@ -208,6 +217,7 @@
     gap: 10px;
     background: var(--card);
     border: 1px solid var(--line);
+    border-left: 4px solid var(--moss);
     border-radius: var(--radius);
     padding: 0.8rem 1rem;
     margin-bottom: 1.15rem;
@@ -273,13 +283,14 @@
   .tab-btn.active {
     background: var(--card);
     color: var(--ink);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 10px rgba(10, 51, 35, 0.10);
+    border: 1px solid rgba(131, 153, 88, 0.3);
   }
 
   /* Skin Cycling / Night Mode Switcher */
   .mode-switcher {
-    background: #fdfbf7;
-    border: 1px solid var(--line);
+    background: var(--surface-mist);
+    border: 1px solid var(--line-soft);
     border-radius: 12px;
     padding: 0.8rem 0.9rem;
     margin-bottom: 1.2rem;
@@ -337,6 +348,7 @@
   .step-card {
     background: var(--card);
     border: 1px solid var(--line);
+    border-left: 3px solid rgba(131, 153, 88, 0.55);
     border-radius: var(--radius);
     padding: 0.95rem 1.05rem;
     display: flex;
@@ -468,13 +480,13 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: #fffdf9;
-    border-top: 1px solid var(--line);
+    background: rgba(247, 244, 213, 0.92);
+    border-top: 1px solid rgba(211, 150, 140, 0.45);
     padding: 0.75rem 1.1rem;
     display: flex;
     justify-content: center;
     z-index: 30;
-    box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+    box-shadow: 0 -6px 20px rgba(10, 51, 35, 0.10);
   }
   .bottom-bar-inner {
     max-width: 680px;
@@ -495,14 +507,14 @@
   .sheet {
     position: fixed;
     inset: auto 0 0 0;
-    background: #fffdf9;
+    background: var(--card);
     border-radius: 20px 20px 0 0;
     max-width: 680px;
     margin: 0 auto;
     max-height: 88vh;
     overflow-y: auto;
     padding: 1.25rem 1.2rem 2.2rem;
-    box-shadow: 0 -12px 40px rgba(0,0,0,0.22);
+    box-shadow: 0 -12px 40px rgba(10, 51, 35, 0.28);
     z-index: 101;
     animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -512,7 +524,7 @@
   .sheet-handle {
     width: 44px;
     height: 5px;
-    background: #d8cebf;
+    background: rgba(211, 150, 140, 0.65);
     border-radius: 99px;
     margin: -0.4rem auto 1rem;
   }
@@ -588,10 +600,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #ffffff;
+    background: var(--card);
     cursor: pointer;
   }
-  .alt-card:hover { border-color: #baa891; }
+  .alt-card:hover { border-color: var(--moss); }
   .alt-name { font-size: 0.88rem; font-weight: 600; color: var(--ink); }
   .alt-store { font-size: 0.74rem; color: var(--muted); }
   .alt-price { font-size: 0.84rem; font-weight: 700; color: var(--ok); }
@@ -605,7 +617,7 @@
   }
   .sim-item {
     padding: 0.75rem 0.9rem;
-    background: #fff;
+    background: var(--card);
     border: 1px solid var(--line);
     border-radius: 10px;
     text-align: left;
@@ -617,7 +629,7 @@
   .sim-item:hover { background: var(--surface); }
   .sim-name { font-weight: 600; font-size: 0.9rem; }
   .sim-brand { font-size: 0.76rem; color: var(--muted); }
-  .sim-cat { font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; background: #ece5d8; font-weight: 600; }
+  .sim-cat { font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; background: var(--moss-bg); color: var(--moss-dark); font-weight: 600; }
 
   button.primary {
     width: 100%;
@@ -684,6 +696,7 @@
   .welcome-box {
     background: var(--card);
     border: 1px solid var(--line);
+    border-left: 4px solid var(--moss);
     border-radius: var(--radius-lg);
     padding: 1.45rem 1.25rem 1.35rem;
     box-shadow: var(--shadow);
@@ -715,12 +728,13 @@
   }
   .choice-card:hover {
     border-color: var(--ok);
-    background: #faf7f0;
+    background: var(--surface);
   }
   .choice-card.primary-choice {
     border-color: rgba(10, 51, 35, 0.35);
-    background: #FFFFFF;
-    box-shadow: 0 0 0 1px rgba(211, 150, 140, 0.25);
+    border-left: 4px solid var(--moss);
+    background: var(--card);
+    box-shadow: var(--shadow-soft), 0 0 0 1px rgba(211, 150, 140, 0.28);
   }
   .choice-header {
     display: flex;
@@ -740,7 +754,8 @@
     letter-spacing: 0.04em;
     padding: 2px 7px;
     border-radius: 4px;
-    background: #e8ded0;
+    background: var(--moss-bg);
+    color: var(--moss-dark);
   }
   .choice-text {
     font-size: 0.85rem;
@@ -755,24 +770,24 @@
     padding: 1.05rem 1.15rem;
     margin-bottom: 1.2rem;
     border: 1px solid var(--line);
-    background: #ffffff;
+    background: var(--card);
     box-shadow: var(--shadow-soft);
   }
   .prognosis-card.ok {
     border-left: 5px solid var(--ok);
-    background: #f7fbf8;
+    background: linear-gradient(135deg, #EDF3E4 0%, #F7F4D5 70%);
   }
   .prognosis-card.warn {
     border-left: 5px solid var(--warn);
-    background: #fdfbf5;
+    background: var(--warn-bg);
   }
   .prognosis-card.no {
     border-left: 5px solid var(--no);
-    background: #fff8f8;
+    background: var(--no-bg);
   }
   .prognosis-card.empty {
-    border-left: 5px solid #94a3b8;
-    background: #f8fafc;
+    border-left: 5px solid #105666;
+    background: linear-gradient(145deg, #EDF3E4 0%, #E3EFF2 55%, #F7F4D5 100%);
   }
   .prognosis-header {
     display: flex;
@@ -811,7 +826,7 @@
     margin-top: 0.45rem;
     font-size: 0.83rem;
     line-height: 1.5;
-    color: #334155;
+    color: var(--muted);
   }
   .prognosis-why-list {
     margin: 0.25rem 0 0;
@@ -823,11 +838,11 @@
 
   /* Empty Shelf */
   .empty-shelf {
-    border: 2px dashed rgba(10, 51, 35, 0.35);
+    border: 2px dashed rgba(131, 153, 88, 0.55);
     border-radius: 14px;
     padding: 1.8rem 1rem;
     text-align: center;
-    background: rgba(255,255,255,0.85);
+    background: rgba(247, 244, 213, 0.72);
     margin: 0.6rem 0;
   }
   .empty-shelf-text {
@@ -860,7 +875,7 @@
     border: 1px solid var(--line);
     border-radius: 10px;
     font-size: 0.95rem;
-    background: #fff;
+    background: var(--card);
     margin-bottom: 0.6rem;
     box-sizing: border-box;
   }
@@ -882,9 +897,9 @@
     cursor: pointer;
   }
   .cat-chip.active {
-    background: var(--ink);
-    color: #fff;
-    border-color: var(--ink);
+    background: var(--primary);
+    color: var(--primary-fg);
+    border-color: var(--primary);
   }
 
   /* Profile / Category Switcher in Header */
@@ -944,9 +959,10 @@
     opacity: 0.85;
   }
   .cat-nav-btn.active {
-    background: #FFFFFF;
-    box-shadow: 0 2px 8px rgba(10, 51, 35, 0.12);
+    background: var(--card);
+    box-shadow: 0 2px 10px rgba(10, 51, 35, 0.14);
     color: #0A3323;
+    border: 1px solid rgba(131, 153, 88, 0.35);
   }
   .cat-nav-btn.active.cat-teen .c-title, .cat-nav-btn.active#btnProfileTeen .c-title { color: #105666; }
   .cat-nav-btn.active.cat-adult .c-title, .cat-nav-btn.active#btnProfileAdult .c-title { color: #0A3323; }
@@ -960,8 +976,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px dashed var(--rose);
+    background: rgba(247, 244, 213, 0.75);
+    border: 1px dashed var(--rose-dark);
     border-radius: 9px;
     padding: 6px 8px;
     cursor: pointer;
@@ -1004,7 +1020,7 @@
     position: relative;
   }
   .typ-regal-shelf-header {
-    border-bottom: 2px solid #e3d9cb;
+    border-bottom: 2px solid rgba(131, 153, 88, 0.35);
     padding-bottom: 0.85rem;
     margin-bottom: 1.1rem;
   }
@@ -1018,24 +1034,24 @@
     font-weight: 600;
     padding: 5px 10px;
     border-radius: 8px;
-    background: #fff;
-    border: 1px solid var(--line);
+    background: var(--card);
+    border: 1px solid var(--line-soft);
     color: var(--muted);
     cursor: pointer;
     transition: all 0.15s ease;
   }
   .ideal-type-pill:hover {
-    border-color: #baa891;
+    border-color: var(--moss);
     color: var(--ink);
   }
   .ideal-type-pill.active {
-    background: var(--ink);
-    color: #fff;
-    border-color: var(--ink);
+    background: var(--primary);
+    color: var(--primary-fg);
+    border-color: var(--primary);
   }
   .coverage-bar-card {
-    background: #fff;
-    border: 1px solid #e8e0d4;
+    background: var(--surface);
+    border: 1px solid var(--line);
     border-radius: 10px;
     padding: 9px 12px;
     display: flex;
@@ -1048,7 +1064,7 @@
   .coverage-progress {
     flex: 1;
     height: 7px;
-    background: #eee5d8;
+    background: rgba(131, 153, 88, 0.22);
     border-radius: 99px;
     overflow: hidden;
   }
@@ -1064,8 +1080,9 @@
     gap: 12px;
   }
   .typ-compare-card {
-    background: #fff;
+    background: var(--card);
     border: 1px solid var(--line);
+    border-left: 3px solid rgba(131, 153, 88, 0.5);
     border-radius: 14px;
     padding: 12px 14px;
     display: grid;
@@ -1106,7 +1123,7 @@
   }
   .typ-compare-divider {
     font-size: 0.9rem;
-    color: #baa891;
+    color: var(--moss);
     font-weight: 700;
     user-select: none;
   }
@@ -1126,9 +1143,9 @@
     background: #072217;
   }
   .btn-adopt-alt {
-    background: #fff;
-    color: #5c4424;
-    border: 1px solid #d4c4b0;
+    background: var(--card);
+    color: var(--secondary);
+    border: 1px solid rgba(16, 86, 102, 0.4);
     border-radius: 8px;
     padding: 6px 10px;
     font-size: 0.75rem;
@@ -1137,16 +1154,16 @@
     white-space: nowrap;
   }
   .btn-adopt-alt:hover {
-    background: #faf6f0;
-    border-color: #baa891;
+    background: var(--rx-bg);
+    border-color: var(--secondary);
   }
   .toast-container {
     position: fixed;
     bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
-    background: #1e293b;
-    color: #fff;
+    background: #0A3323;
+    color: #F7F4D5;
     padding: 10px 20px;
     border-radius: 99px;
     font-size: 0.88rem;
@@ -1167,12 +1184,14 @@
 
   /* Budget-based Routine Engine */
   .budget-hero-card {
-    background: linear-gradient(135deg, #ffffff 0%, #fdfceb 100%);
+    background: linear-gradient(145deg, #F7F4D5 0%, #EDF3E4 55%, #E3EFF2 100%);
+    color: var(--ink);
     border: 1px solid var(--line);
+    border-left: 4px solid var(--moss);
     border-radius: 12px;
     padding: 0.95rem 1.1rem;
     margin: 1.1rem 0 0.8rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    box-shadow: var(--shadow-soft);
   }
   .budget-pills {
     display: flex;
@@ -1181,9 +1200,9 @@
     margin: 8px 0;
   }
   .budget-pill {
-    background: #fff;
-    border: 1px solid #d4c4b0;
-    color: #4a3b2c;
+    background: var(--card);
+    border: 1px solid var(--line-soft);
+    color: #0A3323;
     border-radius: 8px;
     padding: 6px 12px;
     font-size: 0.82rem;
@@ -1192,8 +1211,8 @@
     transition: all 0.15s ease;
   }
   .budget-pill:hover {
-    border-color: #baa891;
-    background: #faf6f0;
+    border-color: var(--moss);
+    background: var(--moss-bg);
   }
   .budget-pill.active {
     background: #0A3323;
@@ -1202,7 +1221,7 @@
     box-shadow: 0 2px 6px rgba(10,51,35,0.25);
   }
   .budget-progress-container {
-    background: #f1ebd8;
+    background: rgba(131, 153, 88, 0.22);
     border-radius: 99px;
     height: 10px;
     overflow: hidden;
@@ -1214,7 +1233,7 @@
     transition: width 0.3s ease;
   }
   .budget-item-card {
-    background: #fff;
+    background: var(--card);
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 0.75rem 0.9rem;
@@ -1225,7 +1244,7 @@
     gap: 10px;
   }
   .budget-item-card:hover {
-    border-color: #baa891;
+    border-color: var(--moss);
   }
   .budget-price-tag {
     font-size: 0.86rem;
