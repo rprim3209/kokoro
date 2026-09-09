@@ -1396,9 +1396,27 @@ Object.keys(TEEN_DB).forEach(id => {
 // Länder-Filter (eu_countries → countries[])
 // Annahme Seeds ohne Land: DE|AT|CH (DACH-Demo) — siehe land-filter.md
 // EU-Tag = überall verfügbar, sobald ein Land gewählt ist.
+// DACH-Marktgruppe: AT/DE/CH/(LI) teilen Verfügbarkeit nur für den Filter
+// (gemeinsamer Drogerie-Markt; keine Filial-Garantie). IT/FR bleiben strikt.
 // ==========================================
 
 const SEED_DEFAULT_COUNTRIES = ["DE", "AT", "CH"];
+
+/** DACH = gemeinsamer Drogerie-Markt für Filterzwecke (siehe land-filter.md) */
+const DACH_MARKET_GROUP = ["AT", "DE", "CH", "LI"];
+
+function isDachMarketCountry(cc) {
+  var code = String(cc || "").trim().toUpperCase();
+  return DACH_MARKET_GROUP.indexOf(code) !== -1;
+}
+
+/** Ländercodes, die für Matching gelten (DACH expandiert zu AT+DE+CH+LI). */
+function expandCountryMatchCodes(cc) {
+  var code = String(cc || "").trim().toUpperCase();
+  if (!code) return [];
+  if (isDachMarketCountry(code)) return DACH_MARKET_GROUP.slice();
+  return [code];
+}
 
 const PROFILE_COUNTRY_OPTIONS = [
   // EU-27 fully + EFTA
@@ -1513,7 +1531,13 @@ function productAvailableInCountry(p, cc, opts) {
     return false;
   }
   if (list.indexOf("EU") !== -1) return true;
-  return list.indexOf(code) !== -1;
+  // DACH: AT sieht auch DE/CH/(LI)-getaggte Produkte (und umgekehrt).
+  // Nicht für IT/FR/… — dort bleibt Matching strikt auf Land + EU.
+  var matchCodes = expandCountryMatchCodes(code);
+  for (var i = 0; i < matchCodes.length; i++) {
+    if (list.indexOf(matchCodes[i]) !== -1) return true;
+  }
+  return false;
 }
 
 function filterProductsByCountry(list, cc, opts) {
@@ -1522,7 +1546,7 @@ function filterProductsByCountry(list, cc, opts) {
   if (!cc) return arr.slice();
   var hideUnknown = (opts.hideUnknown !== undefined)
     ? !!opts.hideUnknown
-    : (typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : true);
+    : (typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : false);
   return arr.filter(function (p) {
     return productAvailableInCountry(p, cc, { hideUnknown: hideUnknown, includeUnknown: !hideUnknown });
   });
@@ -1532,7 +1556,7 @@ function filterProductIdsByCountry(ids, dbMap, cc, opts) {
   opts = opts || {};
   var hideUnknown = (opts.hideUnknown !== undefined)
     ? !!opts.hideUnknown
-    : (typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : true);
+    : (typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : false);
   var map = dbMap || {};
   var code = cc || (typeof getProfileCountry === "function" ? getProfileCountry() : "");
   var kept = [];
@@ -1557,10 +1581,14 @@ function filterProductIdsByCountry(ids, dbMap, cc, opts) {
 function countryFilterNoteHtml(stats, cc) {
   if (!cc || !stats) return "";
   var parts = [];
-  if (stats.hiddenCountry > 0) parts.push(stats.hiddenCountry + " nicht in " + cc);
+  var code = String(cc || "").toUpperCase();
+  var scope = (typeof isDachMarketCountry === "function" && isDachMarketCountry(code))
+    ? (code + " / DACH")
+    : code;
+  if (stats.hiddenCountry > 0) parts.push(stats.hiddenCountry + " nicht in " + scope);
   if (stats.hiddenUnknown > 0) parts.push(stats.hiddenUnknown + " Land offen ausgeblendet");
   if (!parts.length) return "";
-  return '<div style="font-size:0.72rem;color:var(--muted);margin:4px 0 8px;line-height:1.35">🌍 Filter ' + cc + ': ' + parts.join(" · ") + '. <button type="button" class="btn-text" style="font-size:0.72rem;padding:0;text-decoration:underline;color:#2563eb" onclick="toggleHideUnknownCountries()">Unklare Herkunft ' + (typeof shouldHideUnknownCountries === "function" && shouldHideUnknownCountries() ? "einblenden" : "ausblenden") + "</button></div>";
+  return '<div style="font-size:0.72rem;color:var(--muted);margin:4px 0 8px;line-height:1.35">🌍 Filter ' + scope + ': ' + parts.join(" · ") + '. <button type="button" class="btn-text" style="font-size:0.72rem;padding:0;text-decoration:underline;color:#2563eb" onclick="toggleHideUnknownCountries()">Unklare Herkunft ' + (typeof shouldHideUnknownCountries === "function" && shouldHideUnknownCountries() ? "einblenden" : "ausblenden") + "</button></div>";
 }
 
 function getLiveDmHonesty(cc) {
@@ -1616,6 +1644,9 @@ if (typeof window !== "undefined") {
   window.pickCountryAvailableId = pickCountryAvailableId;
   window.PROFILE_COUNTRY_OPTIONS = PROFILE_COUNTRY_OPTIONS;
   window.SEED_DEFAULT_COUNTRIES = SEED_DEFAULT_COUNTRIES;
+  window.DACH_MARKET_GROUP = DACH_MARKET_GROUP;
+  window.isDachMarketCountry = isDachMarketCountry;
+  window.expandCountryMatchCodes = expandCountryMatchCodes;
 }
 
 // Seeds / Offline-Katalog einmal normalisieren
@@ -2512,7 +2543,7 @@ function showKatalogStatusModal() {
           <ol style="font-size:0.82rem;color:#334155;margin:0;padding-left:1.2rem;line-height:1.5">
             <li>Mappe auf deinem Desktop öffnen: <code>Kosmetikschrank</code></li>
             <li>Doppelklick auf <strong><code>start-server.bat</code></strong></li>
-            <li>Der Server startet sofort auf <strong><code>http://localhost:8000</code></strong> und öffnet den Browser automatisch!</li>
+            <li>Der Server startet sofort auf <strong><code>http://127.0.0.1:8787</code></strong> und öffnet den Browser automatisch!</li>
           </ol>
         </div>
       ` : ''}

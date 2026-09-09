@@ -56,7 +56,7 @@ let appState = {
   ],
   customProducts: {},
   country: "AT",
-  hideUnknownCountries: true
+  hideUnknownCountries: false
 };
 
 function escapeHtml(str) {
@@ -139,7 +139,15 @@ if (saved) {
       }
 
       // Länder-Migration: einheitliches Land für alle Kategorien (Global Sync)
-      if (appState.hideUnknownCountries === undefined) appState.hideUnknownCountries = true;
+      // dach1: Unklare Herkunft standardmäßig einblenden (Katalog für AT nicht leeren)
+      if (appState.hideUnknownCountries === undefined) appState.hideUnknownCountries = false;
+      if (appState._countryFilterVersion !== "dach1") {
+        appState._countryFilterVersion = "dach1";
+        // Einmalig weicher: alter Default hide=true machte AT-Katalog zu klein
+        if (appState.hideUnknownCountries === true) {
+          appState.hideUnknownCountries = false;
+        }
+      }
       if (!appState.country) {
         const found = (Array.isArray(appState.profiles) && appState.profiles.find(p => p.country)) || null;
         appState.country = (found && found.country) ? String(found.country).toUpperCase() : "AT";
@@ -217,7 +225,7 @@ function resetSchrank() {
     ],
     customProducts: {},
     country: "AT",
-    hideUnknownCountries: true
+    hideUnknownCountries: false
   };
   if (appState.profiles && appState.profiles[0] && !appState.profiles[0].country) {
     appState.profiles[0].country = "AT";
@@ -950,7 +958,8 @@ function detectCountryFromLocationUI(btnEl) {
 }
 
 function shouldHideUnknownCountries() {
-  return appState.hideUnknownCountries !== false;
+  // Default aus (false): unklare Herkunft einblenden — siehe land-filter.md / dach1
+  return appState.hideUnknownCountries === true;
 }
 
 function setHideUnknownCountries(on) {

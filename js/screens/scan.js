@@ -116,7 +116,7 @@ function openAddBabyProductModal(targetSlot = "all", profileType = "baby") {
   function renderSearchList() {
     const keys = Object.keys(BABY_DB);
     const cc = typeof getProfileCountry === "function" ? getProfileCountry() : "";
-    const hideUnknown = typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : true;
+    const hideUnknown = typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : false;
     let hiddenCountry = 0, hiddenUnknown = 0;
     const filtered = keys.filter(id => {
       const p = BABY_DB[id];
@@ -475,7 +475,7 @@ function openAddTeenProductModal(targetSlot = "all") {
   function renderSearchList() {
     const keys = Object.keys(TEEN_DB);
     const cc = typeof getProfileCountry === "function" ? getProfileCountry() : "";
-    const hideUnknown = typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : true;
+    const hideUnknown = typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : false;
     let hiddenCountry = 0, hiddenUnknown = 0;
     const filtered = keys.filter(id => {
       const p = TEEN_DB[id];
@@ -823,7 +823,7 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
   function getFilteredProducts() {
     const keys = Object.keys(DB).filter(k => k !== "water");
     const cc = typeof getProfileCountry === "function" ? getProfileCountry() : "";
-    const hideUnknown = typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : true;
+    const hideUnknown = typeof shouldHideUnknownCountries === "function" ? shouldHideUnknownCountries() : false;
     let hiddenCountry = 0, hiddenUnknown = 0;
     const filtered = keys.filter(id => {
       const p = DB[id];

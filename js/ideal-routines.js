@@ -135,8 +135,12 @@ function setIdealRoutineType(typeId) {
   if (p && p.category === "adult") {
     p.subtitle = sub;
   }
+  const comp = appState.routineComplexity || "basis";
+  syncAdultRoutineToComplexity(comp, typeId, true);
   saveState();
   renderMain();
+  const rName = (IDEAL_ROUTINES[typeId] && IDEAL_ROUTINES[typeId].name) || sub;
+  showToast(`🪵 Hauttyp auf <strong>${rName}</strong> umgestellt!`);
 }
 
 function setIdealRoutineComplexity(comp) {
@@ -145,16 +149,19 @@ function setIdealRoutineComplexity(comp) {
   if (p && p.category === "adult") {
     p.complexity = comp;
   }
+  const routineId = getSelectedIdealRoutineId();
+  syncAdultRoutineToComplexity(comp, routineId, false);
   saveState();
   renderMain();
   const label = comp === "minimal" ? "Minimalistisch (2 Produkte)" : (comp === "basis" ? "Ausgewogene Basis (3 Produkte)" : "Umfassend (4–5 Produkte)");
   showToast(`🎯 Routine-Aufwand auf <strong>${label}</strong> angepasst!`);
 }
 
-function getIdealRoutineSteps(routine, tab, complexity) {
+function getIdealRoutineSteps(routine, tab, complexity, specificPmMode) {
   const comp = complexity || appState.routineComplexity || "basis";
   const isAM = tab === "am";
   const id = routine.id;
+  const currentPmMode = specificPmMode || appState.pmMode || "a";
 
   if (comp === "minimal") {
     if (isAM) {
@@ -177,12 +184,12 @@ function getIdealRoutineSteps(routine, tab, complexity) {
     } else {
       // PM Minimal (2 Produkte)
       if (id === "acne_barrier") {
-        if (appState.pmMode === "b") {
+        if (currentPmMode === "b") {
           return [
             { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "baleaWash", why: "Porentiefe, reizarme Reinigung vor dem BPO." },
             { slotKey: "active", slotName: "2. Akut-Active", prodId: "clienzo", why: "BPO 5% bekämpft Entzündungen bei akuten Pickeln direkt." }
           ];
-        } else if (appState.pmMode === "c") {
+        } else if (currentPmMode === "c") {
           return [
             { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "baleaWash", why: "Reizarme Reinigung für die Barriere-Erholung." },
             { slotKey: "creme", slotName: "2. SOS-Barrierebalsam", prodId: "mixaPanthenol", why: "Reichhaltiges Panthenol zur Regeneration der Hornschicht." }
@@ -241,13 +248,13 @@ function getIdealRoutineSteps(routine, tab, complexity) {
     } else {
       // PM Basis (3 Produkte)
       if (id === "acne_barrier") {
-        if (appState.pmMode === "b") {
+        if (currentPmMode === "b") {
           return [
             { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "baleaWash", why: "Porentiefe, reizarme Reinigung." },
             { slotKey: "active", slotName: "2. Akut-Active", prodId: "clienzo", why: "BPO 5% bekämpft Entzündungen direkt." },
             { slotKey: "creme", slotName: "3. Barrierecreme", prodId: "baleaCreme", why: "Cica schützt vor BPO-Austrocknung." }
           ];
-        } else if (appState.pmMode === "c") {
+        } else if (currentPmMode === "c") {
           return [
             { slotKey: "reiniger", slotName: "1. Milde Reinigung", prodId: "baleaWash", why: "Reizarme Reinigung für die Ruhe-Nacht." },
             { slotKey: "serum", slotName: "2. SOS-Hydrator", prodId: "purito", why: "Panthenol zur Milderung von Spannungsgefühl." },
@@ -282,22 +289,146 @@ function getIdealRoutineSteps(routine, tab, complexity) {
     }
   } else {
     // "comprehensive": alle definierten Schritte (4-5)
-    return isAM ? routine.am : (routine[`pm_${appState.pmMode}`] || routine.pm || routine.pm_a);
+    return isAM ? routine.am : (routine[`pm_${currentPmMode}`] || routine.pm || routine.pm_a);
   }
 }
 
-function checkSlotCovered(slotKey, tab) {
-  const list = (tab === "am") ? appState.am : getActivePMList();
+function checkProductMatchesSlot(p, slotKey) {
+  if (!p) return false;
+  const kat = p.kat || p.slot || "";
+  if (slotKey === "reiniger") {
+    return kat === "reiniger" || kat === "bad";
+  }
+  if (slotKey === "spf") {
+    return kat === "spf" || (p.klassen && p.klassen.includes("uv"));
+  }
+  if (slotKey === "windel") {
+    return kat === "windel";
+  }
+  if (slotKey === "haar") {
+    return kat === "haar";
+  }
+  if (slotKey === "active") {
+    return kat === "active" || kat === "spot" || p.rx || (p.klassen && p.klassen.some(k => ["azelaic", "retinoid_rx", "retinoid_cos", "bha", "aha", "niacinamide"].includes(k)));
+  }
+  if (slotKey === "serum") {
+    if (p.id === "purito") return true;
+    const hasActiveClasses = p.rx || (p.klassen && p.klassen.some(k => ["azelaic", "retinoid_rx", "retinoid_cos", "bha", "aha"].includes(k)));
+    if (hasActiveClasses) return false;
+    return kat === "serum" || (p.klassen && (p.klassen.includes("humectant") || p.klassen.includes("support") || p.klassen.includes("niacinamide")));
+  }
+  if (slotKey === "creme") {
+    if (p.id === "purito") return false;
+    return kat === "creme" || kat === "windel";
+  }
+  return false;
+}
+
+function checkSlotCovered(slotKey, tab, customList) {
+  let list = customList;
+  if (!list) {
+    if (tab === "am") list = appState.am;
+    else if (tab === "pm_a") list = appState.pm_a;
+    else if (tab === "pm_b") list = appState.pm_b;
+    else if (tab === "pm_c") list = appState.pm_c;
+    else list = (typeof getActivePMList === "function" ? getActivePMList() : appState.pm_a);
+  }
+  if (!Array.isArray(list)) return null;
   for (const id of list) {
-    const p = DB[id] || (typeof TEEN_DB !== "undefined" ? TEEN_DB[id] : null);
+    const p = (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(id) : null)
+      || (typeof DB === "object" ? DB[id] : null)
+      || (typeof TEEN_DB === "object" ? TEEN_DB[id] : null)
+      || (typeof BABY_DB === "object" ? BABY_DB[id] : null);
     if (!p) continue;
-    if (slotKey === "reiniger" && p.kat === "reiniger") return p;
-    if (slotKey === "serum" && (p.kat === "serum" || (p.klassen && p.klassen.includes("humectant")))) return p;
-    if (slotKey === "active" && (p.kat === "active" || p.kat === "spot" || p.rx || (p.klassen && p.klassen.some(k => ["azelaic", "retinoid_rx", "retinoid_cos", "bha", "aha", "niacinamide"].includes(k))))) return p;
-    if (slotKey === "creme" && p.kat === "creme") return p;
-    if (slotKey === "spf" && (p.kat === "spf" || (p.klassen && p.klassen.includes("uv")))) return p;
+    if (checkProductMatchesSlot(p, slotKey)) return p;
   }
   return null;
+}
+
+function syncListToSteps(currentList, targetSteps, isAM, isTypeSwitch) {
+  if (!Array.isArray(currentList)) currentList = [];
+  if (!Array.isArray(targetSteps) || targetSteps.length === 0) return currentList;
+
+  const result = [];
+  const assignedProdIds = new Set();
+
+  for (const st of targetSteps) {
+    let matchedProdId = null;
+
+    if (!isTypeSwitch) {
+      // 1. First priority: look for a user custom/scanned product matching this step
+      for (const id of currentList) {
+        if (assignedProdIds.has(id)) continue;
+        if (appState.customProducts && appState.customProducts[id]) {
+          const p = (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(id) : null)
+            || (typeof DB === "object" ? DB[id] : null);
+          if (p && checkProductMatchesSlot(p, st.slotKey)) {
+            matchedProdId = id;
+            break;
+          }
+        }
+      }
+
+      // 2. Second priority: look for any existing product in currentList matching this step
+      if (!matchedProdId) {
+        for (const id of currentList) {
+          if (assignedProdIds.has(id)) continue;
+          const p = (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(id) : null)
+            || (typeof DB === "object" ? DB[id] : null);
+          if (p && checkProductMatchesSlot(p, st.slotKey)) {
+            matchedProdId = id;
+            break;
+          }
+        }
+      }
+    } else {
+      // Skin type switched: only keep user custom/scanned products
+      for (const id of currentList) {
+        if (assignedProdIds.has(id)) continue;
+        if (appState.customProducts && appState.customProducts[id]) {
+          const p = (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(id) : null)
+            || (typeof DB === "object" ? DB[id] : null);
+          if (p && checkProductMatchesSlot(p, st.slotKey)) {
+            matchedProdId = id;
+            break;
+          }
+        }
+      }
+    }
+
+    if (matchedProdId) {
+      result.push(matchedProdId);
+      assignedProdIds.add(matchedProdId);
+    } else {
+      // Step not covered: insert recommended ideal product
+      if (st.prodId && !assignedProdIds.has(st.prodId)) {
+        result.push(st.prodId);
+        assignedProdIds.add(st.prodId);
+      }
+    }
+  }
+
+  return typeof sortRoutine === "function" ? sortRoutine(result, isAM) : result;
+}
+
+function syncAdultRoutineToComplexity(comp, targetRoutineId, isTypeSwitch = false) {
+  const routineId = targetRoutineId || getSelectedIdealRoutineId();
+  const routine = IDEAL_ROUTINES[routineId] || IDEAL_ROUTINES.acne_barrier;
+  if (!routine) return;
+
+  // AM
+  const stepsAM = getIdealRoutineSteps(routine, "am", comp);
+  appState.am = syncListToSteps(appState.am, stepsAM, true, isTypeSwitch);
+
+  // PM Modes A, B, C
+  const stepsPMA = getIdealRoutineSteps(routine, "pm", comp, "a");
+  appState.pm_a = syncListToSteps(appState.pm_a, stepsPMA, false, isTypeSwitch);
+
+  const stepsPMB = getIdealRoutineSteps(routine, "pm", comp, "b");
+  appState.pm_b = syncListToSteps(appState.pm_b, stepsPMB, false, isTypeSwitch);
+
+  const stepsPMC = getIdealRoutineSteps(routine, "pm", comp, "c");
+  appState.pm_c = syncListToSteps(appState.pm_c, stepsPMC, false, isTypeSwitch);
 }
 
 function adoptIdealProduct(prodId, targetTab) {
@@ -309,47 +440,13 @@ function adoptIdealProduct(prodId, targetTab) {
 }
 
 function adoptAllMissingProducts(targetTab) {
-  const tab = targetTab || appState.tab;
+  const comp = appState.routineComplexity || "basis";
   const routineId = getSelectedIdealRoutineId();
-  const routine = IDEAL_ROUTINES[routineId];
-  if (!routine) return;
-
-  const currentComplexity = appState.routineComplexity || "basis";
-  const steps = getIdealRoutineSteps(routine, tab, currentComplexity);
-  let count = 0;
-
-  steps.forEach(st => {
-    const isCovered = checkSlotCovered(st.slotKey, tab);
-    if (!isCovered) {
-      if (tab === "am") {
-        if (!appState.am.includes(st.prodId)) {
-          appState.am.push(st.prodId);
-          count++;
-        }
-      } else {
-        const pmList = (appState.pmMode === "a" ? appState.pm_a : (appState.pmMode === "b" ? appState.pm_b : appState.pm_c));
-        if (!pmList.includes(st.prodId)) {
-          pmList.push(st.prodId);
-          count++;
-        }
-      }
-    }
-  });
-
-  if (tab === "am") appState.am = sortRoutine(appState.am, true);
-  else {
-    if (appState.pmMode === "a") appState.pm_a = sortRoutine(appState.pm_a, false);
-    else if (appState.pmMode === "b") appState.pm_b = sortRoutine(appState.pm_b, false);
-    else appState.pm_c = sortRoutine(appState.pm_c, false);
-  }
-
+  syncAdultRoutineToComplexity(comp, routineId, false);
   saveState();
   renderMain();
-  if (count > 0) {
-    showToast(`⚡ <strong>${count} fehlende Produkte</strong> in deinen Schrank gestellt!`);
-  } else {
-    showToast(`✓ Alle Schritte sind bereits in deinem Schrank.`);
-  }
+  const label = comp === "minimal" ? "2 Produkte" : (comp === "basis" ? "3 Produkte" : "4–5 Produkte");
+  showToast(`⚡ Schrank auf <strong>${label}</strong> vervollständigt!`);
 }
 
 function adoptTeenProductToSlot(prodId, slotKey) {
@@ -374,7 +471,7 @@ function renderTypRegal(tab, currentList) {
 
   let coveredCount = 0;
   steps.forEach(st => {
-    if (checkSlotCovered(st.slotKey, tab)) coveredCount++;
+    if (checkSlotCovered(st.slotKey, tab, currentList)) coveredCount++;
   });
   const totalCount = steps.length;
   const missingCount = totalCount - coveredCount;
@@ -467,7 +564,7 @@ function renderTypRegal(tab, currentList) {
           const idealP = DB[st.prodId];
           if (!idealP) return "";
           const isIdentical = currentList.includes(st.prodId);
-          const coveredP = checkSlotCovered(st.slotKey, tab);
+          const coveredP = checkSlotCovered(st.slotKey, tab, currentList);
 
           return `
             <div class="typ-compare-card">
@@ -552,10 +649,33 @@ function getTeenIdealRoutineSteps(complexity = "basis") {
   return TEEN_IDEAL_ROUTINE;
 }
 
+function syncTeenRoutineToComplexity(comp) {
+  if (!appState.teen) appState.teen = { reiniger: [], active: [], creme: [], spf: [] };
+  const steps = getTeenIdealRoutineSteps(comp);
+  const targetSlots = steps.map(s => s.slotKey);
+  const allSlots = ["reiniger", "active", "creme", "spf"];
+
+  // 1. Ensure target slots are populated
+  steps.forEach(st => {
+    if (!appState.teen[st.slotKey]) appState.teen[st.slotKey] = [];
+    if (appState.teen[st.slotKey].length === 0) {
+      appState.teen[st.slotKey].push(st.prodId);
+    }
+  });
+
+  // 2. Clear non-target slots when scaling down
+  allSlots.forEach(slot => {
+    if (!targetSlots.includes(slot)) {
+      appState.teen[slot] = [];
+    }
+  });
+}
+
 function setTeenComplexity(comp) {
   appState.teenComplexity = comp;
   const p = getActiveProfile();
   if (p && p.category === "teen") p.complexity = comp;
+  syncTeenRoutineToComplexity(comp);
   saveState();
   renderMain();
   showToast(`✨ Teenie-Routine auf ${comp === 'minimal' ? '2 Schritte (Minimal)' : (comp === 'basis' ? '3 Schritte (Basis)' : '4 Schritte (Umfassend)')} angepasst!`);
@@ -563,20 +683,10 @@ function setTeenComplexity(comp) {
 
 function adoptAllTeenMissingProducts() {
   const comp = appState.teenComplexity || "basis";
-  const steps = getTeenIdealRoutineSteps(comp);
-  const t = appState.teen;
-  if (!t) return;
-  let added = 0;
-  steps.forEach(st => {
-    if (!t[st.slotKey] || t[st.slotKey].length === 0) {
-      if (!t[st.slotKey]) t[st.slotKey] = [];
-      t[st.slotKey].push(st.prodId);
-      added++;
-    }
-  });
+  syncTeenRoutineToComplexity(comp);
   saveState();
   renderMain();
-  showToast(`⚡ ${added > 0 ? added + ' Produkte' : 'Alle Schritte'} in den Teenie-Schrank gestellt!`);
+  showToast(`⚡ Alle Schritte in den Teenie-Schrank gestellt!`);
 }
 
 function renderTeenTypRegal() {
@@ -803,10 +913,38 @@ function getChildIdealRoutineSteps(complexity = "basis") {
   return CHILD_IDEAL_ROUTINE;
 }
 
+function syncBabyRoutineToComplexity(comp, profile) {
+  if (!appState[profile]) {
+    appState[profile] = profile === "baby"
+      ? { reiniger: [], creme: [], windel: [], spf: [] }
+      : { reiniger: [], creme: [], spf: [], haar: [] };
+  }
+  const isBaby = profile === "baby";
+  const steps = isBaby ? getBabyIdealRoutineSteps(comp) : getChildIdealRoutineSteps(comp);
+  const targetSlots = steps.map(s => s.slotKey);
+  const allSlots = isBaby ? ["reiniger", "creme", "windel", "spf"] : ["reiniger", "creme", "spf", "haar"];
+
+  // 1. Ensure target slots are populated
+  steps.forEach(st => {
+    if (!appState[profile][st.slotKey]) appState[profile][st.slotKey] = [];
+    if (appState[profile][st.slotKey].length === 0) {
+      appState[profile][st.slotKey].push(st.prodId);
+    }
+  });
+
+  // 2. Clear non-target slots when scaling down
+  allSlots.forEach(slot => {
+    if (!targetSlots.includes(slot)) {
+      appState[profile][slot] = [];
+    }
+  });
+}
+
 function setBabyComplexity(comp) {
   appState.babyComplexity = comp;
   const p = getActiveProfile();
   if (p && p.category === "baby") p.complexity = comp;
+  syncBabyRoutineToComplexity(comp, "baby");
   saveState();
   renderMain();
   showToast(`✨ Baby-Routine auf ${comp === 'minimal' ? '2 Schritte (Minimal)' : (comp === 'basis' ? '3 Schritte (Basis)' : '4 Schritte (Umfassend)')} angepasst!`);
@@ -816,6 +954,7 @@ function setChildComplexity(comp) {
   appState.childComplexity = comp;
   const p = getActiveProfile();
   if (p && p.category === "child") p.complexity = comp;
+  syncBabyRoutineToComplexity(comp, "child");
   saveState();
   renderMain();
   showToast(`✨ Kinder-Routine auf ${comp === 'minimal' ? '2 Schritte (Minimal)' : (comp === 'basis' ? '3 Schritte (Basis)' : '4 Schritte (Umfassend)')} angepasst!`);
@@ -837,22 +976,10 @@ function adoptBabyIdealProduct(prodId, profile, slotKey) {
 function adoptAllBabyMissingProducts(profile) {
   const isBaby = profile === "baby";
   const comp = isBaby ? (appState.babyComplexity || "basis") : (appState.childComplexity || "basis");
-  const steps = isBaby ? getBabyIdealRoutineSteps(comp) : getChildIdealRoutineSteps(comp);
-  const targetObj = appState[profile];
-  if (!targetObj) return;
-
-  let added = 0;
-  steps.forEach(st => {
-    if (!targetObj[st.slotKey] || targetObj[st.slotKey].length === 0) {
-      if (!targetObj[st.slotKey]) targetObj[st.slotKey] = [];
-      targetObj[st.slotKey].push(st.prodId);
-      added++;
-    }
-  });
-
+  syncBabyRoutineToComplexity(comp, profile);
   saveState();
   renderMain();
-  showToast(`⚡ ${added > 0 ? added + ' Produkte' : 'Alle Schritte'} in den ${isBaby ? 'Baby' : 'Kinder'}-Schrank gestellt!`);
+  showToast(`⚡ Alle Schritte in den ${isBaby ? 'Baby' : 'Kinder'}-Schrank gestellt!`);
 }
 
 function renderBabyTypRegal() {

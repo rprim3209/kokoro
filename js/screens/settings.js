@@ -71,7 +71,7 @@ function renderSettingsScreen(container) {
           <input type="checkbox" ${typeof shouldHideUnknownCountries==="function" && shouldHideUnknownCountries() ? "checked" : ""} onchange="setHideUnknownCountries(this.checked); renderSettingsScreen();">
           Unklare Herkunft ausblenden
         </label>
-        <span style="font-size:0.72rem;color:var(--muted)">Standard: an — Produkte ohne Land-Angabe verstecken</span>
+        <span style="font-size:0.72rem;color:var(--muted)">Standard: aus — ohne Land-Angabe = Badge „Land offen“ (DACH: AT/DE/CH teilen Filter)</span>
       </div>
     </div>
 

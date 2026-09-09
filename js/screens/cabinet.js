@@ -759,14 +759,19 @@ function sortRoutine(arr, isAM = true) {
   if (!Array.isArray(arr)) return [];
   
   const getRank = (prodId) => {
-    const p = DB[prodId];
+    const p = (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(prodId) : null)
+      || (typeof DB === "object" ? DB[prodId] : null)
+      || (typeof TEEN_DB === "object" ? TEEN_DB[prodId] : null)
+      || (typeof BABY_DB === "object" ? BABY_DB[prodId] : null);
     if (!p) return 999;
-    
+
+    const kat = p.kat || p.slot || "creme";
+
     // 1. Cleanser / Reiniger ist IMMER Schritt 1
-    if (p.kat === "reiniger") return 10;
-    
+    if (kat === "reiniger" || kat === "bad") return 10;
+
     // 2. Seren / Hydratisierung (dünnflüssig)
-    if (p.kat === "serum") {
+    if (kat === "serum") {
       // Reine Hydratoren & Humectants zuerst (Hyaluron, Ectoin)
       if (p.klassen && p.klassen.includes("humectant")) return 21;
       // Beruhigende Barriere-Seren (Niacinamid)
@@ -774,17 +779,17 @@ function sortRoutine(arr, isAM = true) {
       // Aktive Seren (Azelainsäure, BHA, AHA, Retinol)
       return 25;
     }
-    
+
     // 3. Medizinische Actives & Akut-Spots
-    if (p.kat === "active") return 30;
-    if (p.kat === "spot") return 35;
-    
-    // 4. Feuchtigkeits- & Barriere-Cremes
-    if (p.kat === "creme") return 40;
-    
+    if (kat === "active") return 30;
+    if (kat === "spot") return 35;
+
+    // 4. Feuchtigkeits- & Barriere-Cremes / Windelschutz
+    if (kat === "creme" || kat === "windel") return 40;
+
     // 5. Breitspektrum-Sonnenschutz (morgens immer der allerletzte Schritt)
-    if (p.kat === "spf") return isAM ? 50 : 90;
-    
+    if (kat === "spf") return isAM ? 50 : 90;
+
     return 60;
   };
 
@@ -839,12 +844,12 @@ function renderBottle(prod) {
   else if (prod.shape === "jar") { cap = ""; shapeClass = "jar"; }
   else if (prod.shape === "tube") { cap = `<div class="bottle-neck"></div>`; shapeClass = "tube"; }
   const rxClass = prod.rx ? "rx" : "";
-  const shortLbl = prod.wirk.split(" ")[0].slice(0, 7);
+  const shortLbl = ((prod.wirk || prod.name || "Produkt").split(" ")[0] || "").slice(0, 7);
 
   return `
     <div class="bottle-icon">
       ${cap}
-      <div class="bottle-body ${shapeClass} ${rxClass}" style="--b-color:${prod.c}">
+      <div class="bottle-body ${shapeClass} ${rxClass}" style="--b-color:${prod.c || '#2563eb'}">
         <span class="bottle-label">${shortLbl}</span>
       </div>
     </div>
