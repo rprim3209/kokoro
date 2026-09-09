@@ -80,7 +80,10 @@ function getActiveProfileCategory() {
     const p = typeof getActiveProfile === "function" ? getActiveProfile() : null;
     if (p && p.category) return p.category;
   } catch (e) { /* ignore */ }
-  if (typeof appState !== "undefined" && appState && appState.category) return appState.category;
+  if (typeof appState !== "undefined" && appState) {
+    if (appState.category) return appState.category;
+    if (appState.profile) return appState.profile;
+  }
   return "adult";
 }
 
@@ -1357,6 +1360,26 @@ function assessCabinetProfileConstraints(products, opts) {
         },
         p
       );
+    }
+
+    // Baby: potent adult actives (Retinoids, Acids, BPO, peeling) = strict conflict
+    if (cat === "baby") {
+      var klasses = Array.isArray(p.klassen) ? p.klassen : [];
+      var isAdultActive = klasses.some(function (k) {
+        return /retinoid|bpo|aha|bha|peeling|salicyl|glycolic|ascorbic|azelaic|barrier_stress/.test(k);
+      }) || /retinol|retinal|adapalen|tretinoin|benzoyl|peeling|aha 30%|salicylsäure 2%/i.test(p.name || "");
+      if (isAdultActive) {
+        pushHit(
+          {
+            code: "baby_adult_active",
+            outcome: "konflikt",
+            reason: "Potente Wirkstoffe (Retinoide/Säuren/BPO) sind für Säuglinge kontraindiziert.",
+            prio: 10,
+            edu: "Die Hautbarriere von Säuglingen (<3 Jahre) ist bis zu 30% dünner und stark resorptionsfähig. Erwachsene Wirkstoffe führen zu schweren Reizungen."
+          },
+          p
+        );
+      }
     }
   });
 

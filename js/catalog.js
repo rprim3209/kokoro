@@ -2209,12 +2209,33 @@ function applyKatalogRows(rows) {
     return null; // offen (nie raten)
   };
 
-  // 1. Nur Jugend-Produkte: rows.filter(r => r.katalog === "jugend")
-  const jugendRows = rows.filter(r => r.katalog === "jugend");
+  // 1. Nur Jugend-Produkte: rows.filter(r => r.katalog === "jugend" || r.katalog === "jugend_teen")
+  const jugendRows = rows.filter(r => r.katalog === "jugend" || r.katalog === "jugend_teen");
   if (jugendRows.length > 0) {
     jugendRows.forEach((r, idx) => {
       const ean = (r.ean || "").trim();
-      const id = ean ? ("t_ean_" + ean) : ("t_item_" + (idx + 1));
+      const rawName = (r.name || "").trim();
+      const rawBrand = (r.brand || "").trim();
+
+      // Match ID: EAN first; if no EAN, search matching seed by name & brand; fallback to t_item_
+      let id = ean ? ("t_ean_" + ean) : null;
+      if (!id && typeof TEEN_DB === "object" && TEEN_DB) {
+        const nameL = rawName.toLowerCase();
+        const brandL = rawBrand.toLowerCase();
+        for (const tid in TEEN_DB) {
+          const item = TEEN_DB[tid];
+          if (item && !item.ean && item.name && item.name.toLowerCase() === nameL && item.brand && item.brand.toLowerCase() === brandL) {
+            id = tid;
+            break;
+          }
+        }
+      }
+      if (!id) {
+        id = "t_item_" + (idx + 1);
+      }
+
+      const existing = (typeof TEEN_DB === "object" && TEEN_DB) ? TEEN_DB[id] : null;
+
       const rawSlot = (r.slot || "").trim();
       let slot = "creme";
       if (rawSlot === "basis_reiniger" || rawSlot === "akne_reiniger" || rawSlot === "reiniger") slot = "reiniger";
@@ -2222,28 +2243,51 @@ function applyKatalogRows(rows) {
       else if (rawSlot === "basis_creme" || rawSlot === "akne_creme" || rawSlot === "creme") slot = "creme";
       else if (rawSlot === "basis_spf" || rawSlot === "spf") slot = "spf";
       else if (rawSlot === "sonst") slot = "sonst";
+      else if (existing && existing.slot) slot = existing.slot;
 
-      const brand = (r.brand || "").trim();
+      const brand = rawBrand || (existing ? existing.brand : "");
       const cfFromBrand = typeof isBrandCrueltyFree === "function" && isBrandCrueltyFree(brand);
+
+      const parsedFf = parseFlagWithSource(r.flag_fragrance_free, r.fragrance_basis);
+      let ff = parsedFf !== null ? parsedFf : (existing && existing.ff !== null && existing.ff !== undefined ? existing.ff : null);
+      if (ff === null && (r.flag_fragrance_free === "no" || r.flag_fragrance_free === "false")) {
+        const blob = ((r.fragrance_basis || "") + " " + (r.notes || "")).toLowerCase();
+        if (/parf|duft|fragrance|scent|perfume/.test(blob)) {
+          ff = false;
+        }
+      }
+      const ff_basis = (r.fragrance_basis || "").trim() || (existing ? existing.ff_basis : "");
+
+      const parsedNc = parseFlagWithSource(r.flag_nc, r.nc_basis);
+      const nc = parsedNc !== null ? parsedNc : (existing && existing.nc !== null && existing.nc !== undefined ? existing.nc : null);
+      const nc_basis = (r.nc_basis || "").trim() || (existing ? existing.nc_basis : "");
+
+      const parsedCf = parseFlagWithSource(r.flag_cf, r.cf_basis);
+      const cf = cfFromBrand ? true : (parsedCf !== null ? parsedCf : (existing && existing.cf !== null && existing.cf !== undefined ? existing.cf : null));
+      const cf_basis = (r.cf_basis || "").trim() || (cfFromBrand ? "CFI Leaping Bunny" : (existing ? existing.cf_basis : ""));
+
+      const notForMinors = r.not_for_minors === "yes" || r.not_for_minors === "true" || (existing ? !!existing.notForMinors : false);
+      const parsedCountries = parseEuCountries(r.eu_countries);
+      const countries = parsedCountries && parsedCountries.length ? parsedCountries : (existing && existing.countries ? existing.countries : ["EU"]);
 
       TEEN_DB[id] = {
         id: id,
-        name: (r.name || "").trim(),
+        name: rawName || (existing ? existing.name : ""),
         brand: brand,
         slot: slot,
-        rawSlot: rawSlot,
-        age: (r.age_band || "teen_or_ya_unclear").trim(),
-        ean: ean,
-        ff: parseFlagWithSource(r.flag_fragrance_free, r.fragrance_basis),
-        ff_basis: (r.fragrance_basis || "").trim(),
-        nc: parseFlagWithSource(r.flag_nc, r.nc_basis),
-        nc_basis: (r.nc_basis || "").trim(),
-        cf: cfFromBrand ? true : parseFlagWithSource(r.flag_cf, r.cf_basis),
-        cf_basis: (r.cf_basis || "").trim(),
-        notForMinors: r.not_for_minors === "yes" || r.not_for_minors === "true",
-        countries: parseEuCountries(r.eu_countries),
-        url: (r.source_url || "").trim(),
-        notes: (r.notes || "").trim()
+        rawSlot: rawSlot || (existing ? existing.rawSlot : slot),
+        age: (r.age_band || "").trim() || (existing ? existing.age : "teen_or_ya_unclear"),
+        ean: ean || (existing ? existing.ean : ""),
+        ff: ff,
+        ff_basis: ff_basis,
+        nc: nc,
+        nc_basis: nc_basis,
+        cf: cf,
+        cf_basis: cf_basis,
+        notForMinors: notForMinors,
+        countries: countries,
+        url: (r.source_url || "").trim() || (existing ? existing.url : ""),
+        notes: (r.notes || "").trim() || (existing ? existing.notes : "")
       };
     });
   }
@@ -2253,29 +2297,76 @@ function applyKatalogRows(rows) {
   if (babyRows.length > 0) {
     babyRows.forEach((r, idx) => {
       const ean = (r.ean || "").trim();
-      const id = ean ? ("b_ean_" + ean) : ("b_item_" + (idx + 1));
-      const slot = (r.slot || "creme").trim();
-      const brand = (r.brand || "").trim();
+      const rawName = (r.name || "").trim();
+      const rawBrand = (r.brand || "").trim();
+
+      // Match ID: EAN first; if no EAN, search matching seed by name & brand; fallback to b_item_
+      let id = ean ? ("b_ean_" + ean) : null;
+      if (!id && typeof BABY_DB === "object" && BABY_DB) {
+        const nameL = rawName.toLowerCase();
+        const brandL = rawBrand.toLowerCase();
+        for (const bid in BABY_DB) {
+          const item = BABY_DB[bid];
+          if (item && !item.ean && item.name && item.name.toLowerCase() === nameL && item.brand && item.brand.toLowerCase() === brandL) {
+            id = bid;
+            break;
+          }
+        }
+      }
+      if (!id) {
+        id = "b_item_" + (idx + 1);
+      }
+
+      const existing = (typeof BABY_DB === "object" && BABY_DB) ? BABY_DB[id] : null;
+
+      const slot = (r.slot || "").trim() || (existing ? existing.slot : "creme");
+      const brand = rawBrand || (existing ? existing.brand : "");
       const cfFromBrand = typeof isBrandCrueltyFree === "function" && isBrandCrueltyFree(brand);
+
+      const parsedFf = parseFlagWithSource(r.flag_fragrance_free, r.fragrance_basis);
+      let ff = parsedFf !== null ? parsedFf : (existing && existing.ff !== null && existing.ff !== undefined ? existing.ff : null);
+      if (ff === null && (r.flag_fragrance_free === "no" || r.flag_fragrance_free === "false")) {
+        const blob = ((r.fragrance_basis || "") + " " + (r.notes || "")).toLowerCase();
+        if (/parf|duft|fragrance|scent|perfume/.test(blob)) {
+          ff = false;
+        }
+      }
+      const ff_basis = (r.fragrance_basis || "").trim() || (existing ? existing.ff_basis : "");
+
+      const parsedU3 = parseFlagWithSource(r.flag_under3_intended, r.under3_basis);
+      let u3 = parsedU3 !== null ? parsedU3 : (existing && existing.u3 !== null && existing.u3 !== undefined ? existing.u3 : ((r.age_band || "").includes("baby") ? true : ((r.age_band || "").includes("kind") ? false : null)));
+      const u3_basis = (r.under3_basis || "").trim() || (existing ? existing.under3_basis : "");
+
+      const parsedCf = parseFlagWithSource(r.flag_cf, r.cf_basis);
+      const cf = cfFromBrand ? true : (parsedCf !== null ? parsedCf : (existing && existing.cf !== null && existing.cf !== undefined ? existing.cf : null));
+      const cf_basis = (r.cf_basis || "").trim() || (cfFromBrand ? "CFI Leaping Bunny" : (existing ? existing.cf_basis : ""));
+
+      const parsedNc = parseFlagWithSource(r.flag_nc, r.nc_basis);
+      const nc = parsedNc !== null ? parsedNc : (existing && existing.nc !== null && existing.nc !== undefined ? existing.nc : null);
+      const nc_basis = (r.nc_basis || "").trim() || (existing ? existing.nc_basis : "");
+
+      const parsedCountries = parseEuCountries(r.eu_countries);
+      const countries = parsedCountries && parsedCountries.length ? parsedCountries : (existing && existing.countries ? existing.countries : ["EU"]);
 
       BABY_DB[id] = {
         id: id,
-        name: (r.name || "").trim(),
+        name: rawName || (existing ? existing.name : ""),
         brand: brand,
         slot: slot,
-        age: (r.age_band || "baby_0_36m").trim(),
-        ean: ean,
-        ff: parseFlagWithSource(r.flag_fragrance_free, r.fragrance_basis),
-        ff_basis: (r.fragrance_basis || "").trim(),
-        u3: parseFlagWithSource(r.flag_under3_intended, r.under3_basis) !== null ? parseFlagWithSource(r.flag_under3_intended, r.under3_basis) : ((r.age_band || "").includes("baby") ? true : ((r.age_band || "").includes("kind") ? false : null)),
-        cf: cfFromBrand ? true : parseFlagWithSource(r.flag_cf, r.cf_basis),
-        cf_basis: (r.cf_basis || "").trim(),
-        nc: parseFlagWithSource(r.flag_nc, r.nc_basis),
-        nc_basis: (r.nc_basis || "").trim(),
-        spfNote: (r.spf_note || "").trim(),
-        url: (r.source_url || "").trim(),
-        notes: (r.notes || "").trim(),
-        countries: parseEuCountries(r.eu_countries)
+        age: (r.age_band || "").trim() || (existing ? existing.age : "baby_0_36m"),
+        ean: ean || (existing ? existing.ean : ""),
+        ff: ff,
+        ff_basis: ff_basis,
+        u3: u3,
+        u3_basis: u3_basis,
+        cf: cf,
+        cf_basis: cf_basis,
+        nc: nc,
+        nc_basis: nc_basis,
+        spfNote: (r.spf_note || "").trim() || (existing ? existing.spfNote : ""),
+        url: (r.source_url || "").trim() || (existing ? (existing.url || existing.sourceUrl) : ""),
+        notes: (r.notes || "").trim() || (existing ? existing.notes : ""),
+        countries: countries
       };
     });
   }
