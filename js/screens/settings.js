@@ -53,12 +53,18 @@ function renderSettingsScreen(container) {
 
     <div class="settings-section">
       <div class="settings-title">
-        <span>🌍 Land & Verfügbarkeit</span>
+        <span>🌍 Land & Verfügbarkeit (alle Kategorien)</span>
       </div>
       <p style="font-size:0.82rem;color:var(--muted);margin:0 0 0.55rem;line-height:1.4">
-        Aktives Profil: <strong>${typeof countryLabel==="function" ? countryLabel(typeof getProfileCountry==="function" ? getProfileCountry() : "AT") : (typeof getProfileCountry==="function" ? getProfileCountry() : "AT")}</strong>.
-        Katalog und Vorschläge zeigen nur Produkte, die laut <code>eu_countries</code> hier vorkommen (oder <code>EU</code>).
+        Aktives Land: <strong>${typeof countryLabel==="function" ? countryLabel(typeof getProfileCountry==="function" ? getProfileCountry() : "AT") : (typeof getProfileCountry==="function" ? getProfileCountry() : "AT")}</strong>.
+        Gilt einheitlich für alle Kategorien (Erwachsener, Teenie, Kind, Baby) und die Online-Suche.
       </p>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:0.6rem;flex-wrap:wrap">
+        <button type="button" class="ghost-btn" id="btnDetectCountryLocationSettings" onclick="detectCountryFromLocationUI(this)" style="width:auto;margin:0;padding:0.42rem 0.85rem;font-size:0.8rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;background:#eef6f3;color:#1e4620;border:1px solid #b7dfca;cursor:pointer">
+          <span aria-hidden="true">📍</span> Standort des Handys verwenden
+        </button>
+        <span id="countryLocationStatusSettings" style="font-size:0.76rem;color:var(--muted)"></span>
+      </div>
       ${typeof renderCountryPickerHtml === "function" ? renderCountryPickerHtml((typeof getProfileCountry==="function" ? getProfileCountry() : "AT"), "setProfileCountry", { uid: "settingsCountryPicker", maxHeight: "280px" }) : (typeof renderCountryChipsHtml === "function" ? renderCountryChipsHtml((typeof getProfileCountry==="function" ? getProfileCountry() : "AT"), "setProfileCountry") : "")}
       <div style="margin-top:0.7rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <label style="font-size:0.8rem;color:var(--ink);display:flex;align-items:center;gap:6px;cursor:pointer">
@@ -67,9 +73,6 @@ function renderSettingsScreen(container) {
         </label>
         <span style="font-size:0.72rem;color:var(--muted)">Standard: an — Produkte ohne Land-Angabe verstecken</span>
       </div>
-      <p style="font-size:0.72rem;color:var(--muted);margin:0.55rem 0 0;line-height:1.35">
-        Hinweis: Live-dm-Suche bleibt der <strong>Deutschland-Shop</strong>. Bei Land ≠ DE erscheint ein ehrlicher Badge.
-      </p>
     </div>
 
     <div class="settings-section">

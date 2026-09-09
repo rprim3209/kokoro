@@ -17,17 +17,19 @@ function mountProfileDmLiveSearch(opts) {
     const box = document.getElementById(resultsId);
     if (!box) return;
     const query = String(q || "").trim();
+    const ccNow = typeof getProfileCountry === "function" ? getProfileCountry() : "AT";
+    const retailer = typeof getLiveRetailerForCountry === "function" ? getLiveRetailerForCountry(ccNow) : { label: "dm" };
     if (query.length < 2) {
-      box.innerHTML = `<div style="font-size:0.8rem;color:var(--muted);padding:8px 0">Tippe mindestens 2 Zeichen für die Live-Suche bei dm.</div>`;
+      box.innerHTML = `<div style="font-size:0.8rem;color:var(--muted);padding:8px 0">Tippe mindestens 2 Zeichen für die Live-Suche bei ${escapeHtml(retailer.label)}.</div>`;
       return;
     }
-    box.innerHTML = `<div style="font-size:0.8rem;color:#991b1b;padding:8px 0;font-weight:600">⏳ Frage live bei dm nach „${escapeHtml(query)}“…</div>`;
+    box.innerHTML = `<div style="font-size:0.8rem;color:#991b1b;padding:8px 0;font-weight:600">⏳ Frage live bei ${escapeHtml(retailer.label)} nach „${escapeHtml(query)}“…</div>`;
     const prods = await searchDmLive(query);
     window.currentLiveDmResults = prods;
     window.dmResultsMap = window.dmResultsMap || {};
     prods.forEach(pr => { if (pr && pr.id) window.dmResultsMap[pr.id] = pr; });
     if (!prods.length) {
-      const errMsg = window.lastDmError || (`Kein Live-Treffer bei dm für „${escapeHtml(query)}“.`);
+      const errMsg = window.lastDmError || (`Kein Live-Treffer bei ${escapeHtml(retailer.label)} für „${escapeHtml(query)}“.`);
       box.innerHTML = `<div style="font-size:0.8rem;color:var(--muted);padding:6px 0">${errMsg}</div>`;
       return;
     }
@@ -852,15 +854,17 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
 
   function renderListHtml() {
     if (currentCat === "dm") {
+      const ccNow = typeof getProfileCountry === "function" ? getProfileCountry() : "AT";
+      const retailer = typeof getLiveRetailerForCountry === "function" ? getLiveRetailerForCountry(ccNow) : { label: "dm" };
       const countEl = document.getElementById("searchCountLabel");
-      if (countEl) countEl.innerText = `${liveDmItems.length} Live-dm Treffer`;
+      if (countEl) countEl.innerText = `${liveDmItems.length} Live-Treffer (${retailer.label})`;
 
       if (liveDmLoading) {
         return `
           <div style="text-align:center;padding:2.2rem 1rem;color:var(--muted);font-size:0.9rem">
             <div style="font-size:1.8rem;margin-bottom:8px">⏳</div>
-            <div style="font-weight:600;color:var(--ink)">Frage live bei dm-drogerie markt an...</div>
-            <div style="font-size:0.8rem;color:var(--muted);margin-top:3px">Suchbegriff: „${searchVal}“</div>
+            <div style="font-weight:600;color:var(--ink)">Frage live bei ${escapeHtml(retailer.label)} an...</div>
+            <div style="font-size:0.8rem;color:var(--muted);margin-top:3px">Suchbegriff: „${escapeHtml(searchVal)}“</div>
           </div>
         `;
       }
@@ -870,8 +874,8 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
           <div style="text-align:center;padding:2.2rem 1rem;color:var(--muted);font-size:0.9rem">
             <div style="font-size:1.8rem;margin-bottom:8px">🛒</div>
             ${searchVal && searchVal.trim().length >= 2 
-              ? `<div style="font-weight:600;color:var(--ink)">Kein Treffer bei dm für „${searchVal}“.</div><div style="font-size:0.8rem;color:var(--muted);margin-top:3px">Probiere Marken wie Balea Med, CeraVe, Nivea, Isana oder eine 13-stellige EAN.</div>`
-              : `<div style="font-weight:600;color:var(--ink)">Live im dm-Sortiment suchen</div><div style="font-size:0.8rem;color:var(--muted);margin-top:3px">Tippe oben einen Suchbegriff (z.B. Balea Med Waschgel, Niacinamid, Sonnenschutz oder EAN).</div>`}
+              ? `<div style="font-weight:600;color:var(--ink)">Kein Treffer bei ${escapeHtml(retailer.label)} für „${escapeHtml(searchVal)}“.</div><div style="font-size:0.8rem;color:var(--muted);margin-top:3px">Probiere Marken wie Balea Med, CeraVe, Nivea, Isana oder eine 13-stellige EAN.</div>`
+              : `<div style="font-weight:600;color:var(--ink)">Live im Sortiment (${escapeHtml(retailer.label)}) suchen</div><div style="font-size:0.8rem;color:var(--muted);margin-top:3px">Tippe oben einen Suchbegriff (z.B. Waschgel, Niacinamid, Sonnenschutz oder EAN).</div>`}
           </div>
         `;
       }

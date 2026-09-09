@@ -170,8 +170,14 @@ function renderStartScreen(container) {
           <span class="start-profile-active">Aktiv: <strong>${country}</strong> · ${countryName}</span>
         </div>
         <p style="font-size:0.78rem;color:var(--muted);margin:0 0 0.45rem;line-height:1.4">
-          Alle <strong>27 EU-Länder</strong> (+ Schweiz/Norwegen/Island). Nur Produkte zeigen, die laut Katalog dort vorkommen. Vorschlag für Prim: <strong>AT</strong>.
+          Alle <strong>27 EU-Länder</strong> (+ Schweiz/Norwegen/Island). Gilt einheitlich für alle Kategorien &amp; die Live-Online-Suche.
         </p>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:0.6rem;flex-wrap:wrap">
+          <button type="button" class="country-location-btn" id="btnDetectCountryLocationStart" onclick="detectCountryFromLocationUI(this)" style="padding:0.42rem 0.85rem;font-size:0.8rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;background:#eef6f3;color:#1e4620;border:1px solid #b7dfca;border-radius:8px;cursor:pointer">
+            <span aria-hidden="true">📍</span> Standort des Handys verwenden
+          </button>
+          <span id="countryLocationStatusStart" style="font-size:0.76rem;color:var(--muted)"></span>
+        </div>
         ${renderCountryPickerHtml(country, "selectStartCountry", { uid: "startCountryPicker", maxHeight: "260px" })}
       </div>
 

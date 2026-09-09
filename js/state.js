@@ -55,6 +55,7 @@ let appState = {
     }
   ],
   customProducts: {},
+  country: "AT",
   hideUnknownCountries: true
 };
 
@@ -137,11 +138,17 @@ if (saved) {
         appState.activeProfileId = "p_adult_1";
       }
 
-      // Länder-Migration: fehlendes Land → AT (Prim/DACH-Demo), leicht änderbar
+      // Länder-Migration: einheitliches Land für alle Kategorien (Global Sync)
       if (appState.hideUnknownCountries === undefined) appState.hideUnknownCountries = true;
+      if (!appState.country) {
+        const found = (Array.isArray(appState.profiles) && appState.profiles.find(p => p.country)) || null;
+        appState.country = (found && found.country) ? String(found.country).toUpperCase() : "AT";
+      } else {
+        appState.country = String(appState.country).toUpperCase();
+      }
       if (Array.isArray(appState.profiles)) {
         appState.profiles.forEach(function (pr) {
-          if (!pr.country) pr.country = "AT";
+          pr.country = appState.country;
         });
       }
       const activeP = getActiveProfile();
@@ -209,6 +216,7 @@ function resetSchrank() {
       }
     ],
     customProducts: {},
+    country: "AT",
     hideUnknownCountries: true
   };
   if (appState.profiles && appState.profiles[0] && !appState.profiles[0].country) {
@@ -366,6 +374,11 @@ function loadProfileToAppState(p) {
   }
   if (p.subtitle) {
     appState.profileSubtitles[p.category] = p.subtitle;
+  }
+  if (appState.country) {
+    p.country = appState.country;
+  } else if (p.country) {
+    appState.country = p.country;
   }
 
   if (p.category === "adult") {
@@ -702,33 +715,238 @@ function deleteProfile(profileId) {
 
 
 function getProfileCountry(profileOrId) {
+  if (appState && appState.country) {
+    return String(appState.country).toUpperCase();
+  }
   var p = null;
   if (profileOrId && typeof profileOrId === "object") p = profileOrId;
   else if (profileOrId) p = (appState.profiles || []).find(function (x) { return x.id === profileOrId; });
-  if (!p) p = getActiveProfile();
-  var cc = (p && p.country) ? String(p.country).toUpperCase() : "AT";
+  if (!p && typeof getActiveProfile === "function") p = getActiveProfile();
+  var cc = (p && p.country) ? String(p.country).toUpperCase() : (appState && appState.country ? String(appState.country).toUpperCase() : "AT");
   return cc || "AT";
 }
 
 function setProfileCountry(code, profileId) {
   var cc = String(code || "AT").trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(cc)) cc = "AT";
-  var p = profileId
-    ? (appState.profiles || []).find(function (x) { return x.id === profileId; })
-    : getActiveProfile();
-  if (!p) return;
-  p.country = cc;
+
+  // Global im appState setzen (einheitlich für alle Kategorien & Online-Suche)
+  appState.country = cc;
+  if (Array.isArray(appState.profiles)) {
+    appState.profiles.forEach(function (pr) {
+      pr.country = cc;
+    });
+  }
+
   saveState();
   if (typeof showToast === "function") {
-    var label = cc;
-    if (typeof PROFILE_COUNTRY_OPTIONS !== "undefined") {
-      var opt = PROFILE_COUNTRY_OPTIONS.find(function (o) { return o.code === cc; });
-      if (opt) label = opt.label + " (" + cc + ")";
-    }
-    showToast("🌍 Land: <strong>" + label + "</strong> — Katalog gefiltert");
+    var label = typeof countryLabel === "function" ? countryLabel(cc) : cc;
+    showToast("🌍 Land: <strong>" + label + " (" + cc + ")</strong> — für alle Kategorien & Online-Suche aktiv");
   }
   if (typeof renderCurrentScreen === "function") renderCurrentScreen();
   else if (typeof renderMain === "function") renderMain(false);
+}
+
+const COUNTRY_GEO_ANCHORS = {
+  AT: [[48.2, 16.37], [47.07, 15.44], [47.27, 11.40], [47.81, 13.05], [46.62, 14.31], [47.5, 14.5]],
+  DE: [[52.52, 13.40], [48.14, 11.58], [53.55, 9.99], [50.94, 6.96], [50.11, 8.68], [48.78, 9.18], [51.34, 12.37], [54.32, 10.13]],
+  CH: [[47.38, 8.54], [46.20, 6.14], [46.95, 7.45], [46.80, 8.23]],
+  IT: [[41.90, 12.50], [45.46, 9.19], [40.85, 14.27], [38.12, 13.36], [43.77, 11.25], [45.44, 12.33]],
+  FR: [[48.86, 2.35], [43.30, 5.37], [45.76, 4.84], [43.60, 1.44], [44.84, -0.58], [48.57, 7.75], [50.63, 3.06]],
+  ES: [[40.42, -3.70], [41.39, 2.17], [39.47, -0.38], [37.39, -5.98], [43.26, -2.93]],
+  PT: [[38.72, -9.14], [41.16, -8.63], [37.02, -7.93]],
+  NL: [[52.37, 4.90], [51.92, 4.48], [52.09, 5.12], [53.22, 6.57]],
+  BE: [[50.85, 4.35], [51.22, 4.40], [50.46, 4.87], [50.63, 5.57]],
+  LU: [[49.61, 6.13], [49.81, 6.13]],
+  PL: [[52.23, 21.01], [50.06, 19.94], [51.11, 17.03], [54.35, 18.65], [52.41, 16.93]],
+  CZ: [[50.08, 14.44], [49.20, 16.61], [49.83, 18.28]],
+  SK: [[48.15, 17.11], [48.72, 21.26], [49.22, 18.74]],
+  HU: [[47.50, 19.04], [46.25, 20.15], [47.53, 21.63]],
+  SI: [[46.06, 14.51], [46.55, 15.65]],
+  HR: [[45.82, 15.98], [43.51, 16.44], [45.33, 14.44], [42.65, 18.09]],
+  RO: [[44.43, 26.10], [46.77, 23.60], [45.75, 21.23], [44.18, 28.65]],
+  BG: [[42.70, 23.32], [42.14, 24.75], [43.21, 27.91]],
+  GR: [[37.98, 23.73], [40.64, 22.94], [35.34, 25.14]],
+  SE: [[59.33, 18.07], [57.71, 11.97], [55.60, 13.00], [63.83, 20.26]],
+  NO: [[59.91, 10.75], [60.39, 5.32], [63.43, 10.40], [69.65, 18.96]],
+  DK: [[55.68, 12.57], [56.16, 10.20], [55.40, 10.40], [57.05, 9.92]],
+  FI: [[60.17, 24.94], [61.50, 23.76], [65.01, 25.47]],
+  IE: [[53.35, -6.26], [51.90, -8.47], [53.27, -9.05]],
+  EE: [[59.44, 24.75], [58.38, 26.73]],
+  LV: [[56.95, 24.11], [55.87, 26.54]],
+  LT: [[54.69, 25.28], [54.90, 23.90], [55.70, 21.14]],
+  CY: [[35.19, 33.38], [34.67, 33.04]],
+  MT: [[35.90, 14.51]],
+  IS: [[64.15, -21.94], [65.68, -18.10]]
+};
+
+function coordsToCountryCode(lat, lon) {
+  if (typeof lat !== "number" || typeof lon !== "number" || isNaN(lat) || isNaN(lon)) return "AT";
+  var bestCc = null;
+  var bestDist = Infinity;
+  var rad = Math.PI / 180;
+  for (var cc in COUNTRY_GEO_ANCHORS) {
+    var points = COUNTRY_GEO_ANCHORS[cc];
+    for (var i = 0; i < points.length; i++) {
+      var plat = points[i][0];
+      var plon = points[i][1];
+      var dlat = lat - plat;
+      var dlon = (lon - plon) * Math.cos(((lat + plat) / 2) * rad);
+      var dist = dlat * dlat + dlon * dlon;
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestCc = cc;
+      }
+    }
+  }
+  return bestCc || "AT";
+}
+
+function detectCountryFromTimezoneOrLocale() {
+  try {
+    var tz = (typeof Intl !== "undefined" && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone || "" : "";
+    if (tz.includes("Vienna")) return "AT";
+    if (tz.includes("Berlin")) return "DE";
+    if (tz.includes("Zurich")) return "CH";
+    if (tz.includes("Rome")) return "IT";
+    if (tz.includes("Paris")) return "FR";
+    if (tz.includes("Madrid")) return "ES";
+    if (tz.includes("Lisbon")) return "PT";
+    if (tz.includes("Amsterdam")) return "NL";
+    if (tz.includes("Brussels")) return "BE";
+    if (tz.includes("Luxembourg")) return "LU";
+    if (tz.includes("Warsaw")) return "PL";
+    if (tz.includes("Prague")) return "CZ";
+    if (tz.includes("Bratislava")) return "SK";
+    if (tz.includes("Budapest")) return "HU";
+    if (tz.includes("Ljubljana")) return "SI";
+    if (tz.includes("Zagreb")) return "HR";
+    if (tz.includes("Bucharest")) return "RO";
+    if (tz.includes("Sofia")) return "BG";
+    if (tz.includes("Athens")) return "GR";
+    if (tz.includes("Stockholm")) return "SE";
+    if (tz.includes("Oslo")) return "NO";
+    if (tz.includes("Copenhagen")) return "DK";
+    if (tz.includes("Helsinki")) return "FI";
+    if (tz.includes("Dublin")) return "IE";
+    if (tz.includes("Tallinn")) return "EE";
+    if (tz.includes("Riga")) return "LV";
+    if (tz.includes("Vilnius")) return "LT";
+  } catch (e) {}
+
+  try {
+    var lang = (navigator.languages && navigator.languages[0]) || navigator.language || navigator.userLanguage || "";
+    lang = String(lang).toUpperCase();
+    if (lang.includes("-AT")) return "AT";
+    if (lang.includes("-DE")) return "DE";
+    if (lang.includes("-CH")) return "CH";
+    if (lang.includes("-IT")) return "IT";
+    if (lang.includes("-FR")) return "FR";
+    if (lang.includes("-ES")) return "ES";
+  } catch (e) {}
+
+  return "AT";
+}
+
+function detectCountryFromLocation(cb) {
+  cb = cb || function () {};
+
+  function fallback(reason) {
+    var tzCc = detectCountryFromTimezoneOrLocale();
+    setProfileCountry(tzCc);
+    cb(null, tzCc, "Fallback: " + reason);
+  }
+
+  if (typeof navigator === "undefined" || !navigator.geolocation) {
+    return fallback("Kein GPS im Browser");
+  }
+
+  var didRespond = false;
+  var timer = setTimeout(function () {
+    if (didRespond) return;
+    didRespond = true;
+    fallback("GPS-Timeout");
+  }, 7500);
+
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      if (didRespond) return;
+      didRespond = true;
+      clearTimeout(timer);
+      var lat = pos.coords.latitude;
+      var lon = pos.coords.longitude;
+
+      // 1. Präziser Offline-Distanz-Matcher über europäische Anker (sofort & synchron)
+      var geoCc = coordsToCountryCode(lat, lon);
+      setProfileCountry(geoCc);
+
+      // 2. Online Reverse-Geocode API zur optionalen Ortsnamen-Veredelung (asynchron im Hintergrund)
+      if (typeof fetch === "function" && window.location.protocol !== "file:") {
+        try {
+          var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+          var to = ctrl ? setTimeout(function () { ctrl.abort(); }, 3000) : null;
+          fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=" + lat + "&longitude=" + lon + "&localityLanguage=de", {
+            signal: ctrl ? ctrl.signal : undefined
+          }).then(function (res) {
+            if (to) clearTimeout(to);
+            if (res && res.ok) return res.json();
+          }).then(function (data) {
+            if (data && data.countryCode && /^[A-Z]{2}$/i.test(data.countryCode)) {
+              var onlineCc = data.countryCode.toUpperCase();
+              if (onlineCc !== geoCc) setProfileCountry(onlineCc);
+              var place = data.city || data.locality || onlineCc;
+              cb(null, onlineCc, "GPS + Geocode (" + place + ")");
+              return;
+            }
+            cb(null, geoCc, "GPS (" + lat.toFixed(2) + "°, " + lon.toFixed(2) + "°)");
+          }).catch(function () {
+            cb(null, geoCc, "GPS (" + lat.toFixed(2) + "°, " + lon.toFixed(2) + "°)");
+          });
+          return;
+        } catch (e) {
+          // Fallback zu direktem Callback unten
+        }
+      }
+
+      cb(null, geoCc, "GPS (" + lat.toFixed(2) + "°, " + lon.toFixed(2) + "°)");
+    },
+    function (err) {
+      if (didRespond) return;
+      didRespond = true;
+      clearTimeout(timer);
+      fallback(err.code === 1 ? "Standortfreigabe abgelehnt" : "GPS Signal fehlt");
+    },
+    { timeout: 7000, enableHighAccuracy: false, maximumAge: 300000 }
+  );
+}
+
+function detectCountryFromLocationUI(btnEl) {
+  var origText = btnEl ? btnEl.innerHTML : "";
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.innerHTML = "<span>⏳</span> Standort wird ermittelt…";
+  }
+  var statusSpan = document.getElementById("countryLocationStatusStart") || document.getElementById("countryLocationStatusSettings");
+  if (statusSpan) statusSpan.innerText = "Frage GPS an…";
+
+  detectCountryFromLocation(function (err, cc, source) {
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.innerHTML = origText;
+    }
+    var label = typeof countryLabel === "function" ? countryLabel(cc) : cc;
+    if (statusSpan) {
+      statusSpan.innerText = "✅ " + label + " (" + cc + ") [" + source + "]";
+    }
+    if (typeof showToast === "function") {
+      showToast("📍 Standort aktiv: <strong>" + label + " (" + cc + ")</strong><br><small style='opacity:0.9'>" + source + " — für alle Kategorien & Online-Suche</small>");
+    }
+    if (typeof renderCurrentScreen === "function") {
+      renderCurrentScreen();
+    } else if (typeof renderStartScreen === "function") {
+      renderStartScreen();
+    }
+  });
 }
 
 function shouldHideUnknownCountries() {
@@ -770,6 +988,10 @@ function countryLabel(code) {
 
 window.getProfileCountry = getProfileCountry;
 window.setProfileCountry = setProfileCountry;
+window.coordsToCountryCode = coordsToCountryCode;
+window.detectCountryFromTimezoneOrLocale = detectCountryFromTimezoneOrLocale;
+window.detectCountryFromLocation = detectCountryFromLocation;
+window.detectCountryFromLocationUI = detectCountryFromLocationUI;
 window.shouldHideUnknownCountries = shouldHideUnknownCountries;
 window.setHideUnknownCountries = setHideUnknownCountries;
 window.toggleHideUnknownCountries = toggleHideUnknownCountries;
