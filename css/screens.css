@@ -8,11 +8,11 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: #ffffff;
-  border-top: 1px solid var(--line);
+  background: #839958;
+  border-top: 1px solid rgba(10, 51, 35, 0.2);
   padding: 6px 12px calc(6px + env(safe-area-inset-bottom));
   z-index: 50;
-  box-shadow: 0 -4px 16px rgba(0,0,0,0.04);
+  box-shadow: 0 -4px 16px rgba(10, 51, 35, 0.15);
 }
 .bottom-nav {
   max-width: 680px;
@@ -31,7 +31,7 @@
   border-radius: 10px;
   padding: 5px 2px;
   cursor: pointer;
-  color: var(--muted);
+  color: #0A261A;
   font-family: inherit;
   transition: all 0.16s ease;
 }
@@ -41,7 +41,7 @@
 }
 .nav-tab-btn .tab-label {
   font-size: 0.68rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-top: 2px;
   letter-spacing: 0.01em;
 }
@@ -49,20 +49,20 @@
   transform: scale(0.95);
 }
 .nav-tab-btn.active {
-  color: #0A3323;
-  background: #E4ECE5;
+  color: #F7F4D5;
+  background: #0A3323;
 }
 .nav-tab-btn.active.tab-teen {
-  color: #105666;
-  background: #E3EFF2;
+  color: #F7F4D5;
+  background: #105666;
 }
 .nav-tab-btn.active.tab-child {
-  color: #4A5B2B;
-  background: #EDF3E4;
+  color: #F7F4D5;
+  background: #4A5B2B;
 }
 .nav-tab-btn.active.tab-baby {
-  color: #8C483E;
-  background: #FBF0ED;
+  color: #F7F4D5;
+  background: #8C483E;
 }
 
 /* Screen Wrapper */
@@ -98,14 +98,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.65rem 0.8rem;
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
   margin-bottom: 0.5rem;
 }
 .profile-manage-card.active-profile {
   border-color: #0A3323;
-  background: #f4f8f5;
+  background: #ffffff;
 }
 
 /* Dedicated Scan & Verdict Screen Styling */
@@ -136,7 +136,7 @@
   padding: 6px 12px;
   border-radius: 99px;
   border: 1px solid var(--line);
-  background: var(--paper);
+  background: var(--surface);
   color: var(--ink);
   font-size: 0.82rem;
   font-weight: 600;

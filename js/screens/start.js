@@ -61,7 +61,7 @@ function renderStartScreen(container) {
       </p>
 
       <!-- Profil- & Kategoriewahl: Sichtbar, aber kompakt & nicht im Weg -->
-      <div style="margin-bottom:1.15rem;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:9px 12px">
+      <div style="margin-bottom:1.15rem;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
           <span style="font-size:0.74rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:0.04em">
             Kategorie wählen:
