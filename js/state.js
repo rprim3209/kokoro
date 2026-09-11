@@ -720,7 +720,7 @@ function openRenameProfileModal(profileId) {
       <button class="ghost-btn" style="width:auto;margin-top:0;padding:0.75rem 1.2rem" onclick="closeModal()">Abbrechen</button>
       <button class="primary" style="margin-top:0;flex:1" onclick="submitRenameProfile('${p.id}')">Speichern</button>
       ${appState.profiles.length > 1 ? `
-        <button class="ghost-btn" style="width:auto;margin-top:0;color:#b91c1c;border-color:#fecaca" onclick="if(confirm('Profil wirklich löschen?')){ deleteProfile('${p.id}'); }" title="Profil löschen">🗑️</button>
+        <button class="ghost-btn" style="width:auto;margin-top:0;color:#b91c1c;border-color:#fecaca" onclick="deleteProfile('${p.id}')" title="Profil löschen">🗑️</button>
       ` : ''}
     </div>
   `);
@@ -738,8 +738,12 @@ function submitRenameProfile(profileId) {
   const p = appState.profiles.find(x => x.id === profileId);
   if (p && newName) {
     p.name = newName;
-    if (cInp && cInp.value) p.country = String(cInp.value).toUpperCase();
-    saveState();
+    if (cInp && cInp.value && typeof setProfileCountry === "function") {
+      setProfileCountry(cInp.value, profileId);
+    } else {
+      if (cInp && cInp.value) p.country = String(cInp.value).toUpperCase();
+      saveState();
+    }
   }
   closeModal();
   updateCategoryNav();
@@ -763,6 +767,7 @@ function deleteProfile(profileId) {
     loadProfileToAppState(nextP);
   }
   saveState();
+  closeModal();
   updateCategoryNav();
   renderMain();
 }

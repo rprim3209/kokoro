@@ -91,6 +91,10 @@ function isBabyProfile() {
   return getActiveProfileCategory() === "baby";
 }
 
+function isChildProfile() {
+  return getActiveProfileCategory() === "child";
+}
+
 function isTeenProfile() {
   return getActiveProfileCategory() === "teen";
 }
@@ -200,6 +204,19 @@ function makeDim(outcome, reason, code) {
 
 function getCabinetProductIds() {
   if (typeof appState === "undefined" || !appState) return [];
+  var cat = typeof getActiveProfileCategory === "function" ? getActiveProfileCategory() : (appState.profile || "adult");
+  if (cat === "teen") {
+    var t = appState.teen || {};
+    return [].concat(t.reiniger || [], t.active || [], t.creme || [], t.spf || []);
+  }
+  if (cat === "child") {
+    var c = appState.child || {};
+    return [].concat(c.reiniger || [], c.creme || [], c.spf || [], c.haar || []);
+  }
+  if (cat === "baby") {
+    var b = appState.baby || {};
+    return [].concat(b.reiniger || [], b.creme || [], b.windel || [], b.spf || []);
+  }
   var pm =
     typeof getActivePMList === "function"
       ? getActivePMList()
@@ -848,12 +865,46 @@ function assessZuDir(candidate) {
     );
   }
 
-  if (isBabyProfile() && hasPerfume) {
-    return makeDim(
-      "konflikt",
-      "Für unter 3: parfümierte Leave-ons meiden.",
-      "baby_perfume"
-    );
+  if (isBabyProfile()) {
+    var klassesBaby = Array.isArray(candidate.klassen) ? candidate.klassen : [];
+    var isAdultActiveBaby = klassesBaby.some(function (k) {
+      return /retinoid|bpo|aha|bha|peeling|salicyl|glycolic|ascorbic|azelaic|barrier_stress/.test(k);
+    }) || /retinol|retinal|adapalen|tretinoin|benzoyl|peeling|aha 30%|salicylsäure 2%/i.test(candidate.name || "");
+    if (isAdultActiveBaby) {
+      return makeDim(
+        "konflikt",
+        "Potente Wirkstoffe (Retinoide/Säuren/BPO) sind für Säuglinge kontraindiziert.",
+        "baby_adult_active"
+      );
+    }
+    if (hasPerfume) {
+      return makeDim(
+        "konflikt",
+        "Für unter 3: parfümierte Leave-ons meiden.",
+        "baby_perfume"
+      );
+    }
+  }
+
+  if (isChildProfile()) {
+    var klassesChild = Array.isArray(candidate.klassen) ? candidate.klassen : [];
+    var isAdultActiveChild = klassesChild.some(function (k) {
+      return /retinoid|bpo|aha|bha|peeling|salicyl|glycolic|ascorbic|azelaic/.test(k);
+    }) || /retinol|retinal|adapalen|tretinoin|benzoyl|peeling|aha 30%|salicylsäure 2%/i.test(candidate.name || "");
+    if (isAdultActiveChild) {
+      return makeDim(
+        "konflikt",
+        "Potente Wirkstoffe (Retinoide/chemische Säurepeelings/BPO) sind vor der Pubertät ungeeignet.",
+        "child_adult_active"
+      );
+    }
+    if (hasPerfume) {
+      return makeDim(
+        "eher_nicht",
+        "Duftstoffarm bevorzugt bei Kinderhaut.",
+        "child_perfume"
+      );
+    }
   }
 
   if ((hasTag("sensibel") || hasTag("duftstofffrei")) && hasPerfume) {
@@ -994,7 +1045,7 @@ function assessZumSchrank(candidate) {
   var am = (typeof appState !== "undefined" && appState.am) || [];
   var allCabinetIds = getCabinetProductIds();
   var allCabinetProds = allCabinetIds.map(function (id) {
-    return typeof DB !== "undefined" ? DB[id] : null;
+    return typeof resolveCabinetProduct === "function" ? resolveCabinetProduct(id) : (typeof DB !== "undefined" ? DB[id] : null);
   }).filter(Boolean);
 
   var hasRxRetinoid = allCabinetProds.some(isRxRetinoid);
@@ -1071,7 +1122,7 @@ function assessSlot(candidate, emptyCabinet) {
 
   var currentPM = typeof getActivePMList === "function" ? getActivePMList() : [];
   var pmHasRetinoid = currentPM.some(function (id) {
-    return isRetinoidProduct(typeof DB !== "undefined" ? DB[id] : null);
+    return isRetinoidProduct(typeof resolveCabinetProduct === "function" ? resolveCabinetProduct(id) : (typeof DB !== "undefined" ? DB[id] : null));
   });
   if (isAcidProduct(candidate) && pmHasRetinoid) {
     return makeDim(
@@ -1178,8 +1229,18 @@ function resolveCabinetProduct(id) {
 
 function getFullCabinetProductIds() {
   if (typeof appState === "undefined" || !appState) return [];
+  var cat = typeof getActiveProfileCategory === "function" ? getActiveProfileCategory() : (appState.profile || "adult");
   var ids = [];
-  if (appState.useSkinCycling) {
+  if (cat === "teen") {
+    var t = appState.teen || {};
+    ids = [].concat(t.reiniger || [], t.active || [], t.creme || [], t.spf || []);
+  } else if (cat === "child") {
+    var c = appState.child || {};
+    ids = [].concat(c.reiniger || [], c.creme || [], c.spf || [], c.haar || []);
+  } else if (cat === "baby") {
+    var b = appState.baby || {};
+    ids = [].concat(b.reiniger || [], b.creme || [], b.windel || [], b.spf || []);
+  } else if (appState.useSkinCycling) {
     ids = [].concat(
       appState.am || [],
       appState.pm_a || [],
@@ -1390,6 +1451,26 @@ function assessCabinetProfileConstraints(products, opts) {
             reason: "Potente Wirkstoffe (Retinoide/Säuren/BPO) sind für Säuglinge kontraindiziert.",
             prio: 10,
             edu: "Die Hautbarriere von Säuglingen (<3 Jahre) ist bis zu 30% dünner und stark resorptionsfähig. Erwachsene Wirkstoffe führen zu schweren Reizungen."
+          },
+          p
+        );
+      }
+    }
+
+    // Child: potent adult actives (Retinoids, Acids, BPO, chemical peeling) = strict conflict
+    if (cat === "child") {
+      var klassesChild = Array.isArray(p.klassen) ? p.klassen : [];
+      var isAdultActiveChild = klassesChild.some(function (k) {
+        return /retinoid|bpo|aha|bha|peeling|salicyl|glycolic|ascorbic|azelaic/.test(k);
+      }) || /retinol|retinal|adapalen|tretinoin|benzoyl|peeling|aha 30%|salicylsäure 2%/i.test(p.name || "");
+      if (isAdultActiveChild) {
+        pushHit(
+          {
+            code: "child_adult_active",
+            outcome: "konflikt",
+            reason: "Potente Wirkstoffe (Retinoide/chemische Säurepeelings/BPO) sind vor der Pubertät ungeeignet.",
+            prio: 12,
+            edu: "Kinderhaut (3–11 Jahre) benötigt keine aggressiven Anti-Aging-Stoffe oder hochdosierten Säuren. Sanfter Barriere-Schutz und LSF genügen."
           },
           p
         );

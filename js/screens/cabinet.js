@@ -1393,9 +1393,12 @@ function adoptDmProductToSlot(prodOrIdOrIdx, target = "am") {
     });
   }
   if (typeof BABY_DB === "object" && !BABY_DB[prod.id]) {
-    BABY_DB[prod.id] = Object.assign({}, prod, {
-      slot: kat === "reiniger" ? "reiniger" : (kat === "spf" ? "spf" : "creme")
-    });
+    let babySlot = "creme";
+    if (kat === "reiniger" || prod.slot === "bad") babySlot = "reiniger";
+    else if (kat === "spf") babySlot = "spf";
+    else if (kat === "haar" || /shampoo|haar/i.test(prod.name || "")) babySlot = "haar";
+    else if (kat === "windel" || /windel|wundschutz|po-creme|zinksalbe/i.test(prod.name || "")) babySlot = "windel";
+    BABY_DB[prod.id] = Object.assign({}, prod, { slot: babySlot });
   }
 
   // 2. In appState.customProducts persistieren (überlebt Reload)
@@ -1413,12 +1416,24 @@ function adoptDmProductToSlot(prodOrIdOrIdx, target = "am") {
     if (!appState.teen) appState.teen = { reiniger: [], active: [], creme: [], spf: [] };
     if (!appState.teen[slot]) appState.teen[slot] = [];
     if (!appState.teen[slot].includes(prod.id)) appState.teen[slot].push(prod.id);
-  } else if (profileCat === "baby" || profileCat === "child") {
-    const slot = kat === "reiniger" ? "reiniger" : (kat === "spf" ? "spf" : "creme");
-    const targetKey = profileCat;
-    if (!appState[targetKey]) appState[targetKey] = { reiniger: [], creme: [], spf: [] };
-    if (!appState[targetKey][slot]) appState[targetKey][slot] = [];
-    if (!appState[targetKey][slot].includes(prod.id)) appState[targetKey][slot].push(prod.id);
+  } else if (profileCat === "child") {
+    let slot = "creme";
+    if (kat === "reiniger" || prod.slot === "reiniger" || prod.slot === "bad") slot = "reiniger";
+    else if (kat === "spf" || prod.slot === "spf") slot = "spf";
+    else if (kat === "haar" || prod.slot === "haar" || /shampoo|haar/i.test(prod.name || "")) slot = "haar";
+    else slot = "creme";
+    if (!appState.child) appState.child = { reiniger: [], creme: [], spf: [], haar: [] };
+    if (!appState.child[slot]) appState.child[slot] = [];
+    if (!appState.child[slot].includes(prod.id)) appState.child[slot].push(prod.id);
+  } else if (profileCat === "baby") {
+    let slot = "creme";
+    if (kat === "reiniger" || prod.slot === "reiniger" || prod.slot === "bad") slot = "reiniger";
+    else if (kat === "spf" || prod.slot === "spf") slot = "spf";
+    else if (kat === "windel" || prod.slot === "windel" || /windel|wundschutz|po-creme|zinksalbe/i.test(prod.name || "")) slot = "windel";
+    else slot = "creme";
+    if (!appState.baby) appState.baby = { reiniger: [], creme: [], windel: [], spf: [] };
+    if (!appState.baby[slot]) appState.baby[slot] = [];
+    if (!appState.baby[slot].includes(prod.id)) appState.baby[slot].push(prod.id);
   } else {
     // Erwachsenen-Profil: AM oder PM
     if (target === "am") {

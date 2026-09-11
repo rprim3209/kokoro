@@ -1593,7 +1593,7 @@ function saveCustomProductAndCheck() {
 }
 
 function showVerdict(prodId) {
-  const prod = DB[prodId];
+  const prod = (typeof resolveCabinetProduct === "function" ? resolveCabinetProduct(prodId) : null) || (typeof DB !== "undefined" ? DB[prodId] : null);
   if (!prod) return;
   const v = evaluateCandidate(prod);
   // Arzt-Thema: keine Active-Upsell-Listen (Support/Reiniger/SPF ok)

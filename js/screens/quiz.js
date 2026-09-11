@@ -430,10 +430,41 @@ function finishQuiz() {
     activeP.complexity = chosenComplexity;
 
     saveState();
-    closeModal();
     updateCategoryNav();
-    renderMain();
-    showToast(`✨ Baby-Profil: <strong>${sub}</strong> (${chosenComplexity === 'minimal' ? '2 Schritte' : (chosenComplexity === 'basis' ? '3 Schritte' : '4 Schritte')})`);
+
+    const compLabel = chosenComplexity === "minimal" ? "Minimalistisch (2 Produkte)" : (chosenComplexity === "basis" ? "Ausgewogene Basis (3 Produkte)" : "Umfassend (4 Produkte)");
+
+    showModalSheet(`
+      <h2>Baby-Profil steht</h2>
+      <p style="font-size:0.92rem;color:var(--muted)">Dein Kosmetikschrank hat die Voraussetzungen für Säuglingshaut (&lt; 3 Jahre) ermittelt:</p>
+      
+      <div class="tags-list" style="margin:0.8rem 0">
+        <span class="tag ok">Baby (&lt; 3 J.)</span>
+        <span class="tag ok">${sub}</span>
+        <span class="tag ok">100% Parfümfrei</span>
+        <span class="tag ok">${compLabel}</span>
+      </div>
+
+      <div class="pharma-box" style="margin-bottom:1rem">
+        <div class="pharma-title">👶 Säuglingshaut-Schutz aktiv</div>
+        <div class="pharma-text">Die Hautbarriere von Säuglingen ist bis zu 30% dünner und stark resorptionsfähig. Alle Produkte werden strikt auf Parfümfreiheit, reizarme Lipide und Eignung für unter 3 Jahren geprüft.</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <button class="primary" onclick="loadBabyPreset(); closeModal(); renderMain(); showToast('🎯 Empfohlene Baby-Starter-Routine geladen!');">
+          🎯 Empfohlene Starter-Routine laden (${compLabel})
+        </button>
+        <button class="ghost-btn" style="margin-top:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openBudgetRoutineModal()">
+          💰 Routine nach Budget zusammenstellen (z. B. 20 €, 30 €, 50 €)
+        </button>
+        <button class="ghost-btn" style="margin-top:0" onclick="closeModal(); renderMain();">
+          🧴 Mit leerem Schrank starten (eigene Produkte einsortieren)
+        </button>
+        <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:4px">
+          ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+        </div>
+      </div>
+    `);
     return;
   }
 
@@ -452,10 +483,41 @@ function finishQuiz() {
     activeP.complexity = chosenComplexity;
 
     saveState();
-    closeModal();
     updateCategoryNav();
-    renderMain();
-    showToast(`✨ Kinder-Profil: <strong>${sub}</strong> (${chosenComplexity === 'minimal' ? '2 Schritte' : (chosenComplexity === 'basis' ? '3 Schritte' : '4 Schritte')})`);
+
+    const compLabel = chosenComplexity === "minimal" ? "Minimalistisch (2 Produkte)" : (chosenComplexity === "basis" ? "Ausgewogene Basis (3 Produkte)" : "Umfassend (4 Produkte)");
+
+    showModalSheet(`
+      <h2>Kinder-Profil steht</h2>
+      <p style="font-size:0.92rem;color:var(--muted)">Dein Kosmetikschrank hat die Voraussetzungen für Kinderhaut (3–11 Jahre) ermittelt:</p>
+      
+      <div class="tags-list" style="margin:0.8rem 0">
+        <span class="tag ok">Kind (3–11 J.)</span>
+        <span class="tag ok">${sub}</span>
+        <span class="tag ok">Duftstoffarm / Parfümfrei</span>
+        <span class="tag ok">${compLabel}</span>
+      </div>
+
+      <div class="pharma-box" style="margin-bottom:1rem">
+        <div class="pharma-title">🧒 Kinderhaut-Schutz aktiv</div>
+        <div class="pharma-text">Kinderhaut benötigt keine aggressiven Säuren oder Anti-Aging-Stoffe. Die Routine konzentriert sich auf sanfte Reinigung, Feuchtigkeitsschutz und zuverlässigen Breitband-Sonnenschutz (LSF 50+).</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <button class="primary" onclick="loadChildPreset(); closeModal(); renderMain(); showToast('🎯 Empfohlene Kinder-Starter-Routine geladen!');">
+          🎯 Empfohlene Starter-Routine laden (${compLabel})
+        </button>
+        <button class="ghost-btn" style="margin-top:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openBudgetRoutineModal()">
+          💰 Routine nach Budget zusammenstellen (z. B. 20 €, 30 €, 50 €)
+        </button>
+        <button class="ghost-btn" style="margin-top:0" onclick="closeModal(); renderMain();">
+          🧴 Mit leerem Schrank starten (eigene Produkte einsortieren)
+        </button>
+        <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:4px">
+          ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+        </div>
+      </div>
+    `);
     return;
   }
 
@@ -487,10 +549,40 @@ function finishQuiz() {
     appState.tags = teenTags;
 
     saveState();
-    closeModal();
     updateCategoryNav();
-    renderMain();
-    showToast(`✨ Teenie-Profil: <strong>${sub}</strong> (${chosenComplexity === 'minimal' ? '2 Schritte' : (chosenComplexity === 'basis' ? '3 Schritte' : '4 Schritte')})`);
+
+    const compLabel = chosenComplexity === "minimal" ? "Minimalistisch (2 Produkte)" : (chosenComplexity === "basis" ? "Ausgewogene Basis (3 Produkte)" : "Umfassend (4 Produkte)");
+
+    showModalSheet(`
+      <h2>Teenie-Profil steht</h2>
+      <p style="font-size:0.92rem;color:var(--muted)">Dein Kosmetikschrank hat die Voraussetzungen für Teeniehaut ermittelt:</p>
+      
+      <div class="tags-list" style="margin:0.8rem 0">
+        <span class="tag ok">Teen (12–19 J.)</span>
+        <span class="tag ok">${sub}</span>
+        <span class="tag ok">${compLabel}</span>
+      </div>
+
+      <div class="pharma-box" style="margin-bottom:1rem">
+        <div class="pharma-title">👱 Teeniehaut-Balance aktiv</div>
+        <div class="pharma-text">Fokus auf evidenzbasierte Klärung von Talg & Mitessern ohne schwere Anti-Aging-Stoffe oder barrierezerstörende aggressive Alkohole.</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <button class="primary" onclick="loadTeenPreset(); closeModal(); renderMain(); showToast('🎯 Empfohlene Teenie-Starter-Routine geladen!');">
+          🎯 Empfohlene Starter-Routine laden (${compLabel})
+        </button>
+        <button class="ghost-btn" style="margin-top:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openBudgetRoutineModal()">
+          💰 Routine nach Budget zusammenstellen (z. B. 20 €, 30 €, 50 €)
+        </button>
+        <button class="ghost-btn" style="margin-top:0" onclick="closeModal(); renderMain();">
+          🧴 Mit leerem Schrank starten (eigene Produkte einsortieren)
+        </button>
+        <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:4px">
+          ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
+        </div>
+      </div>
+    `);
     return;
   }
 
@@ -656,21 +748,14 @@ function finishQuiz() {
 
 function applyStarterRoutine() {
   const comp = appState.routineComplexity || "basis";
-  if (comp === "minimal") {
+  const routineId = typeof getSelectedIdealRoutineId === "function" ? getSelectedIdealRoutineId() : "acne_barrier";
+  if (typeof syncAdultRoutineToComplexity === "function") {
+    syncAdultRoutineToComplexity(comp, routineId, true);
+  } else {
     appState.am = ["baleaWash", "baleaSpf"];
     appState.pm_a = ["baleaWash", "baleaCreme"];
-    appState.pm_b = ["baleaWash", "clienzo"];
+    appState.pm_b = ["baleaWash", "baleaCreme"];
     appState.pm_c = ["baleaWash", "baleaCreme"];
-  } else if (comp === "basis") {
-    appState.am = ["baleaWash", "apad", "baleaSpf"];
-    appState.pm_a = ["baleaWash", "adap", "baleaCreme"];
-    appState.pm_b = ["baleaWash", "clienzo", "baleaCreme"];
-    appState.pm_c = ["baleaWash", "purito", "baleaCreme"];
-  } else {
-    appState.am = ["baleaWash", "ha", "apad", "baleaCreme", "baleaSpf"];
-    appState.pm_a = ["baleaWash", "ha", "adap", "baleaCreme"];
-    appState.pm_b = ["baleaWash", "ha", "clienzo", "baleaCreme"];
-    appState.pm_c = ["baleaWash", "ha", "purito", "baleaCreme"];
   }
 
   appState.am = sortRoutine(appState.am, true);
@@ -681,6 +766,7 @@ function applyStarterRoutine() {
   saveState();
   closeModal();
   renderMain();
-  showToast(`🎯 Starter-Routine (${comp === 'minimal' ? '2 Produkte' : (comp === 'basis' ? '3 Produkte' : 'Umfassend')}) in den Schrank gestellt!`);
+  const sub = (appState.profileSubtitles && appState.profileSubtitles.adult) || "Routine";
+  showToast(`🎯 Starter-Routine (${sub}) in den Schrank gestellt!`);
 }
 
