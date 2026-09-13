@@ -1224,6 +1224,11 @@ function resolveCabinetProduct(id) {
   }
   if (typeof TEEN_DB !== "undefined" && TEEN_DB && TEEN_DB[id]) return TEEN_DB[id];
   if (typeof BABY_DB !== "undefined" && BABY_DB && BABY_DB[id]) return BABY_DB[id];
+  if (typeof window !== "undefined" && window.dmResultsMap && window.dmResultsMap[id]) return window.dmResultsMap[id];
+  if (typeof window !== "undefined" && Array.isArray(window.currentLiveDmResults)) {
+    var found = window.currentLiveDmResults.find(function (x) { return x && (x.id === id || x.ean === id || x.dan === id); });
+    if (found) return found;
+  }
   return null;
 }
 
@@ -2086,3 +2091,227 @@ function calculatePrognosis() {
     cabinetHits: cabinet.hits || []
   };
 }
+
+
+/**
+ * Gegenprüfung eines Produkts (insb. aus Live-Katalog / EAN / Schrank) gegen Hauttyp und Routine.
+ * Analysiert:
+ * 1. Hauttyp-Fit (aktives Profil, Subtitel z. B. "Akne & Barriere", Tags).
+ * 2. Routine-Fit (Wirkstoff-Kollisionen gegen andere Produkte der Morgen-/Abend-Routine).
+ * 3. Transparenz über fehlende Händlerdaten (Komedogenität, Duftstoffe, Cruelty-Free).
+ */
+function evaluateProductCompatibility(productOrId, tab) {
+  var resolve = typeof resolveProfileCabinetProduct === "function"
+    ? resolveProfileCabinetProduct
+    : (typeof resolveCabinetProduct === "function" ? resolveCabinetProduct : function (id) {
+        return typeof DB !== "undefined" && DB ? DB[id] : null;
+      });
+
+  var p = (productOrId && typeof productOrId === "object") ? productOrId : resolve(productOrId);
+  if (!p) {
+    return {
+      status: "empty",
+      verdict: null,
+      title: "Produkt nicht gefunden",
+      skinTypeFit: { outcome: "passt", points: ["Keine Produktdaten vorhanden."] },
+      routineFit: { outcome: "passt", points: ["Keine Produktdaten vorhanden."] },
+      missingData: { hasMissing: false, list: [] },
+      isLive: false
+    };
+  }
+  ensureClassesForRules(p);
+
+  var activeProf = typeof getActiveProfile === "function" ? getActiveProfile() : null;
+  var cat = (activeProf && activeProf.category) || (typeof getActiveProfileCategory === "function" ? getActiveProfileCategory() : "adult");
+  var profileName = (activeProf && activeProf.name) || "Aktives Profil";
+  var profileSub = (activeProf && activeProf.subtitle) || (typeof getProfileSubtitle === "function" ? getProfileSubtitle(cat) : ((appState && appState.profileSubtitles && appState.profileSubtitles[cat]) || "Akne & Barriere"));
+  var tags = (appState && appState.tags) || [];
+  var currentTab = tab || (appState && appState.tab) || "am";
+
+  // --- 1. DATENQUALITÄT & LÜCKEN-CHECK ---
+  var isLive = !!(p._liveSource || (p.source && /live|mcp|obf|web/i.test(p.source)) || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id)));
+  var missingList = [];
+  if (p.ff == null) missingList.push("Duftstoffe / Parfümierung (keine verifizierten Angaben)");
+  if (p.nc == null) missingList.push("Komedogenität (kein Nicht-komedogen-Claim deklariert)");
+  if (p.cf == null) missingList.push("Cruelty-Free / Tierversuchsfrei-Zertifikat (kein Verbandssiegel hinterlegt)");
+
+  var hasMissingData = missingList.length > 0;
+
+  // --- 2. HAUTTYP-FIT ---
+  var skinOutcomes = [];
+  var skinPoints = [];
+
+  var isAkneProfile = cat === "teen" || /akne/i.test(profileSub) || hasTag("akne-prone") || hasTag("pref_nc");
+  var isSensitiveProfile = cat === "baby" || /sensibel|barriere|rötung|rosazea|parfümfrei/i.test(profileSub) || hasTag("sensibel") || hasTag("duftstofffrei") || hasTag("begleitpflege");
+
+  if (cat === "baby") {
+    var klassesBaby = Array.isArray(p.klassen) ? p.klassen : [];
+    var isAdultActive = klassesBaby.some(function (k) {
+      return /retinoid|bpo|aha|bha|peeling|salicyl|glycolic|ascorbic|azelaic|barrier_stress/.test(k);
+    }) || /retinol|retinal|adapalen|tretinoin|benzoyl|peeling|aha 30%|salicylsäure 2%/i.test(p.name || "");
+
+    if (isAdultActive) {
+      skinOutcomes.push("konflikt");
+      skinPoints.push("🔴 Potente Wirkstoffe (Retinoide/Säuren/BPO) sind für Säuglinge (<3 J.) kontraindiziert.");
+    }
+    if (p.ff === false) {
+      skinOutcomes.push("konflikt");
+      skinPoints.push("🔴 Enthält Parfüm/Duftstoffe: Im Baby-Profil gilt strikte Parfümfrei-Prio (Allergie-Risiko).");
+    } else if (p.ff == null) {
+      skinOutcomes.push("eher_nicht");
+      skinPoints.push("🟡 Parfümierung offen: Im Online-Katalog liegen keine verifizierten Angaben zur Duftstofffreiheit vor. Für Babys nur bestätigte parfümfreie Produkte empfohlen.");
+    } else {
+      skinPoints.push("🟢 100% Parfümfrei: Erfüllt die pädiatrische Empfehlung für Säuglingshaut.");
+    }
+    if (p.u3 === false) {
+      skinOutcomes.push("eher_nicht");
+      skinPoints.push("🟡 Nicht für Säuglinge (<3 Jahre) ausgewiesen.");
+    }
+  } else if (cat === "child") {
+    var klassesChild = Array.isArray(p.klassen) ? p.klassen : [];
+    var isChildAdultActive = klassesChild.some(function (k) {
+      return /retinoid|bpo|aha|bha|peeling|salicyl|glycolic|ascorbic|azelaic/.test(k);
+    }) || /retinol|retinal|adapalen|tretinoin|benzoyl|peeling|aha 30%|salicylsäure 2%/i.test(p.name || "");
+
+    if (isChildAdultActive) {
+      skinOutcomes.push("konflikt");
+      skinPoints.push("🔴 Intensive Wirkstoffe (Retinoide/chemische Säurepeelings/BPO) sind vor der Pubertät ungeeignet.");
+    }
+    if (p.ff === false) {
+      skinOutcomes.push("eher_nicht");
+      skinPoints.push("🟡 Enthält Duftstoffe: Bei Kinderhaut wird duftstoffarme Pflege bevorzugt.");
+    } else if (p.ff == null) {
+      skinPoints.push("ℹ️ Duftstoffe offen: Im Katalog nicht deklariert.");
+    } else {
+      skinPoints.push("🟢 Parfümfrei: Schont die junge Hautbarriere.");
+    }
+  } else {
+    // Adult & Teen
+    // a) Komedogenität
+    if (isAkneProfile) {
+      if (p.nc === true) {
+        skinPoints.push("🟢 Nicht-komedogen bestätigt: Offizieller Hersteller-Claim gegen porenverstopfende Stoffe.");
+      } else if (p.nc === false) {
+        skinOutcomes.push("eher_nicht");
+        skinPoints.push("🟡 Nicht als komedogenarm ausgewiesen: Kann bei Neigung zu Unreinheiten porenverstopfend wirken.");
+      } else {
+        skinPoints.push("ℹ️ Komedogenität offen: Im Online-Katalog liegt kein offizieller Nicht-Komedogen-Claim vor. Bei unreiner Haut vorab INCI prüfen.");
+      }
+    }
+
+    // b) Duftstoffe
+    if (p.ff === true) {
+      skinPoints.push("🟢 Parfümfrei: Reizarme Formulierung ohne Duftstoffe – optimal für empfindliche Hautbarriere.");
+    } else if (p.ff === false) {
+      if (isSensitiveProfile) {
+        skinOutcomes.push("eher_nicht");
+        skinPoints.push("🟡 Enthält Parfüm/Duftstoffe: Kann eine beanspruchte Hautbarriere zusätzlich irritieren.");
+      } else {
+        skinPoints.push("ℹ️ Enthält Parfüm/Duftstoffe.");
+      }
+    } else {
+      if (isSensitiveProfile) {
+        skinPoints.push("ℹ️ Duftstoffe offen: Im Online-Katalog liegen keine verifizierten Angaben zur Parfümierung vor. Bei sensibler Haut vorab INCI prüfen.");
+      } else {
+        skinPoints.push("ℹ️ Duftstoffe offen: Keine Händlerangaben hinterlegt.");
+      }
+    }
+
+    // c) Cruelty-Free
+    if (p.cf === true) {
+      skinPoints.push("🟢 Cruelty-Free: Verifiziert tierversuchsfrei (" + (p.cf_basis || "Leaping Bunny / Verbandssiegel") + ").");
+    } else if (p.cf === false) {
+      skinPoints.push("ℹ️ Cruelty-Free: Kein Nachweis hinterlegt.");
+    } else {
+      skinPoints.push("ℹ️ Cruelty-Free offen: Kein Verbandssiegel im Online-Katalog hinterlegt (gesetzliches EU-Tierversuchsverbot gilt).");
+    }
+  }
+
+  // --- 3. ROUTINE-FIT (Gegenprüfung gegen Schrank / AM / PM) ---
+  var routineOutcomes = [];
+  var routinePoints = [];
+
+  var currentSlotIds = [];
+  if (cat === "adult") {
+    currentSlotIds = (currentTab === "am" ? (appState.am || []) : (typeof getActivePMList === "function" ? getActivePMList() : (appState.pm_a || [])));
+  } else if (cat === "teen") {
+    var t = appState.teen || {};
+    currentSlotIds = [].concat(t.reiniger || [], t.active || [], t.creme || [], t.spf || []);
+  } else if (cat === "child") {
+    var c = appState.child || {};
+    currentSlotIds = [].concat(c.reiniger || [], c.creme || [], c.spf || [], c.haar || []);
+  } else if (cat === "baby") {
+    var b = appState.baby || {};
+    currentSlotIds = [].concat(b.reiniger || [], b.creme || [], b.windel || [], b.spf || []);
+  }
+
+  var otherProds = currentSlotIds
+    .filter(function (id) { return id !== p.id; })
+    .map(resolve)
+    .filter(Boolean);
+  otherProds.forEach(ensureClassesForRules);
+
+  if (otherProds.length > 0) {
+    var hasConflictPair = false;
+    var hasWarnPair = false;
+    otherProds.forEach(function (other) {
+      if (typeof checkPairRules === "function") {
+        var hit = checkPairRules(p, [other], { slot: currentTab });
+        if (hit) {
+          if (hit.outcome === "konflikt") {
+            hasConflictPair = true;
+            routineOutcomes.push("konflikt");
+            routinePoints.push("🔴 Routine-Konflikt mit " + other.name + ": " + hit.reason);
+          } else if (hit.outcome === "eher_nicht") {
+            hasWarnPair = true;
+            routineOutcomes.push("eher_nicht");
+            routinePoints.push("🟡 Im Wechsel anwenden mit " + other.name + ": " + hit.reason);
+          }
+        }
+      }
+    });
+
+    if (!hasConflictPair && !hasWarnPair) {
+      routinePoints.push("🟢 Keine Wirkstoff-Kollisionen mit deinen anderen Produkten in der " + (currentTab === "am" ? "Morgen" : "Abend") + "-Routine.");
+    }
+  } else {
+    routinePoints.push("🟢 Erstes Produkt in diesem Routine-Bereich – keine Kollisionen vorhanden.");
+  }
+
+  if (currentTab === "am" && isRetinoidProduct(p)) {
+    routineOutcomes.push("eher_nicht");
+    routinePoints.push("🟡 Retinoide werden standardmäßig abends empfohlen (UV-Empfindlichkeit).");
+  }
+
+  var allOutcomes = skinOutcomes.concat(routineOutcomes);
+  var overall = allOutcomes.length ? worstWins.apply(null, allOutcomes) : "passt";
+
+  return {
+    status: statusFromOutcome(overall),
+    verdict: overall,
+    title: overall === "konflikt"
+      ? "🔴 Routine- oder Reiz-Konflikt"
+      : (overall === "eher_nicht" ? "🟡 Eingeschränkt passend / prüfen" : "🟢 Passt zu Routine & Hauttyp"),
+    skinTypeFit: {
+      profileName: profileName,
+      skinSub: profileSub,
+      category: cat,
+      points: skinPoints
+    },
+    routineFit: {
+      tab: currentTab,
+      points: routinePoints
+    },
+    missingData: {
+      hasMissing: hasMissingData,
+      isLive: isLive,
+      list: missingList
+    },
+    product: p
+  };
+}
+
+if (typeof window !== "undefined") {
+  window.evaluateProductCompatibility = evaluateProductCompatibility;
+}
+

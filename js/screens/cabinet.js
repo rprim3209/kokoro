@@ -15,6 +15,9 @@ function resolveProfileCabinetProduct(id) {
   if (typeof appState === "object" && appState.customProducts && appState.customProducts[id]) {
     return appState.customProducts[id];
   }
+  if (typeof window === "object" && window.dmResultsMap && window.dmResultsMap[id]) {
+    return window.dmResultsMap[id];
+  }
   return null;
 }
 
@@ -332,10 +335,14 @@ function renderBabyCabinet(container) {
             <div class="step-active-desc" style="font-size:0.78rem;color:var(--muted)">Marke: <strong>${p.brand}</strong></div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">
               ${conflictBadgeHtml(flag)}
-              ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Parfümiert</span>' : '')}
-              ${p.u3 === true ? '<span class="tag ped-blue" style="font-size:0.66rem;padding:1px 5px">👶 EU &lt;3 Jahre</span>' : ''}
-              ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : ''}
+              ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Parfümiert</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ Duftstoffe offen</span>')}
+              ${p.u3 === true ? '<span class="tag ped-blue" style="font-size:0.66rem;padding:1px 5px">👶 EU &lt;3 Jahre</span>' : (p.u3 === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Nicht U3</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ U3 offen</span>')}
+              ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ CF offen</span>')}
               ${p.spfNote ? '<span class="tag ped-amber" style="font-size:0.66rem;padding:1px 5px">☀️ AAP &lt;6m</span>' : ''}
+              ${(p._liveSource || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id))) ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.65rem;padding:1px 5px;font-weight:700">⚠️ Live-Katalog</span>' : ''}
+            </div>
+            <div style="margin-top:5px">
+              <button type="button" class="btn-text" style="font-size:0.72rem;color:#1d4ed8;padding:2px 7px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:3px" onclick="event.stopPropagation(); openCompatibilityCheckModal('${p.id}', 'baby')">🔍 Routine- &amp; Hauttyp-Check</button>
             </div>
           </div>
           <div class="step-actions">
@@ -491,10 +498,14 @@ function renderChildCabinet(container) {
             <div class="step-active-desc" style="font-size:0.78rem;color:var(--muted)">Marke: <strong>${p.brand}</strong></div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">
               ${conflictBadgeHtml(flag)}
-              ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Parfümiert</span>' : '')}
-              ${p.u3 === true ? '<span class="tag ped-blue" style="font-size:0.66rem;padding:1px 5px">👶 EU &lt;3 Jahre</span>' : ''}
-              ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : ''}
+              ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Parfümiert</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ Duftstoffe offen</span>')}
+              ${p.u3 === true ? '<span class="tag ped-blue" style="font-size:0.66rem;padding:1px 5px">👶 EU &lt;3 Jahre</span>' : (p.u3 === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Nicht U3</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ U3 offen</span>')}
+              ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ CF offen</span>')}
               ${p.spfNote ? '<span class="tag ped-amber" style="font-size:0.66rem;padding:1px 5px">☀️ AAP &lt;6m</span>' : ''}
+              ${(p._liveSource || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id))) ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.65rem;padding:1px 5px;font-weight:700">⚠️ Live-Katalog</span>' : ''}
+            </div>
+            <div style="margin-top:5px">
+              <button type="button" class="btn-text" style="font-size:0.72rem;color:#b45309;padding:2px 7px;background:#fefce8;border:1px solid #fde68a;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:3px" onclick="event.stopPropagation(); openCompatibilityCheckModal('${p.id}', 'child')">🔍 Routine- &amp; Hauttyp-Check</button>
             </div>
           </div>
           <div class="step-actions">
@@ -716,10 +727,14 @@ function renderTeenCabinet(container) {
             <div class="step-active-desc" style="font-size:0.78rem;color:var(--muted)">Marke: <strong>${p.brand}</strong></div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">
               ${conflictBadgeHtml(flag)}
-              ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Parfümiert</span>' : '')}
-              ${p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px">🛡️ NC</span>' : ''}
-              ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : ''}
+              ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Parfümiert</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ Duftstoffe offen</span>')}
+              ${p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px">🛡️ NC</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ NC offen</span>')}
+              ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ CF offen</span>')}
               ${p.notForMinors ? '<span class="tag" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;font-size:0.66rem;padding:1px 5px">🛑 Kein Teen-Vorschlag</span>' : ''}
+              ${(p._liveSource || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id))) ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.65rem;padding:1px 5px;font-weight:700">⚠️ Live-Katalog</span>' : ''}
+            </div>
+            <div style="margin-top:5px">
+              <button type="button" class="btn-text" style="font-size:0.72rem;color:#0f766e;padding:2px 7px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:3px" onclick="event.stopPropagation(); openCompatibilityCheckModal('${p.id}', 'teen')">🔍 Routine- &amp; Hauttyp-Check</button>
             </div>
           </div>
           <div class="step-actions">
@@ -1203,6 +1218,7 @@ function renderMain(autoSave = true) {
         .filter(k => ["retinoid_rx","retinoid_cos","aha","bha","bpo","ascorbic","azelaic"].indexOf(k) !== -1)
         .map(k => `<span class="tag class-chip" style="font-size:0.66rem;padding:1px 5px">${k}</span>`)
         .join("");
+      const isLiveProd = !!(p._liveSource || (p.source && /live|mcp|obf|web/i.test(p.source)) || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id)));
       html += `
         <div class="step-card ${cardConflictClass}" onclick="openProductDetail('${p.id}')">
           <div class="step-num">${idx + 1}</div>
@@ -1214,12 +1230,16 @@ function renderMain(autoSave = true) {
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
               ${flagBadge}
               ${classChips}
-              ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px" title="Frei von Duftstoffen">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Enthält Parfüm/Duftstoffe">⚠️ Parfümiert</span>' : '')}
-              ${p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px" title="Nicht-komedogen ausgelobt">🛡️ NC</span>' : ''}
-              ${p.cf === true ? '<span class="tag cf" style="font-size:0.66rem;padding:1px 5px" title="Zertifiziert tierversuchsfrei (CFI/Leaping Bunny)">🐰 Cruelty-Free</span>' : ''}
+              ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px" title="Frei von Duftstoffen">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Enthält Parfüm/Duftstoffe">⚠️ Parfümiert</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px" title="Keine verifizierten Angaben zur Parfümierung im Online-Katalog hinterlegt">ℹ️ Duftstoffe offen</span>')}
+              ${p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px" title="Nicht-komedogen ausgelobt">🛡️ NC</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Nicht als komedogenarm ausgewiesen">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px" title="Keine offizielle Herstellerangabe zur Komedogenität im Online-Katalog hinterlegt">ℹ️ NC offen</span>')}
+              ${p.cf === true ? '<span class="tag cf" style="font-size:0.66rem;padding:1px 5px" title="Zertifiziert tierversuchsfrei (CFI/Leaping Bunny)">🐰 Cruelty-Free</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Keine Verbandszertifizierung hinterlegt">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px" title="Kein Verbandssiegel (CFI/Leaping Bunny) im Online-Katalog hinterlegt">ℹ️ CF offen</span>')}
               ${p.no_white_cast === true ? '<span class="tag soc-nwc" style="font-size:0.66rem;padding:1px 5px" title="Hinterlässt keinen weißen Kreideschleier">✨ Zero White-Cast</span>' : ''}
               ${p.iron_ox === true ? '<span class="tag soc-iron" style="font-size:0.66rem;padding:1px 5px" title="Enthält Eisenoxide zum Schutz vor sichtbarem Licht/HEV">🛡️ Eisenoxide</span>' : ''}
               ${p.pih === true ? '<span class="tag soc-pih" style="font-size:0.66rem;padding:1px 5px" title="Evidenzbasierter Wirkstoff gegen Pickelmale/PIH">🎯 PIH-Fokus</span>' : ''}
+              ${isLiveProd ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.65rem;padding:1px 5px;font-weight:700" title="Live aus Drogerie-Katalog geladen (INCI/Claims unvollständig)">⚠️ Live-Katalog</span>' : ''}
+            </div>
+            <div style="margin-top:5px">
+              <button type="button" class="btn-text" style="font-size:0.72rem;color:#4338ca;padding:2px 7px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:3px" onclick="event.stopPropagation(); openCompatibilityCheckModal('${p.id}', '${appState.tab}')">🔍 Routine- &amp; Hauttyp-Check</button>
             </div>
           </div>
           <div class="step-actions">
@@ -1829,3 +1849,87 @@ if (typeof window !== "undefined") {
   window.renderBottle = renderBottle;
   window.startWithEmptyCabinet = startWithEmptyCabinet;
 }
+
+
+function openCompatibilityCheckModal(prodId, tab) {
+  if (typeof evaluateProductCompatibility !== "function") {
+    if (typeof openProductDetail === "function") return openProductDetail(prodId);
+    return;
+  }
+  const evalRes = evaluateProductCompatibility(prodId, tab);
+  const p = evalRes.product;
+  if (!p) return;
+
+  const verdictPill = evalRes.verdict === "passt"
+    ? '<span style="background:#dcfce7;color:#166534;font-size:0.74rem;font-weight:800;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em">🟢 Passt</span>'
+    : (evalRes.verdict === "eher_nicht"
+        ? '<span style="background:#fef3c7;color:#92400e;font-size:0.74rem;font-weight:800;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em">🟡 Eingeschränkt</span>'
+        : '<span style="background:#fee2e2;color:#991b1b;font-size:0.74rem;font-weight:800;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em">🔴 Konflikt</span>');
+
+  const tabLabel = (tab === "am") ? "☀️ Morgen-Routine" : ((tab === "pm") ? "🌙 Abend-Routine" : (evalRes.skinTypeFit.category ? evalRes.skinTypeFit.category.toUpperCase() : "Routine"));
+
+  const skinFitPointsHtml = evalRes.skinTypeFit.points.map(pt => `<div style="font-size:0.83rem;line-height:1.4">${pt}</div>`).join("");
+  const routineFitPointsHtml = evalRes.routineFit.points.map(pt => `<div style="font-size:0.83rem;line-height:1.4">${pt}</div>`).join("");
+
+  let missingDataBoxHtml = "";
+  if (evalRes.missingData.hasMissing || evalRes.missingData.isLive) {
+    missingDataBoxHtml = `
+      <div class="pharma-box" style="background:#fffbeb;border-color:#fde68a;margin-top:0.8rem">
+        <div class="pharma-title" style="color:#92400e">ℹ️ Hinweis zu Online-Katalog-Daten</div>
+        <div class="pharma-text" style="font-size:0.82rem;color:#78350f;line-height:1.4">
+          Dieses Produkt stammt aus dem <strong>Online-Katalog (Live-Suche / EAN)</strong>. Bei Händler- und EAN-Scans liegen oft nur Basisdaten (Name, Marke, Preis) vor.
+          ${evalRes.missingData.list.length > 0 ? `<br><br><strong>Folgende Angaben sind nicht verifiziert:</strong><br>• ${evalRes.missingData.list.join('<br>• ')}` : ''}
+          <br><br>
+          <em>Empfehlung:</em> Prüfe vor der ersten Anwendung die Inhaltsstoffliste (INCI) auf der Verpackung auf bekannte persönliche Reizstoffe.
+        </div>
+      </div>
+    `;
+  }
+
+  showModalSheet(`
+    <div style="font-size:0.74rem;text-transform:uppercase;color:var(--muted);font-weight:700">🔬 Gegenprüfung: Routine- &amp; Hauttyp-Check</div>
+    <h2 style="margin:2px 0 0.4rem;font-size:1.3rem">${p.brand || ""} ${p.name || ""}</h2>
+    <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.9rem">
+      Einsatz: <strong>${tabLabel}</strong> · Kategorie: <strong>${p.kat || "Pflege"}</strong>
+    </div>
+
+    <!-- Status Banner -->
+    <div class="verdict-banner ${evalRes.status}" style="flex-direction:column;gap:6px;margin-bottom:0.9rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:6px">
+        <div class="verdict-title">${evalRes.title}</div>
+        ${verdictPill}
+      </div>
+    </div>
+
+    <!-- 1. Hauttyp-Check -->
+    <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:0.8rem 0.95rem;margin-bottom:0.75rem">
+      <div style="font-weight:700;font-size:0.86rem;color:var(--ink);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span>👤 Passt es zu deinem Hauttyp?</span>
+        <span style="font-size:0.72rem;background:#f1f5f9;color:#475569;padding:2px 6px;border-radius:4px">${evalRes.skinTypeFit.skinSub || evalRes.skinTypeFit.profileName}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${skinFitPointsHtml}
+      </div>
+    </div>
+
+    <!-- 2. Routine-Check -->
+    <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:0.8rem 0.95rem;margin-bottom:0.75rem">
+      <div style="font-weight:700;font-size:0.86rem;color:var(--ink);margin-bottom:6px">
+        🔄 Passt es zu deiner aktuellen ${tabLabel}?
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${routineFitPointsHtml}
+      </div>
+    </div>
+
+    <!-- 3. Datenqualitäts-Hinweis -->
+    ${missingDataBoxHtml}
+
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:1.1rem">
+      <button type="button" class="primary" onclick="closeModal()">Verstanden</button>
+      <button type="button" class="ghost-btn" onclick="${evalRes.skinTypeFit.category === 'teen' ? `openTeenProductDetail('${p.id}')` : (evalRes.skinTypeFit.category === 'baby' || evalRes.skinTypeFit.category === 'child' ? `openBabyProductDetail('${p.id}')` : `openProductDetail('${p.id}')`)}">Vollständige Produkt-Details ansehen ➔</button>
+    </div>
+  `);
+}
+window.openCompatibilityCheckModal = openCompatibilityCheckModal;
+
