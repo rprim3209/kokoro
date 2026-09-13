@@ -406,9 +406,13 @@ MUELLER_SHOP = {
     "HU": "https://www.mueller.co.hu/kereses/?q=",
 }
 
+BIPA_SHOP = {
+    "AT": "https://www.bipa.at/search?q=",
+}
+
 RETAILER_META = {
     "DE": {"primary": "dm", "secondary": "mueller", "label": "dm Deutschland", "mode": "mcp", "shop": DM_SHOP["DE"], "mueller_shop": MUELLER_SHOP["DE"]},
-    "AT": {"primary": "dm", "secondary": "mueller", "label": "dm & Müller Österreich", "mode": "deeplink_obf", "shop": DM_SHOP["AT"], "mueller_shop": MUELLER_SHOP["AT"]},
+    "AT": {"primary": "dm", "secondary": "bipa", "tertiary": "mueller", "label": "dm, BIPA & Müller Österreich", "mode": "deeplink_obf", "shop": DM_SHOP["AT"], "bipa_shop": BIPA_SHOP["AT"], "mueller_shop": MUELLER_SHOP["AT"]},
     "IT": {"primary": "dm", "label": "dm Italia", "mode": "deeplink_obf", "shop": DM_SHOP["IT"]},
     "PL": {"primary": "dm", "label": "dm Polska", "mode": "deeplink_obf", "shop": DM_SHOP["PL"]},
     "CZ": {"primary": "dm", "label": "dm Česko", "mode": "deeplink_obf", "shop": DM_SHOP["CZ"]},
@@ -517,6 +521,57 @@ def deeplink_card(query: str, meta: dict) -> dict:
         "attributes": [],
     }
 
+
+def bipa_deeplink_card(query: str, country: str) -> dict:
+    cc = (country or "AT").strip().upper() or "AT"
+    shop = BIPA_SHOP.get(cc, "https://www.bipa.at/search?q=")
+    url = shop + quote(query)
+
+    brand = "BIPA"
+    q_clean = query.strip()
+    q_lower = q_clean.lower()
+    if re.search(r"\b(bi\s*good|bigood)\b", q_lower):
+        brand = "bi good"
+    elif re.search(r"\b(bi\s*care|bicare)\b", q_lower):
+        brand = "bi care"
+    elif re.search(r"\bbabywell\b", q_lower):
+        brand = "Babywell"
+    elif re.search(r"\blook\s*by\s*bipa\b", q_lower):
+        brand = "Look by BIPA"
+    elif re.search(r"\btoday\b", q_lower):
+        brand = "Today"
+
+    kat = "creme"
+    if re.search(r"\b(wasch|reiniger|cleanser|reinigung|schaum|gel|mizell|seife)\b", q_lower):
+        kat = "reiniger"
+    elif re.search(r"\b(serum|ampulle|retinol|niacinamid|vitamin\s*c|aha|bha|peeling|elixier)\b", q_lower):
+        kat = "serum"
+    elif re.search(r"\b(sonne|sun|spf|lfs|uv)\b", q_lower):
+        kat = "spf"
+    elif re.search(r"\b(shampoo|haar|spülung|conditioner)\b", q_lower):
+        kat = "haar"
+    elif re.search(r"\b(windel|wundschutz|po-creme|zink|wickel)\b", q_lower):
+        kat = "windel"
+
+    safe_id = re.sub(r"\W+", "_", query)[:24].strip("_")
+    return {
+        "id": f"deeplink_bipa_{cc}_{safe_id}",
+        "title": f"Im BIPA Onlineshop ({cc}) nach „{query}“ suchen",
+        "name": f"Im BIPA Onlineshop nach „{query}“ suchen",
+        "brand": brand,
+        "brandName": brand,
+        "price": "",
+        "kat": kat,
+        "url": url,
+        "appLink": url,
+        "source": "deeplink",
+        "store": f"BIPA {cc}",
+        "retailerLabel": f"BIPA {cc}",
+        "country": cc,
+        "countries": [cc],
+        "wirk": f"BIPA Drogerie ({cc}) · Deep-Link",
+        "attributes": [],
+    }
 
 def mueller_deeplink_card(query: str, country: str) -> dict:
     cc = (country or "AT").strip().upper() or "AT"
@@ -1147,6 +1202,7 @@ def live_search(query: str, country: str, page_size: int) -> dict:
             out_meta["notFound"] = True
         return {"products": products[:page_size], "meta": out_meta}
 
+    is_bipa_q = bool(re.search(r"\b(bi\s*good|bigood|bi\s*care|bicare|babywell|look\s*by\s*bipa|today|today\s*sun|bipa)\b", q, re.IGNORECASE))
     is_mueller_q = bool(re.search(r"\b(cv|cadeavera|terra\s*naturi|beauty\s*baby|aveo|aiko|duchesse|barfuss|sensisana|müller|mueller)\b", q, re.IGNORECASE))
 
     if cc == "DE" and meta.get("mode") == "mcp":
@@ -1176,20 +1232,27 @@ def live_search(query: str, country: str, page_size: int) -> dict:
         else:
             products.append(ensure_product_price_str(m_card))
     elif cc == "AT":
-        # Österreich: dm.at und mueller.at beide vollwertig hinterlegen
+        # Österreich: dm.at, bipa.at und mueller.at vollwertig hinterlegen
         dm_card = ensure_product_price_str(deeplink_card(q, meta))
+        b_card = ensure_product_price_str(bipa_deeplink_card(q, "AT"))
         m_card = ensure_product_price_str(mueller_deeplink_card(q, "AT"))
-        if is_mueller_q:
+        if is_bipa_q:
+            products.append(b_card)
+            products.append(dm_card)
+            products.append(m_card)
+        elif is_mueller_q:
             products.append(m_card)
             products.append(dm_card)
+            products.append(b_card)
         else:
             products.append(dm_card)
+            products.append(b_card)
             products.append(m_card)
         note = (
-            "Österreich Live-Suche: dm.at & mueller.at (Deep-Links) + "
+            "Österreich Live-Suche: dm.at, bipa.at & mueller.at (Deep-Links) + "
             "Open Beauty Facts (Länderfilter AT). DE-MCP wird ehrlich nicht als lokaler Bestand gezeigt."
         )
-        obf = search_obf(q, cc, max(1, page_size - 2))
+        obf = search_obf(q, cc, max(1, page_size - 3))
         products.extend(obf)
     elif cc == "CH" or meta.get("primary") == "mueller":
         # Schweiz: Müller Schweiz als primäre Drogerie

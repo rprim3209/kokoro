@@ -36,11 +36,21 @@ DE, PL, HU, CZ, ES, CH (+ DK Online-Shop genannt) — **nicht** flächendeckend 
 DE, AT, CH, HR, HU, SI, ES (begrenzt), SK, LI.
 
 - **Weg 2 (Live-Suche Integration):**
-  - **Österreich (`AT`):** Müller Österreich (`https://www.mueller.at/search/?q=`) wird gleichwertig neben dm.at angeboten. Bei Müller-Eigenmarken (CV, Terra Naturi, Beauty Baby) steht Müller an Position 1.
+  - **Österreich (`AT`):** Müller Österreich (`https://www.mueller.at/search/?q=`) wird gleichwertig neben dm.at und bipa.at angeboten. Bei Müller-Eigenmarken (CV, Terra Naturi, Beauty Baby) steht Müller an Position 1.
   - **Deutschland (`DE`):** Müller Deutschland (`https://www.mueller.de/search/?q=`) ist als Drogerie-Alternative zur dm-MCP-API hinterlegt. Bei Müller-Marken steht Müller an Position 1.
   - **Schweiz (`CH`):** Müller Schweiz (`https://www.mueller.ch/search/?q=`) ist als primäre Drogerie hinterlegt.
   - **Eigenmarken-Erkennung:** Automatische Erkennung von `CV CadeaVera`, `Terra Naturi`, `Beauty Baby`, `Aveo`, `Aiko`, `Duchesse`, `Barfuss`, `SensiSana`.
   - **Cabinet-Adoption:** Müller-Karten können direkt via `+ Morgen`, `+ Abend` oder `+ Schrank` in alle Routinen übernommen werden.
+
+## BIPA (REWE International)
+
+Österreich (`AT`) — Marktführer neben dm mit über 600 Filialen.
+
+- **Live-Suche Integration (Österreich):**
+  - **Such-Endpoint:** `https://www.bipa.at/search?q=`
+  - **Triple-Drogerie in AT:** In Österreich stehen mit `dm.at`, `bipa.at` und `mueller.at` alle drei führenden Ketten direkt zur Verfügung.
+  - **Eigenmarken-Erkennung:** Automatische Erkennung von `bi good` (zertifizierte Naturkosmetik nach NATRUE & Vegan), `bi care` (Hautpflege, Seren, Cremes, LSF), `Babywell` (Babypflege, Wundschutz, Kinder-Sonnenschutz), `Look by BIPA`, `Today` / `Today Sun`.
+  - **Master-Katalog:** Beliebte Eigenmarken sind fest im Master-Katalog (`katalog-produkte.csv` und `js/catalog.js`) mit verifizierten Claims hinterlegt.
 
 
 ## Douglas-Gruppe (Premium Beauty, ~22 Länder)
