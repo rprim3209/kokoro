@@ -323,6 +323,30 @@ const KNOWN_EAN_REGISTRY = {
     cf: false,
     store: "dm / Apotheke (~11 €)"
   },
+  "769915232400": {
+    name: "Natural Moisturizing Factors + Beta Glucan, 100 ml",
+    brand: "The Ordinary",
+    kat: "creme",
+    price: "14,40 €",
+    img: "https://static.prod.ecom.mueller.de/products/769915232400/769915232400_1_02042026.jpg",
+    wirk: "Beta-Glucan + NMF + Ceramide",
+    ff: true,
+    nc: true,
+    cf: true,
+    store: "Müller (~14,40 €)"
+  },
+  "0769915232400": {
+    name: "Natural Moisturizing Factors + Beta Glucan, 100 ml",
+    brand: "The Ordinary",
+    kat: "creme",
+    price: "14,40 €",
+    img: "https://static.prod.ecom.mueller.de/products/769915232400/769915232400_1_02042026.jpg",
+    wirk: "Beta-Glucan + NMF + Ceramide",
+    ff: true,
+    nc: true,
+    cf: true,
+    store: "Müller (~14,40 €)"
+  },
   "4066447888720": {
     name: "Baby Körperlotion ultra sensitive, 250 ml",
     brand: "Babylove",
@@ -338,21 +362,112 @@ const KNOWN_EAN_REGISTRY = {
   }
 };
 
+function parseMuellerMarkdown(text, ean) {
+  if (!text) return null;
+  const linkMatch = text.match(/\[([^\]]+)\]\((https?:\/\/(?:www\.)?mueller\.[a-z]+\/p\/[a-z0-9\-]+-PPN\d+\/?)\)/i);
+  if (!linkMatch) {
+    const imgLink = text.match(/\[!\[Image\s*\d*:\s*([^\]]*)\]\([^)]+\)\]\((https?:\/\/(?:www\.)?mueller\.[a-z]+\/p\/[a-z0-9\-]+-PPN\d+\/?)\)/i);
+    if (!imgLink) return null;
+  }
+  const rawTitle = linkMatch ? linkMatch[1].trim() : text.match(/\[!\[Image\s*\d*:\s*([^\]]*)\]/i)[1].trim();
+  const prodUrl = linkMatch ? linkMatch[2].trim() : text.match(/https?:\/\/(?:www\.)?mueller\.[a-z]+\/p\/[a-z0-9\-]+-PPN\d+\/?/i)[0];
+
+  let img = "";
+  const imgProdMatch = text.match(/https?:\/\/[^\s\)\"]*(?:static|images)\.prod\.ecom\.mueller\.de[^\s\)\"]*products(?:%2F|\/)[^\s\)\"]+/i)
+                     || text.match(/https?:\/\/[^\s\)\"]*products(?:%2F|\/)[^\s\)\"]+/i);
+  if (imgProdMatch) {
+    img = imgProdMatch[0];
+  } else {
+    const cardImg = text.match(/\[!\[Image[^\]]*\]\((https?:\/\/[^\s\)\"]+)\)\]\([^\)]*PPN\d+/i);
+    if (cardImg && !/icon|dam\/jcr/i.test(cardImg[1])) {
+      img = cardImg[1];
+    }
+  }
+  if (img) {
+    const cleanMatch = img.match(/url=([^&]+)/);
+    if (cleanMatch) {
+      try { img = decodeURIComponent(cleanMatch[1]); } catch(e) {}
+    }
+  }
+
+  let price = "";
+  const priceMatch = text.match(/(\d+[,.]\d{2}\s*€)/);
+  if (priceMatch) price = priceMatch[1].trim();
+
+  const known = [
+    "The Ordinary", "CV CadeaVera", "CadeaVera", "Terra Naturi", "Aveo Med", "Aveo",
+    "Beauty Baby", "Mixa", "CeraVe", "Balea", "Nivea", "Neutrogena", "La Roche-Posay",
+    "Garnier", "Sebamed", "Isana", "Catrice", "Essence", "Maybelline", "L'Oréal", "Loreal",
+    "Weleda", "Dr. Hauschka", "Alverde", "Kneipp", "bi good", "bi care", "Babywell"
+  ];
+  let brand = "";
+  for (const b of known) {
+    if (rawTitle.toLowerCase().startsWith(b.toLowerCase())) {
+      brand = b;
+      break;
+    }
+  }
+  if (!brand) brand = rawTitle.split(/\s+/)[0] || "Müller";
+
+  let cleanName = rawTitle;
+  if (brand && cleanName.toLowerCase().startsWith(brand.toLowerCase())) {
+    cleanName = cleanName.slice(brand.length).trim().replace(/^[-–:]\s*/, "");
+  }
+
+  let kat = "creme";
+  const low = (rawTitle + " " + brand).toLowerCase();
+  if (/\b(wasch|reiniger|cleanser|reinigung|schaum|gel|mizell|seife)\b/.test(low)) kat = "reiniger";
+  else if (/\b(serum|ampulle|retinol|niacinamid|vitamin\s*c|aha|bha|peeling|elixier)\b/.test(low)) kat = "serum";
+  else if (/\b(sonne|sun|spf|lsf|uv)\b/.test(low)) kat = "spf";
+  else if (/\b(windel|wundschutz|po-creme|zink|wickel)\b/.test(low)) kat = "windel";
+
+  return {
+    id: "mueller_" + (ean || "item"),
+    title: rawTitle,
+    name: cleanName || rawTitle,
+    brand: brand,
+    brandName: brand,
+    price: price,
+    img: img,
+    image_url: img,
+    url: prodUrl,
+    appLink: prodUrl,
+    store: "Müller",
+    retailerLabel: "Müller",
+    source: "mueller_live",
+    deeplinkOnly: false,
+    ean: ean || "",
+    gtin: ean || "",
+    kat: kat,
+    wirk: "Müller Sortiment" + (price ? " · " + price : ""),
+    countries: ["AT", "DE"]
+  };
+}
+
 function findLocalProductMatch(query) {
   const raw = String(query || "").trim();
   const qClean = raw.replace(/\D/g, "");
   const qLower = raw.toLowerCase();
 
+  const candidates = [];
+  if (qClean) {
+    candidates.push(qClean);
+    if (qClean.length === 12) candidates.push("0" + qClean);
+    if (qClean.length === 13 && qClean.startsWith("0")) candidates.push(qClean.replace(/^0+/, ""));
+  }
+
   // 1. Check known EAN registry
-  if (qClean && KNOWN_EAN_REGISTRY[qClean]) {
-    const item = KNOWN_EAN_REGISTRY[qClean];
-    return normalizeLiveApiProduct(Object.assign({
-      id: "ean_" + qClean,
-      gtin: qClean,
-      ean: qClean,
-      source: "live_catalog",
-      deeplinkOnly: false
-    }, item));
+  for (const c of candidates) {
+    if (KNOWN_EAN_REGISTRY[c]) {
+      const item = KNOWN_EAN_REGISTRY[c];
+      return normalizeLiveApiProduct(Object.assign({
+        id: "ean_" + c,
+        gtin: c,
+        ean: c,
+        source: "live_catalog",
+        deeplinkOnly: false
+      }, item));
+    }
   }
 
   // 2. Check DB (Adult)
@@ -360,7 +475,8 @@ function findLocalProductMatch(query) {
     for (const k in DB) {
       const p = DB[k];
       if (!p) continue;
-      if (qClean && (p.ean === qClean || p.gtin === qClean || p.id === "ean_" + qClean)) {
+      const pClean = String(p.ean || p.gtin || "").replace(/\D/g, "");
+      if (candidates.length && (candidates.includes(pClean) || candidates.some(c => p.id === "ean_" + c))) {
         return normalizeLiveApiProduct(Object.assign({}, p, { deeplinkOnly: false, source: "catalog" }));
       }
       if (qLower.length >= 3) {
@@ -377,7 +493,8 @@ function findLocalProductMatch(query) {
     for (const k in BABY_DB) {
       const p = BABY_DB[k];
       if (!p) continue;
-      if (qClean && (p.ean === qClean || p.id === "b_ean_" + qClean)) {
+      const pClean = String(p.ean || p.gtin || "").replace(/\D/g, "");
+      if (candidates.length && (candidates.includes(pClean) || candidates.some(c => p.id === "b_ean_" + c))) {
         return normalizeLiveApiProduct(Object.assign({}, p, { deeplinkOnly: false, source: "baby_catalog" }));
       }
     }
@@ -388,7 +505,8 @@ function findLocalProductMatch(query) {
     for (const k in TEEN_DB) {
       const p = TEEN_DB[k];
       if (!p) continue;
-      if (qClean && (p.ean === qClean || p.id === "t_ean_" + qClean)) {
+      const pClean = String(p.ean || p.gtin || "").replace(/\D/g, "");
+      if (candidates.length && (candidates.includes(pClean) || candidates.some(c => p.id === "t_ean_" + c))) {
         return normalizeLiveApiProduct(Object.assign({}, p, { deeplinkOnly: false, source: "teen_catalog" }));
       }
     }
@@ -398,7 +516,7 @@ function findLocalProductMatch(query) {
   if (window.DM_PILOT_CACHE && window.DM_PILOT_CACHE.length) {
     const hit = window.DM_PILOT_CACHE.find(r => {
       const e = String(r.ean || r.gtin || "").replace(/\D/g, "");
-      return qClean && e === qClean;
+      return candidates.includes(e);
     });
     if (hit && typeof normalizeDmPilotRow === "function") {
       const norm = normalizeDmPilotRow(hit);
@@ -426,10 +544,21 @@ async function searchLiveProducts(query, country) {
     products.push(localHit);
   }
 
-  // B: Try API when running on web / local server (http/https)
-  if (window.location.protocol !== "file:" && products.length === 0) {
+  // B: Try API when running on web / local server (http/https or local server under file://)
+  if (products.length === 0) {
     try {
-      const res = await fetch(`/api/live-search?query=${encodeURIComponent(q)}&country=${encodeURIComponent(cc)}&pageSize=12`);
+      const apiBase = (window.location.protocol === "file:") ? "http://127.0.0.1:8787" : "";
+      const timeoutMs = (window.location.protocol === "file:") ? 1500 : 8000;
+      let signal;
+      if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
+        signal = AbortSignal.timeout(timeoutMs);
+      } else if (typeof AbortController !== "undefined") {
+        const ctrl = new AbortController();
+        setTimeout(() => ctrl.abort(), timeoutMs);
+        signal = ctrl.signal;
+      }
+      const fetchOpts = signal ? { signal } : {};
+      const res = await fetch(`${apiBase}/api/live-search?query=${encodeURIComponent(q)}&country=${encodeURIComponent(cc)}&pageSize=12`, fetchOpts);
       if (res.ok) {
         const data = await res.json();
         window.lastLiveSearchMeta = Object.assign({}, window.lastLiveSearchMeta, data.meta || {});
@@ -444,42 +573,70 @@ async function searchLiveProducts(query, country) {
         });
       }
     } catch (e) {
-      // API not running or unreachable
+      // Local API not running or unreachable
     }
   }
 
-  // C: Direct Open Beauty Facts (CORS allowed in browser!) if query is an EAN and still not found
+  // C: Direct Multi-Source Fallbacks if query is an EAN (8-14 digits) and still not found
   if (products.length === 0 && /^\d{8,14}$/.test(qClean)) {
-    try {
-      const obfRes = await fetch(`https://world.openbeautyfacts.org/api/v0/product/${qClean}.json`);
-      if (obfRes.ok) {
-        const obfData = await obfRes.json();
-        if (obfData && obfData.status === 1 && obfData.product) {
-          const pr = obfData.product;
-          const name = pr.product_name_de || pr.product_name || pr.generic_name_de || pr.generic_name || "Produkt";
-          const brand = (pr.brands ? pr.brands.split(",")[0].trim() : pr.brand_owner) || "";
-          const img = pr.image_front_url || pr.image_url || pr.image_front_small_url || "";
-          products.push(normalizeLiveApiProduct({
-            id: "obf_" + qClean,
-            name: name,
-            title: name,
-            brand: brand,
-            brandName: brand,
-            ean: qClean,
-            gtin: qClean,
-            img: img,
-            image_url: img,
-            price: "",
-            store: "Open Beauty Facts",
-            source: "obf",
-            deeplinkOnly: false,
-            wirk: "EAN erkannt (Open Beauty Facts)",
-            countries: [cc]
-          }));
+    // C1: Open Beauty Facts (CORS allowed in browser!)
+    const obfCodes = [qClean];
+    if (qClean.length === 12) obfCodes.push("0" + qClean);
+    for (const code of obfCodes) {
+      if (products.length > 0) break;
+      try {
+        const obfRes = await fetch(`https://world.openbeautyfacts.org/api/v0/product/${code}.json`);
+        if (obfRes.ok) {
+          const obfData = await obfRes.json();
+          if (obfData && obfData.status === 1 && obfData.product) {
+            const pr = obfData.product;
+            const name = pr.product_name_de || pr.product_name || pr.generic_name_de || pr.generic_name || "Produkt";
+            const brand = (pr.brands ? pr.brands.split(",")[0].trim() : pr.brand_owner) || "";
+            const img = pr.image_front_url || pr.image_url || pr.image_front_small_url || "";
+            products.push(normalizeLiveApiProduct({
+              id: "obf_" + code,
+              name: name,
+              title: name,
+              brand: brand,
+              brandName: brand,
+              ean: code,
+              gtin: code,
+              img: img,
+              image_url: img,
+              price: "",
+              store: "Open Beauty Facts",
+              source: "obf",
+              deeplinkOnly: false,
+              wirk: "EAN erkannt (Open Beauty Facts)",
+              countries: [cc]
+            }));
+            break;
+          }
         }
+      } catch (e) {
+        // OBF fetch error
       }
-    } catch (e) {
-      // OBF fetch error
+    }
+
+    // C2: Direct Müller Search via Jina reader (CORS allowed for file:// origin: null)
+    if (products.length === 0) {
+      try {
+        const domain = (cc === "DE") ? "mueller.de" : "mueller.at";
+        let jinaSignal;
+        if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
+          jinaSignal = AbortSignal.timeout(3500);
+        }
+        const mRes = await fetch(`https://r.jina.ai/https://www.${domain}/search/?q=${qClean}`, jinaSignal ? { signal: jinaSignal } : {});
+        if (mRes.ok) {
+          const mTxt = await mRes.text();
+          const parsed = parseMuellerMarkdown(mTxt, qClean);
+          if (parsed && parsed.name) {
+            products.push(normalizeLiveApiProduct(parsed));
+          }
+        }
+      } catch (e) {
+        // Jina fetch error
+      }
     }
   }
 

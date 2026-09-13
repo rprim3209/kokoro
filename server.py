@@ -749,7 +749,34 @@ def product_from_katalog(row: dict) -> dict:
     ean = str(row.get("ean") or "").strip()
     name = row.get("name") or ""
     brand = row.get("brand") or ""
-    link = row.get("source_url") or ""
+    link = row.get("source_url") or row.get("offizielle_produktseite") or ""
+    notes = row.get("notes") or row.get("kurzbeschreibung") or ""
+
+    price = ""
+    m_p = re.search(r"price=([^;]+)", notes)
+    if m_p:
+        price = m_p.group(1).strip()
+
+    img = ""
+    m_i = re.search(r"img=([^;]+)", notes)
+    if m_i:
+        img = m_i.group(1).strip()
+
+    ff = row.get("flag_fragrance_free") == "yes"
+    nc = row.get("flag_nc") == "yes"
+    cf = row.get("flag_cf") == "yes"
+    u3 = row.get("flag_under3_intended") == "yes"
+    slot = row.get("slot") or "creme"
+
+    store = "Katalog"
+    low_src = (link + " " + notes).lower()
+    if "mueller" in low_src:
+        store = "Müller"
+    elif "bipa" in low_src:
+        store = "BIPA"
+    elif "dm." in low_src:
+        store = "dm"
+
     return ensure_product_price_str({
         "id": "katalog_" + (ean or name[:24]),
         "dan": "",
@@ -759,17 +786,24 @@ def product_from_katalog(row: dict) -> dict:
         "name": name,
         "brandName": brand,
         "brand": brand,
-        "price": "",
+        "price": price,
+        "img": img,
+        "image_url": img,
         "url": link,
         "appLink": link,
         "relativeProductUrl": path_from_applink(link) if link else "",
         "source": "katalog",
         "deeplinkOnly": False,
-        "retailerLabel": "Lokaler Katalog",
-        "store": "Katalog",
+        "retailerLabel": f"{store} (Katalog)",
+        "store": store,
         "category": row.get("katalog") or "",
+        "kat": slot,
+        "ff": ff,
+        "nc": nc,
+        "cf": cf,
+        "u3": u3,
         "attributes": [],
-        "wirk": "EAN erkannt (Katalog)",
+        "wirk": f"{store} · {price}" if price else f"EAN erkannt ({store} Katalog)",
     })
 
 
@@ -935,7 +969,32 @@ def _parse_web_ean_title(text: str, ean: str) -> tuple[str, str, str, str]:
                 break
 
     if title:
-        title = re.sub(r"\s*[-–|]\s*(dm\.de|barcodelookup).*$", "", title, flags=re.I).strip()
+        title = re.sub(r"\s*[-–|]\s*(dm\.de|barcodelookup|duckduckgo).*$", "", title, flags=re.I).strip()
+        known_brands = [
+            "The Ordinary", "CV CadeaVera", "CadeaVera", "Terra Naturi", "Aveo Med", "Aveo",
+            "Beauty Baby", "Mixa", "CeraVe", "Balea", "Nivea", "Neutrogena", "La Roche-Posay",
+            "Garnier", "Sebamed", "Isana", "Catrice", "Essence", "Maybelline", "L'Oréal", "Loreal",
+            "L'Oreal", "Weleda", "Dr. Hauschka", "Alverde", "Kneipp", "bi good", "bi care",
+            "Babywell", "Paula's Choice", "Geek & Gorgeous", "Avene", "Eucerin", "Bioderma"
+        ]
+        if " - " in title:
+            parts = [p.strip() for p in title.split(" - ")]
+            if len(parts) == 2:
+                left, right = parts[0], parts[1]
+                for kb in known_brands:
+                    if right.lower() == kb.lower() or right.lower().startswith(kb.lower()):
+                        brand = kb
+                        title = f"{brand} {left}" if not left.lower().startswith(brand.lower()) else left
+                        break
+                    elif left.lower() == kb.lower() or left.lower().startswith(kb.lower()):
+                        brand = kb
+                        title = f"{brand} {right}" if not right.lower().startswith(brand.lower()) else right
+                        break
+        if not brand:
+            for kb in known_brands:
+                if title.lower().startswith(kb.lower()):
+                    brand = kb
+                    break
         if not brand:
             m = re.match(
                 r"(?i)^(Mixa|CeraVe|Balea|Nivea|Isana|Garnier|La Roche-Posay|L['']?Oreal|Loreal|L['']Oréal)\b",
@@ -949,6 +1008,13 @@ def _parse_web_ean_title(text: str, ean: str) -> tuple[str, str, str, str]:
                 brand = m.group(1)
                 if not title.lower().startswith(brand.lower()):
                     title = f"{brand} {title}"
+
+    if not img:
+        m_mimg = re.search(r'https?://[^\s\)\"]*(?:static|images)\.prod\.ecom\.mueller\.de[^\s\)\"]*products/[^\s\)\"]+', text)
+        if m_mimg:
+            img_raw = m_mimg.group(0)
+            m_u = re.search(r'url=([^&]+)', img_raw)
+            img = urllib.parse.unquote(m_u.group(1)) if m_u else img_raw
 
     return title, brand, dm_url, img
 
@@ -1014,6 +1080,7 @@ def resolve_ean_web(ean: str, meta: dict) -> dict | None:
     img = ""
 
     sources = [
+        f"https://www.mueller.at/search/?q={urllib.parse.quote(raw)}",
         f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(raw)}",
         f"http://www.barcodelookup.com/{raw}",
         f"https://www.dm.de/search?query={urllib.parse.quote(raw)}",
@@ -1062,7 +1129,7 @@ def resolve_ean_web(ean: str, meta: dict) -> dict | None:
 
     if not brand:
         m = re.match(
-            r"(?i)^(Mixa|CeraVe|Balea|Nivea|La Roche-Posay|Isana|Garnier|Loreal)\b",
+            r"(?i)^(Mixa|CeraVe|Balea|Nivea|La Roche-Posay|Isana|Garnier|Loreal|The Ordinary)\b",
             title,
         )
         if m:
@@ -1107,6 +1174,128 @@ def resolve_ean_web(ean: str, meta: dict) -> dict | None:
     })
     _EAN_WEB_CACHE[raw] = dict(prod)
     return prod
+
+
+def fetch_mueller_ean(code: str, country: str = "AT") -> dict | None:
+    """Sucht Produkt-Identität mit echtem hochauflösendem Bild und Preis im Müller-Sortiment."""
+    raw = re.sub(r"\D", "", str(code or ""))
+    if not (8 <= len(raw) <= 14):
+        return None
+
+    cc = str(country or "AT").upper()
+    domain = "mueller.de" if cc == "DE" else "mueller.at"
+    search_url = f"https://www.{domain}/search/?q={raw}"
+
+    text = ""
+    try:
+        text = _jina_get(search_url, timeout=12)
+    except Exception as exc:
+        return None
+
+    if not text:
+        return None
+
+    m_link = re.search(
+        r'\[([^\]]+)\]\((https?://(?:www\.)?mueller\.[a-z]+/p/[a-z0-9\-]+-PPN\d+/?)\)',
+        text,
+        re.I,
+    )
+    if not m_link:
+        m_img_link = re.search(
+            r'\[!\[Image\s*\d*:\s*([^\]]*)\]\([^)]+\)\]\((https?://(?:www\.)?mueller\.[a-z]+/p/[a-z0-9\-]+-PPN\d+/?)\)',
+            text,
+            re.I,
+        )
+        if m_img_link:
+            raw_title = m_img_link.group(1).strip()
+            prod_url = m_img_link.group(2).strip()
+        else:
+            return None
+    else:
+        raw_title = m_link.group(1).strip()
+        prod_url = m_link.group(2).strip()
+
+    # Image extraction: Prioritize /products/{code}/ or /products/
+    img = ""
+    m_img_code = re.search(rf'https?://[^\s\)\"]*products(?:/|%2F){raw}(?:/|%2F)[^\s\)\"]+', text, re.I)
+    if m_img_code:
+        img = m_img_code.group(0)
+    if not img:
+        m_img_prod = re.search(r'https?://[^\s\)\"]*(?:static|images)\.prod\.ecom\.mueller\.de[^\s\)\"]*products(?:/|%2F)[^\s\)\"]+', text, re.I)
+        if m_img_prod:
+            img = m_img_prod.group(0)
+    if not img:
+        m_card_img = re.search(r'\[!\[Image[^\]]*\]\((https?://[^\s\)\"]+)\)\]\([^\)]*PPN\d+', text, re.I)
+        if m_card_img and "icon" not in m_card_img.group(1).lower() and "dam/jcr" not in m_card_img.group(1).lower():
+            img = m_card_img.group(1)
+
+    if img:
+        m_u = re.search(r'url=([^&]+)', img)
+        if m_u:
+            try:
+                img = urllib.parse.unquote(m_u.group(1))
+            except Exception:
+                pass
+
+    price = ""
+    m_price = re.search(r'(\d+[,.]\d{2}\s*€)', text)
+    if m_price:
+        price = m_price.group(1).strip()
+
+    known_brands = [
+        "The Ordinary", "CV CadeaVera", "CadeaVera", "Terra Naturi", "Aveo Med", "Aveo",
+        "Beauty Baby", "Mixa", "CeraVe", "Balea", "Nivea", "Neutrogena", "La Roche-Posay",
+        "Garnier", "Sebamed", "Isana", "Catrice", "Essence", "Maybelline", "L'Oréal", "Loreal",
+        "L'Oreal", "Weleda", "Dr. Hauschka", "Alverde", "Kneipp", "bi good", "bi care", "Babywell"
+    ]
+    brand = ""
+    for kb in known_brands:
+        if raw_title.lower().startswith(kb.lower()):
+            brand = kb
+            break
+    if not brand:
+        brand = raw_title.split()[0] if raw_title else "Müller"
+
+    name = raw_title
+    if brand and name.lower().startswith(brand.lower()):
+        name = name[len(brand):].strip().lstrip("-–: ")
+
+    full_text = (raw_title + " " + brand).lower()
+    kat = "creme"
+    if re.search(r"\b(wasch|reiniger|cleanser|reinigung|schaum|gel|mizell|seife)\b", full_text):
+        kat = "reiniger"
+    elif re.search(r"\b(serum|ampulle|retinol|niacinamid|vitamin\s*c|aha|bha|peeling|elixier)\b", full_text):
+        kat = "serum"
+    elif re.search(r"\b(sonne|sun|spf|lsf|uv)\b", full_text):
+        kat = "spf"
+    elif re.search(r"\b(shampoo|haar|spülung|conditioner)\b", full_text):
+        kat = "haar"
+    elif re.search(r"\b(windel|wundschutz|po-creme|zink|wickel)\b", full_text):
+        kat = "windel"
+
+    return ensure_product_price_str({
+        "id": f"mueller_{raw}",
+        "dan": "",
+        "gtin": raw,
+        "ean": raw,
+        "title": raw_title,
+        "name": name or raw_title,
+        "brand": brand,
+        "brandName": brand,
+        "price": price,
+        "img": img,
+        "image_url": img,
+        "url": prod_url,
+        "appLink": prod_url,
+        "store": "Müller",
+        "retailerLabel": "Müller",
+        "source": "mueller_live",
+        "deeplinkOnly": False,
+        "kat": kat,
+        "wirk": f"Müller Sortiment · {price}" if price else "Müller Sortiment",
+        "country": cc,
+        "countries": [cc],
+    })
 
 
 def fetch_dmtech_search(query: str, page_size: int = 10) -> list[dict]:
@@ -1184,35 +1373,45 @@ def resolve_ean_identity(ean: str, country: str, meta: dict) -> tuple[list, str,
     if hit:
         hit["country"] = country
         hit["countries"] = [country] if country else []
-        # Hochauflösendes Produktbild & Preis aus dmtech anreichern falls im CSV nicht vorhanden
+        # Hochauflösendes Produktbild & Preis anreichern falls im CSV nicht vorhanden
         if not hit.get("img") or not hit.get("price"):
-            dmtech_hits = fetch_dmtech_search(raw, 1)
-            if dmtech_hits:
-                if not hit.get("img") and dmtech_hits[0].get("img"):
-                    hit["img"] = dmtech_hits[0]["img"]
-                    hit["image_url"] = dmtech_hits[0]["img"]
-                if not hit.get("price") and dmtech_hits[0].get("price"):
-                    hit["price"] = dmtech_hits[0]["price"]
-                if dmtech_hits[0].get("url") and not hit.get("url"):
-                    hit["url"] = dmtech_hits[0]["url"]
-                    hit["appLink"] = dmtech_hits[0]["appLink"]
+            is_mueller_pref = hit.get("store") == "Müller" or "mueller" in (hit.get("url") or "")
+            if is_mueller_pref:
+                m_hit = fetch_mueller_ean(raw, country)
+                if m_hit:
+                    if not hit.get("img") and m_hit.get("img"):
+                        hit["img"] = m_hit["img"]
+                        hit["image_url"] = m_hit["img"]
+                    if not hit.get("price") and m_hit.get("price"):
+                        hit["price"] = m_hit["price"]
+                    if m_hit.get("url") and not hit.get("url"):
+                        hit["url"] = m_hit["url"]
+                        hit["appLink"] = m_hit["appLink"]
+            else:
+                dmtech_hits = fetch_dmtech_search(raw, 1)
+                if dmtech_hits:
+                    if not hit.get("img") and dmtech_hits[0].get("img"):
+                        hit["img"] = dmtech_hits[0]["img"]
+                        hit["image_url"] = dmtech_hits[0]["img"]
+                    if not hit.get("price") and dmtech_hits[0].get("price"):
+                        hit["price"] = dmtech_hits[0]["price"]
+                    if dmtech_hits[0].get("url") and not hit.get("url"):
+                        hit["url"] = dmtech_hits[0]["url"]
+                        hit["appLink"] = dmtech_hits[0]["appLink"]
+                elif not hit.get("img"):
+                    m_hit = fetch_mueller_ean(raw, country)
+                    if m_hit:
+                        if not hit.get("img") and m_hit.get("img"):
+                            hit["img"] = m_hit["img"]
+                            hit["image_url"] = m_hit["img"]
+                        if not hit.get("price") and m_hit.get("price"):
+                            hit["price"] = m_hit["price"]
         if not hit.get("url"):
             hit["url"] = shop_hint
             hit["appLink"] = shop_hint
         return [ensure_product_price_str(hit)], "EAN: lokaler Katalog", shop_hint
 
-    # 2) Pilot CSV
-    hit = search_pilot_ean(raw)
-    if hit:
-        hit["country"] = country
-        hit["countries"] = [country] if country else []
-        if country and country != "DE":
-            hit["url"] = shop_hint
-            hit["appLink"] = shop_hint
-            hit["retailerLabel"] = f"{meta.get('label')} · Identity via Pilot-CSV (kein lokaler Bestand)"
-        return [ensure_product_price_str(hit)], "EAN: dm Pilot-CSV", shop_hint
-
-    # 2b) dmtech Direktsuche (Echtzeit-Identität mit echtem hochauflösendem Produktfoto & Preis!)
+    # 2) dmtech Direktsuche (schnellste Echtzeit-Identität mit echtem hochauflösendem Produktfoto & Preis!)
     dmtech_hits = fetch_dmtech_search(raw, 1)
     if dmtech_hits:
         hit = dmtech_hits[0]
@@ -1224,12 +1423,29 @@ def resolve_ean_identity(ean: str, country: str, meta: dict) -> tuple[list, str,
             hit["appLink"] = shop_hint
         return [ensure_product_price_str(hit)], "EAN: dm Live-Katalog (inkl. Produktbild & Details)", shop_hint
 
-    # 3) OBF barcode (world)
-    hit = search_obf_barcode(raw)
+    # 2b) Müller Direktsuche (hochauflösendes Produktbild & Preis im Müller Sortiment!)
+    mueller_hit = fetch_mueller_ean(raw, country)
+    if mueller_hit:
+        return [mueller_hit], "EAN: Müller Sortiment (inkl. Produktbild & Details)", shop_hint
+
+    # 2c) Pilot CSV
+    hit = search_pilot_ean(raw)
     if hit:
         hit["country"] = country
         hit["countries"] = [country] if country else []
-        # Ländershop-Link ergänzen für UI, OBF-Seite bleibt in appLink optional
+        if country and country != "DE":
+            hit["url"] = shop_hint
+            hit["appLink"] = shop_hint
+            hit["retailerLabel"] = f"{meta.get('label')} · Identity via Pilot-CSV (kein lokaler Bestand)"
+        return [ensure_product_price_str(hit)], "EAN: dm Pilot-CSV", shop_hint
+
+    # 3) OBF barcode (world - check both raw and 13-digit padded)
+    hit = search_obf_barcode(raw)
+    if not hit and len(raw) == 12:
+        hit = search_obf_barcode("0" + raw)
+    if hit:
+        hit["country"] = country
+        hit["countries"] = [country] if country else []
         hit["url"] = shop_hint
         hit["appLink"] = shop_hint
         hit["retailerLabel"] = f"{meta.get('label')} · Identity via Open Beauty Facts"
@@ -1256,7 +1472,7 @@ def resolve_ean_identity(ean: str, country: str, meta: dict) -> tuple[list, str,
 
     # 6) Nichts gefunden — leere products, Deeplink nur als Meta-Hinweis
     return [], (
-        f"EAN {raw} nicht gefunden (Katalog, Pilot, OBF, dm MCP, Web). "
+        f"EAN {raw} nicht gefunden (Katalog, Müller, dm, Pilot, OBF, dm MCP, Web). "
         "Kein Fake-Treffer — Shop-Suche optional über meta.shopSearchUrl."
     ), shop_hint
 
@@ -1345,7 +1561,12 @@ def live_search(query: str, country: str, page_size: int) -> dict:
                 p["countries"] = ["AT"]
                 p["retailerLabel"] = "dm Österreich"
                 ensure_product_price_str(p)
-            products = dmtech_prods + products
+            if is_bipa_q:
+                products = [b_card] + dmtech_prods + [p for p in products if p.get("id") != b_card.get("id")]
+            elif is_mueller_q:
+                products = [m_card] + dmtech_prods + [p for p in products if p.get("id") != m_card.get("id")]
+            else:
+                products = dmtech_prods + products
         note = (
             "Österreich Live-Suche: dm Sortiment (Live-Treffer) + "
             "dm.at, bipa.at & mueller.at (Onlineshop-Suche)."
