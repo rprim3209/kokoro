@@ -364,13 +364,31 @@ const KNOWN_EAN_REGISTRY = {
 
 function parseMuellerMarkdown(text, ean) {
   if (!text) return null;
-  const linkMatch = text.match(/\[([^\]]+)\]\((https?:\/\/(?:www\.)?mueller\.[a-z]+\/p\/[a-z0-9\-]+-PPN\d+\/?)\)/i);
-  if (!linkMatch) {
-    const imgLink = text.match(/\[!\[Image\s*\d*:\s*([^\]]*)\]\([^)]+\)\]\((https?:\/\/(?:www\.)?mueller\.[a-z]+\/p\/[a-z0-9\-]+-PPN\d+\/?)\)/i);
-    if (!imgLink) return null;
+  let rawTitle = "";
+  let prodUrl = "";
+
+  const linkMatch = text.match(/\[([^\]]+)\]\(((?:https?:\/\/(?:www\.)?mueller\.[a-z]+)?\/p\/[a-zA-Z0-9_\-]+(?:\/|\b)?)\)/i);
+  if (linkMatch && !/^(!?\[?Image)/i.test(linkMatch[1])) {
+    rawTitle = linkMatch[1].trim();
+    prodUrl = linkMatch[2].trim();
+  } else {
+    const imgLink = text.match(/\[!\[Image\s*\d*:\s*([^\]]*)\]\([^)]+\)\]\(((?:https?:\/\/(?:www\.)?mueller\.[a-z]+)?\/p\/[a-zA-Z0-9_\-]+(?:\/|\b)?)\)/i);
+    if (imgLink) {
+      rawTitle = imgLink[1].trim();
+      prodUrl = imgLink[2].trim();
+    } else {
+      const sourceMatch = text.match(/URL Source:\s*(https?:\/\/(?:www\.)?mueller\.[a-z]+\/p\/[^\s\)]+)/i);
+      const titleMatch = text.match(/Title:\s*([^|\n\r]+)(?:\|\s*M[UÜ]LLER)?/i);
+      if (sourceMatch && titleMatch) {
+        prodUrl = sourceMatch[1].trim();
+        rawTitle = titleMatch[1].replace(/online bestellen/i, "").trim();
+      }
+    }
   }
-  const rawTitle = linkMatch ? linkMatch[1].trim() : text.match(/\[!\[Image\s*\d*:\s*([^\]]*)\]/i)[1].trim();
-  const prodUrl = linkMatch ? linkMatch[2].trim() : text.match(/https?:\/\/(?:www\.)?mueller\.[a-z]+\/p\/[a-z0-9\-]+-PPN\d+\/?/i)[0];
+  if (!rawTitle || !prodUrl) return null;
+  if (prodUrl.startsWith("/")) {
+    prodUrl = "https://www.mueller.at" + prodUrl;
+  }
 
   let img = "";
   const imgProdMatch = text.match(/https?:\/\/[^\s\)\"]*(?:static|images)\.prod\.ecom\.mueller\.de[^\s\)\"]*products(?:%2F|\/)[^\s\)\"]+/i)
@@ -378,7 +396,7 @@ function parseMuellerMarkdown(text, ean) {
   if (imgProdMatch) {
     img = imgProdMatch[0];
   } else {
-    const cardImg = text.match(/\[!\[Image[^\]]*\]\((https?:\/\/[^\s\)\"]+)\)\]\([^\)]*PPN\d+/i);
+    const cardImg = text.match(/\[!\[Image[^\]]*\]\((https?:\/\/[^\s\)\"]+)\)\]\([^\)]*\/p\//i);
     if (cardImg && !/icon|dam\/jcr/i.test(cardImg[1])) {
       img = cardImg[1];
     }
@@ -579,63 +597,83 @@ async function searchLiveProducts(query, country) {
 
   // C: Direct Multi-Source Fallbacks if query is an EAN (8-14 digits) and still not found
   if (products.length === 0 && /^\d{8,14}$/.test(qClean)) {
-    // C1: Open Beauty Facts (CORS allowed in browser!)
-    const obfCodes = [qClean];
-    if (qClean.length === 12) obfCodes.push("0" + qClean);
-    for (const code of obfCodes) {
+    // C1: Open Beauty Facts & Open Food Facts (CORS allowed in browser!)
+    const factCodes = [qClean];
+    if (qClean.length === 12) factCodes.push("0" + qClean);
+    else if (qClean.length === 13 && qClean.startsWith("0")) factCodes.push(qClean.slice(1));
+    const factDbs = ["openbeautyfacts", "openfoodfacts"];
+
+    for (const code of factCodes) {
       if (products.length > 0) break;
-      try {
-        const obfRes = await fetch(`https://world.openbeautyfacts.org/api/v0/product/${code}.json`);
-        if (obfRes.ok) {
-          const obfData = await obfRes.json();
-          if (obfData && obfData.status === 1 && obfData.product) {
-            const pr = obfData.product;
-            const name = pr.product_name_de || pr.product_name || pr.generic_name_de || pr.generic_name || "Produkt";
-            const brand = (pr.brands ? pr.brands.split(",")[0].trim() : pr.brand_owner) || "";
-            const img = pr.image_front_url || pr.image_url || pr.image_front_small_url || "";
-            products.push(normalizeLiveApiProduct({
-              id: "obf_" + code,
-              name: name,
-              title: name,
-              brand: brand,
-              brandName: brand,
-              ean: code,
-              gtin: code,
-              img: img,
-              image_url: img,
-              price: "",
-              store: "Open Beauty Facts",
-              source: "obf",
-              deeplinkOnly: false,
-              wirk: "EAN erkannt (Open Beauty Facts)",
-              countries: [cc]
-            }));
-            break;
+      for (const db of factDbs) {
+        if (products.length > 0) break;
+        try {
+          const fRes = await fetch(`https://world.${db}.org/api/v2/product/${code}.json`);
+          if (fRes.ok) {
+            const fData = await fRes.json();
+            if (fData && (fData.status === 1 || fData.status === "success") && fData.product) {
+              const pr = fData.product;
+              const name = pr.product_name_de || pr.product_name || pr.generic_name_de || pr.generic_name || "Produkt";
+              const brand = (pr.brands ? pr.brands.split(",")[0].trim() : pr.brand_owner) || "";
+              const img = pr.image_front_url || pr.image_url || pr.image_front_small_url || "";
+              if (name || brand) {
+                const label = db === "openfoodfacts" ? "Open Food Facts" : "Open Beauty Facts";
+                products.push(normalizeLiveApiProduct({
+                  id: (db === "openfoodfacts" ? "off_" : "obf_") + code,
+                  name: name,
+                  title: name,
+                  brand: brand,
+                  brandName: brand,
+                  ean: code,
+                  gtin: code,
+                  img: img,
+                  image_url: img,
+                  price: "",
+                  store: label,
+                  source: db === "openfoodfacts" ? "off" : "obf",
+                  deeplinkOnly: false,
+                  wirk: "EAN erkannt (" + label + ")",
+                  countries: [cc]
+                }));
+                break;
+              }
+            }
           }
+        } catch (e) {
+          // Fact fetch error
         }
-      } catch (e) {
-        // OBF fetch error
       }
     }
 
     // C2: Direct Müller Search via Jina reader (CORS allowed for file:// origin: null)
     if (products.length === 0) {
-      try {
-        const domain = (cc === "DE") ? "mueller.de" : "mueller.at";
-        let jinaSignal;
-        if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
-          jinaSignal = AbortSignal.timeout(3500);
-        }
-        const mRes = await fetch(`https://r.jina.ai/https://www.${domain}/search/?q=${qClean}`, jinaSignal ? { signal: jinaSignal } : {});
-        if (mRes.ok) {
-          const mTxt = await mRes.text();
-          const parsed = parseMuellerMarkdown(mTxt, qClean);
-          if (parsed && parsed.name) {
-            products.push(normalizeLiveApiProduct(parsed));
+      const muellerCodes = [qClean];
+      if (qClean.length === 12) muellerCodes.push("0" + qClean);
+      else if (qClean.length === 13 && qClean.startsWith("0")) muellerCodes.push(qClean.slice(1));
+      const domains = (cc === "DE") ? ["mueller.de", "mueller.at"] : ["mueller.at", "mueller.de"];
+
+      for (const mCode of muellerCodes) {
+        if (products.length > 0) break;
+        for (const dom of domains) {
+          if (products.length > 0) break;
+          try {
+            let jinaSignal;
+            if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
+              jinaSignal = AbortSignal.timeout(3500);
+            }
+            const mRes = await fetch(`https://r.jina.ai/https://www.${dom}/search/?q=${mCode}`, jinaSignal ? { signal: jinaSignal } : {});
+            if (mRes.ok) {
+              const mTxt = await mRes.text();
+              const parsed = parseMuellerMarkdown(mTxt, mCode);
+              if (parsed && parsed.name) {
+                products.push(normalizeLiveApiProduct(parsed));
+                break;
+              }
+            }
+          } catch (e) {
+            // Jina fetch error
           }
         }
-      } catch (e) {
-        // Jina fetch error
       }
     }
   }

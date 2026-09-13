@@ -1288,11 +1288,21 @@ function findProductByEan(ean) {
   }
 }
 
-function handleScannedBarcode(rawEan) {
-  const ean = String(rawEan).trim();
-  console.log("Barcode gescannt:", ean);
-  const found = findProductByEan(ean);
+async function handleScannedBarcode(rawEan) {
+  const ean = String(rawEan || "").trim();
+  if (!ean) return;
+  console.log("Barcode gescannt / eingegeben:", ean);
 
+  // 1. Lokaler Match (DB, Registry, Pilot mit 12/13-Digit-Normalisierung)
+  const localMatch = (typeof findLocalProductMatch === "function") ? findLocalProductMatch(ean) : null;
+  if (localMatch && !localMatch._deeplinkOnly && localMatch.source !== "deeplink") {
+    if (typeof openCompatibilityCheckModal === "function") {
+      openCompatibilityCheckModal(localMatch);
+      return;
+    }
+  }
+
+  const found = findProductByEan(ean);
   if (found) {
     if (found.type === "adult") {
       showVerdict(found.id);
@@ -1301,15 +1311,52 @@ function handleScannedBarcode(rawEan) {
     } else if (found.type === "baby") {
       openBabyProductDetail(found.id);
     }
-  } else {
-    // Falls noch nicht im Schrank-Katalog: ins Suchfeld eintragen und filtern
-    const input = document.getElementById("scanSearchInput");
-    if (input) {
-      input.value = ean;
-      if (typeof window.filterScanList === "function") {
-        window.filterScanList(ean);
+    return;
+  }
+
+  // 2. Falls ein Suchfeld im aktuellen Screen/Modal aktiv ist: eintragen
+  const input = document.getElementById("scanSearchInput") || document.getElementById("searchProdInput");
+  if (input) {
+    input.value = ean;
+  }
+
+  // 3. Live-EAN Suche mit Status-Modal
+  showModalSheet(`
+    <div style="text-align:center;padding:1.6rem 0.6rem">
+      <div style="font-size:2.6rem;margin-bottom:0.6rem">⏳</div>
+      <h3 style="margin:0 0 0.4rem;font-size:1.15rem">EAN ${escapeHtml(ean)} wird gesucht…</h3>
+      <p style="color:var(--muted);font-size:0.86rem;max-width:340px;margin:0 auto 1rem;line-height:1.4">
+        Prüfe live im Sortiment von <strong>Müller, dm &amp; BIPA</strong> sowie Open Beauty / Food Facts…
+      </p>
+      <div style="font-size:0.75rem;color:#64748b">Echtzeit-Abfrage läuft…</div>
+    </div>
+  `);
+
+  try {
+    const cc = (typeof getProfileCountry === "function" ? getProfileCountry() : "AT") || "AT";
+    const results = (typeof searchLiveProducts === "function") ? await searchLiveProducts(ean, cc) : [];
+    const realProd = results.find(p => p && !p._deeplinkOnly && p.source !== "deeplink");
+
+    if (realProd) {
+      if (typeof openCompatibilityCheckModal === "function") {
+        openCompatibilityCheckModal(realProd);
+      } else {
+        showVerdict(realProd.id);
+      }
+    } else {
+      // Kein direkter Treffer -> In den Hinzufügen-Modal mit den Drogerie-Onlineshop-Links wechseln
+      openAddProductModal("am", "dm");
+      const sInp = document.getElementById("searchProdInput");
+      if (sInp) {
+        sInp.value = ean;
+        if (typeof window.setAddCat === "function") {
+          window.setAddCat("dm");
+        }
       }
     }
+  } catch (err) {
+    console.error("Fehler bei Barcode-Suche:", err);
+    openAddProductModal("am", "dm");
   }
 }
 
@@ -1434,35 +1481,49 @@ function openScanModal() {
       container.innerHTML = `<div style="font-size:0.78rem;color:var(--muted);padding:4px 0">Tippe oben einen Namen oder Barcode ein.</div>`;
       return;
     }
-    container.innerHTML = `<div style="font-size:0.8rem;color:#991b1b;padding:8px 0;font-weight:600">⏳ Frage live bei dm-drogerie markt nach „${q}“...</div>`;
-    
-    const prods = await searchDmLive(q);
+    const cc = (typeof getProfileCountry === "function" ? getProfileCountry() : "AT") || "AT";
+    const ret = (typeof getLiveRetailerForCountry === "function" ? getLiveRetailerForCountry(cc) : { label: "Müller, dm & BIPA" });
+    container.innerHTML = `<div style="font-size:0.8rem;color:#991b1b;padding:8px 0;font-weight:600">⏳ Frage live im Drogerie-Sortiment nach „${escapeHtml(q)}“…</div>`;
+
+    const prods = await searchLiveProducts(q, cc);
+    window.currentLiveDmResults = prods;
+    window.dmResultsMap = window.dmResultsMap || {};
+    prods.forEach(pr => { if (pr && pr.id) window.dmResultsMap[pr.id] = pr; });
+
     if (prods.length === 0) {
-            const errMsg = window.lastDmError || ('Kein Live-Treffer bei dm für "' + escapeHtml(q) + '" gefunden.');
+      const errMsg = window.lastDmError || ('Kein Treffer für „' + escapeHtml(q) + '“ gefunden.');
       container.innerHTML = `<div style="font-size:0.8rem;color:var(--muted);padding:6px 0">${errMsg}</div>`;
       return;
     }
 
-    container.innerHTML = prods.slice(0, 4).map((p, idx) => `
-      <div style="background:#fff;border:1px solid #fca5a5;border-radius:8px;padding:8px 10px;margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
-          ${p.img ? `<img src="${p.img}" alt="${p.name}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;border:1px solid #f1f5f9;flex-shrink:0">` : '<div style="width:38px;height:38px;border-radius:6px;background:#fee2e2;color:#b91c1c;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">🛒</div>'}
-          <div style="min-width:0;flex:1">
-            <div style="font-weight:700;font-size:0.84rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.brand} ${p.name}</div>
-            <div style="font-size:0.74rem;color:var(--muted)">
-              <span style="color:#16a34a;font-weight:700">${p.price || 'dm'}</span>
-              ${p.ff === true ? ' · <span style="color:#16a34a;font-weight:600">🌸 Parfümfrei</span>' : (p.ff === false ? ' · <span style="color:#d97706">⚠️ Parfümiert</span>' : '')}
-              ${p.cf === true ? ' · <span style="color:#6b21a8">🐰 CF</span>' : ''}
-              · <a href="${p.url}" target="_blank" style="color:#2563eb;text-decoration:underline">${(p.retailerLabel || (p.url && p.url.includes("mueller") ? "mueller ↗" : "dm ↗"))}</a>
+    container.innerHTML = prods.slice(0, 6).map((p) => {
+      const isDeeplink = p._deeplinkOnly || p.source === "deeplink";
+      return `
+        <div style="background:#fff;border:1px solid ${isDeeplink ? '#fed7aa' : '#fca5a5'};border-radius:8px;padding:8px 10px;margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;cursor:pointer" onclick="${isDeeplink ? `window.open('${p.url || '#'}', '_blank')` : `openCompatibilityCheckModal(window.dmResultsMap['${p.id}'])`}">
+            ${p.img ? `<img src="${p.img}" alt="${escapeHtml(p.name)}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;border:1px solid #f1f5f9;flex-shrink:0" onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('div'),{className:'live-img-fallback',innerText:'🧴',style:'width:38px;height:38px;border-radius:6px;background:#f8fafc;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0'}))">` : `<div style="width:38px;height:38px;border-radius:6px;background:${isDeeplink ? '#fff7ed' : '#fee2e2'};color:${isDeeplink ? '#ea580c' : '#b91c1c'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${isDeeplink ? '🛒' : '🧴'}</div>`}
+            <div style="min-width:0;flex:1">
+              <div style="font-weight:700;font-size:0.84rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.brand || '')} ${escapeHtml(p.name || '')}</div>
+              <div style="font-size:0.74rem;color:var(--muted)">
+                ${p.price ? `<span style="color:#16a34a;font-weight:700">${escapeHtml(p.price)}</span> · ` : ''}
+                ${p.ff === true ? '<span style="color:#16a34a;font-weight:600">🌸 Parfümfrei</span> · ' : (p.ff === false ? '<span style="color:#d97706">⚠️ Parfüm</span> · ' : '')}
+                ${p.nc === true ? '<span style="color:#2563eb;font-weight:600">🛡️ NC</span> · ' : ''}
+                ${p.cf === true ? '<span style="color:#6b21a8;font-weight:600">🐰 CF</span> · ' : ''}
+                <span style="color:#64748b">${escapeHtml(p.retailerLabel || p.store || 'Drogerie')}</span>
+              </div>
             </div>
           </div>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            ${!isDeeplink ? `
+              <button type="button" class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 8px;border-radius:6px;font-size:0.74rem;font-weight:600" onclick="openCompatibilityCheckModal(window.dmResultsMap['${p.id}'])">🔍 Prüfen</button>
+              <button type="button" class="btn-text" style="background:var(--ok);color:#F7F4D5;padding:5px 8px;border-radius:6px;font-size:0.74rem;font-weight:700" onclick="adoptDmProductToSlot('${p.id}', 'am')">+ Morgen</button>
+            ` : `
+              <a href="${p.url || '#'}" target="_blank" rel="noopener" class="btn-text" style="background:#fff7ed;color:#ea580c;padding:5px 8px;border-radius:6px;font-size:0.74rem;font-weight:700;text-decoration:none">Shop ↗</a>
+            `}
+          </div>
         </div>
-        <div style="display:flex;gap:4px;flex-shrink:0">
-          <button type="button" class="btn-text" style="background:var(--ok);color:#F7F4D5;padding:5px 8px;border-radius:6px;font-size:0.74rem;font-weight:700" onclick="adoptDmProductToSlot('${p.id}', 'pm')">+ Schrank</button>
-          <button type="button" class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 8px;border-radius:6px;font-size:0.74rem;font-weight:600" onclick="adoptDmProductToSlot('${p.id}', 'am')">+ Morgen</button>
-        </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
   };
 
   window.filterScanList = (q) => {
