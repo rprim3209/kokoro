@@ -29,7 +29,7 @@ function renderSettingsScreen(container) {
           <div style="display:flex;gap:6px">
             ${!isActive ? `<button class="ghost-btn" style="width:auto;margin-top:0;padding:0.4rem 0.8rem;font-size:0.78rem" onclick="switchProfile('${p.id}'); renderSettingsScreen()">Aktivieren</button>` : ''}
             <button class="ghost-btn" style="width:auto;margin-top:0;padding:0.4rem 0.6rem;font-size:0.78rem" onclick="openRenameProfileModal('${p.id}')" title="Umbenennen">✏️</button>
-            ${appState.profiles.length > 1 ? `<button class="ghost-btn" style="width:auto;margin-top:0;padding:0.4rem 0.6rem;font-size:0.78rem;color:#b91c1c;border-color:#fecaca" onclick="if(confirm('Profil löschen?')){ deleteProfile('${p.id}'); renderSettingsScreen(); }" title="Löschen">🗑️</button>` : ''}
+            ${appState.profiles.length > 1 ? `<button class="ghost-btn" style="width:auto;margin-top:0;padding:0.4rem 0.6rem;font-size:0.78rem;color:#b91c1c;border-color:#fecaca" onclick="deleteProfile('${p.id}')" title="Profil löschen">🗑️</button>` : ''}
           </div>
         </div>
       `;

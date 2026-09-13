@@ -1,9 +1,11 @@
-﻿// ==========================================
+// ==========================================
 // Main Application Module (Router & Navigation)
 // ==========================================
 
 function switchScreen(screenName) {
   if (screenName === "welcome") screenName = "start";
+  const allowed = ["start", "cabinet", "scan", "settings"];
+  if (!allowed.includes(screenName)) screenName = "start";
   appState.view = screenName;
   saveState();
   updateCategoryNav();
@@ -16,12 +18,15 @@ function renderCurrentScreen() {
   if (!container) return;
 
   const view = appState.view || "cabinet";
+  const allowed = ["start", "welcome", "cabinet", "scan", "settings"];
+  const safeView = allowed.includes(view) ? view : "start";
+  if (safeView !== view) appState.view = safeView;
 
-  if (view === "start" || view === "welcome") {
+  if (safeView === "start" || safeView === "welcome") {
     renderStartScreen(container);
-  } else if (view === "scan") {
+  } else if (safeView === "scan") {
     renderScanScreen(container);
-  } else if (view === "settings") {
+  } else if (safeView === "settings") {
     renderSettingsScreen(container);
   } else {
     // Default: cabinet
@@ -62,14 +67,27 @@ document.addEventListener("DOMContentLoaded", () => {
     enrichAllDbProducts();
   }
 
-  // 2. Synchronize Category Nav
-  updateCategoryNav();
+  // Ensure view is valid so we never land in a broken screen
+  const allowed = ["start", "welcome", "cabinet", "scan", "settings"];
+  if (!appState.view || !allowed.includes(appState.view)) {
+    appState.view = "start";
+  }
 
-  // 3. Render Current Screen
-  renderCurrentScreen();
-  updateBottomNav();
+  // 2–3. Sync nav + render — never block catalog load if render throws
+  try {
+    updateCategoryNav();
+    renderCurrentScreen();
+    updateBottomNav();
+  } catch (err) {
+    console.error("[app] Initial render failed:", err);
+    try {
+      if (typeof showToast === "function") {
+        showToast("Anzeige-Fehler — Katalog wird trotzdem geladen.");
+      }
+    } catch (_) {}
+  }
 
-  // 4. Load CSVs in Background
+  // 4. Load CSVs in Background — ALWAYS run, even if render threw
   if (typeof loadKatalogFromCSV === "function") {
     loadKatalogFromCSV();
   }
@@ -97,3 +115,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 });
+
+if (typeof window !== "undefined") {
+  window.switchScreen = switchScreen;
+  window.renderCurrentScreen = renderCurrentScreen;
+  window.updateBottomNav = updateBottomNav;
+}

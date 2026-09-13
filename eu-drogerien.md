@@ -35,6 +35,14 @@ DE, PL, HU, CZ, ES, CH (+ DK Online-Shop genannt) — **nicht** flächendeckend 
 
 DE, AT, CH, HR, HU, SI, ES (begrenzt), SK, LI.
 
+- **Weg 2 (Live-Suche Integration):**
+  - **Österreich (`AT`):** Müller Österreich (`https://www.mueller.at/search/?q=`) wird gleichwertig neben dm.at angeboten. Bei Müller-Eigenmarken (CV, Terra Naturi, Beauty Baby) steht Müller an Position 1.
+  - **Deutschland (`DE`):** Müller Deutschland (`https://www.mueller.de/search/?q=`) ist als Drogerie-Alternative zur dm-MCP-API hinterlegt. Bei Müller-Marken steht Müller an Position 1.
+  - **Schweiz (`CH`):** Müller Schweiz (`https://www.mueller.ch/search/?q=`) ist als primäre Drogerie hinterlegt.
+  - **Eigenmarken-Erkennung:** Automatische Erkennung von `CV CadeaVera`, `Terra Naturi`, `Beauty Baby`, `Aveo`, `Aiko`, `Duchesse`, `Barfuss`, `SensiSana`.
+  - **Cabinet-Adoption:** Müller-Karten können direkt via `+ Morgen`, `+ Abend` oder `+ Schrank` in alle Routinen übernommen werden.
+
+
 ## Douglas-Gruppe (Premium Beauty, ~22 Länder)
 
 u. a. DE, AT, CH, NL, BE, FR (Nocibé), IT, ES, PT, HR, SI, PL, CZ, SK, HU, RO, BG, EE, LV, LT, …

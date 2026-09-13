@@ -208,7 +208,7 @@ function renderStartScreen(container) {
       </div>
 
       <div class="start-actions">
-        <div class="start-action-card primary" onclick="switchScreen('cabinet')">
+        <button type="button" class="start-action-card primary" onclick="typeof openCabinet==='function'?openCabinet():switchScreen('cabinet')">
           <div class="start-action-icon">🧴</div>
           <div class="start-action-body">
             <div class="start-action-title">
@@ -219,9 +219,9 @@ function renderStartScreen(container) {
               Bestehende Produkte eintragen, Lücken im Typ-Regal erkennen und Reiz-Konflikte auflösen.
             </div>
           </div>
-        </div>
+        </button>
 
-        <div class="start-action-card secondary" onclick="openQuizModal()">
+        <button type="button" class="start-action-card secondary" onclick="openQuizModal()">
           <div class="start-action-icon">🌱</div>
           <div class="start-action-body">
             <div class="start-action-title">
@@ -232,7 +232,7 @@ function renderStartScreen(container) {
               Hautzustand & Prioritäten ermitteln — passende evidenzbasierte Routine automatisch vorschlagen.
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       <div class="start-secondary">

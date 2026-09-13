@@ -6,8 +6,8 @@
 const DM_LIVE_COUNTRIES = ["DE","AT","IT","PL","CZ","SK","HU","SI","HR","RO","BG","BA","RS","MK"];
 
 const LIVE_RETAILER_BY_COUNTRY = {
-  DE: { primary: "dm", label: "dm Deutschland", chip: "Live: dm Deutschland", shopUrl: "https://www.dm.de/search?query=", mode: "mcp" },
-  AT: { primary: "dm", label: "dm Österreich", chip: "Live: dm Österreich", shopUrl: "https://www.dm.at/search?query=", mode: "deeplink_obf" },
+  DE: { primary: "dm", secondary: "mueller", label: "dm Deutschland", chip: "Live: dm Deutschland", shopUrl: "https://www.dm.de/search?query=", muellerUrl: "https://www.mueller.de/search/?q=", mode: "mcp" },
+  AT: { primary: "dm", secondary: "mueller", label: "dm & Müller Österreich", chip: "Live: dm / Müller AT", shopUrl: "https://www.dm.at/search?query=", muellerUrl: "https://www.mueller.at/search/?q=", mode: "deeplink_obf" },
   IT: { primary: "dm", label: "dm Italia", chip: "Live: dm Italia", shopUrl: "https://www.dm.it/search?query=", mode: "deeplink_obf" },
   PL: { primary: "dm", label: "dm Polska", chip: "Live: dm Polska", shopUrl: "https://www.dm.pl/search?query=", mode: "deeplink_obf" },
   CZ: { primary: "dm", label: "dm Česko", chip: "Live: dm Česko", shopUrl: "https://www.dm.cz/search?query=", mode: "deeplink_obf" },
@@ -22,7 +22,7 @@ const LIVE_RETAILER_BY_COUNTRY = {
   PT: { primary: "notino", label: "Notino PT", chip: "Live: Notino", shopUrl: "https://www.notino.pt/search.asp?q=", mode: "deeplink_obf" },
   NL: { primary: "douglas", label: "Douglas / Notino NL", chip: "Live: Douglas/Notino", shopUrl: "https://www.notino.nl/search.asp?q=", note: "Auch Kruidvat/Etos (kein API)", mode: "deeplink_obf" },
   BE: { primary: "douglas", label: "Douglas / Notino BE", chip: "Live: Douglas/Notino", shopUrl: "https://www.notino.be/search.asp?q=", note: "Auch Kruidvat (kein API)", mode: "deeplink_obf" },
-  CH: { primary: "mueller", label: "Müller / Douglas CH", chip: "Live: Müller/Douglas", shopUrl: "https://www.notino.ch/search.asp?q=", mode: "deeplink_obf" },
+  CH: { primary: "mueller", secondary: "douglas", label: "Müller Schweiz", chip: "Live: Müller CH", shopUrl: "https://www.mueller.ch/search/?q=", muellerUrl: "https://www.mueller.ch/search/?q=", mode: "deeplink_obf" },
   SE: { primary: "notino", label: "Notino SE", chip: "Live: Notino", shopUrl: "https://www.notino.se/search.asp?q=", mode: "deeplink_obf" },
   DK: { primary: "notino", label: "Notino DK", chip: "Live: Notino", shopUrl: "https://www.notino.dk/search.asp?q=", mode: "deeplink_obf" },
   FI: { primary: "notino", label: "Notino FI", chip: "Live: Notino", shopUrl: "https://www.notino.fi/search.asp?q=", mode: "deeplink_obf" },
@@ -44,6 +44,75 @@ LIVE_RETAILER_BY_COUNTRY.HU.secondary = "Rossmann HU";
 LIVE_RETAILER_BY_COUNTRY.CZ.secondary = "Rossmann CZ";
 LIVE_RETAILER_BY_COUNTRY.ES.secondary = "Rossmann ES";
 LIVE_RETAILER_BY_COUNTRY.CH.secondary = "Rossmann CH";
+
+const MUELLER_BRANDS_RE = /\b(cv|cadeavera|terra\s*naturi|beauty\s*baby|aveo|aiko|duchesse|barfuss|sensisana|müller|mueller)\b/i;
+
+function isMuellerBrandQuery(query) {
+  return MUELLER_BRANDS_RE.test(String(query || ""));
+}
+
+function getMuellerShopUrlForCountry(cc) {
+  const code = String(cc || "AT").toUpperCase();
+  if (code === "AT") return "https://www.mueller.at/search/?q=";
+  if (code === "CH") return "https://www.mueller.ch/search/?q=";
+  if (code === "HR") return "https://www.mueller.hr/pretraga/?q=";
+  if (code === "SI") return "https://www.mueller.si/iskanje/?q=";
+  if (code === "HU") return "https://www.mueller.co.hu/kereses/?q=";
+  return "https://www.mueller.de/search/?q=";
+}
+
+function guessMuellerCategory(query) {
+  const qLower = String(query || "").toLowerCase();
+  if (/\b(wasch|reiniger|cleanser|reinigung|schaum|gel|mizell)\b/i.test(qLower)) return "reiniger";
+  if (/\b(serum|ampulle|retinol|niacinamid|vitamin\s*c|aha|bha|peeling)\b/i.test(qLower)) return "serum";
+  if (/\b(sonne|sun|spf|lfs|uv)\b/i.test(qLower)) return "spf";
+  if (/\b(shampoo|haar|spülung|conditioner)\b/i.test(qLower)) return "haar";
+  if (/\b(windel|wundschutz|po-creme|zink|wickel)\b/i.test(qLower)) return "windel";
+  return "creme";
+}
+
+function detectMuellerBrand(query) {
+  const qLower = String(query || "").toLowerCase();
+  if (/\b(cv|cadeavera)\b/i.test(qLower)) return "CV CadeaVera";
+  if (/\bterra\s*naturi\b/i.test(qLower)) return "Terra Naturi";
+  if (/\bbeauty\s*baby\b/i.test(qLower)) return "Beauty Baby";
+  if (/\baveo\b/i.test(qLower)) return "Aveo";
+  if (/\baiko\b/i.test(qLower)) return "Aiko";
+  if (/\bduchesse\b/i.test(qLower)) return "Duchesse";
+  if (/\bbarfuss\b/i.test(qLower)) return "Barfuss";
+  if (/\bsensisana\b/i.test(qLower)) return "SensiSana";
+  return "Müller";
+}
+
+function createMuellerCard(query, country) {
+  const q = String(query || "").trim();
+  const cc = String(country || (typeof getProfileCountry === "function" ? getProfileCountry() : "AT") || "AT").toUpperCase();
+  const shop = getMuellerShopUrlForCountry(cc);
+  const url = shop + encodeURIComponent(q);
+  const brand = detectMuellerBrand(q);
+  const kat = guessMuellerCategory(q);
+  const safeId = encodeURIComponent(q).replace(/%/g, "_").slice(0, 24);
+  return normalizeLiveApiProduct({
+    id: "deeplink_mueller_" + cc + "_" + safeId,
+    name: "Im Müller Onlineshop nach „" + q + "“ suchen",
+    title: "Im Müller Onlineshop nach „" + q + "“ suchen",
+    brand: brand,
+    brandName: brand,
+    kat: kat,
+    price: "",
+    url: url,
+    appLink: url,
+    store: "Müller " + cc,
+    source: "deeplink",
+    deeplinkOnly: true,
+    retailerLabel: "Müller " + cc,
+    country: cc,
+    countries: [cc],
+    gtin: "",
+    dan: "",
+    wirk: "Müller Drogerie (" + cc + ") · Deep-Link"
+  });
+}
 
 function getLiveRetailerForCountry(cc) {
   const code = String(cc || (typeof getProfileCountry === "function" ? getProfileCountry() : "AT") || "AT").toUpperCase();
@@ -67,6 +136,22 @@ function getLiveSearchHonesty(cc) {
   const r = getLiveRetailerForCountry(cc);
   if (r.mode === "mcp" && r.country === "DE") {
     return { showWarn: false, short: "Live dm = Deutschland-Shop (MCP)", badge: null, chip: r.chip };
+  }
+  if (r.country === "AT") {
+    return {
+      showWarn: true,
+      short: "Deep-Links zu dm.at & mueller.at + Open Beauty Facts",
+      badge: "dm.at & mueller.at · Österreich",
+      chip: r.chip
+    };
+  }
+  if (r.primary === "mueller" || r.country === "CH") {
+    return {
+      showWarn: true,
+      short: "Deep-Link zum Onlineshop von Müller Schweiz",
+      badge: "Müller Schweiz · mueller.ch",
+      chip: r.chip
+    };
   }
   if (r.primary === "dm") {
     return {
@@ -153,12 +238,17 @@ async function searchLiveProducts(query, country) {
         const data = await res.json();
         window.lastLiveSearchMeta = Object.assign({}, window.lastLiveSearchMeta, data.meta || {});
         const raw = (data && data.products) ? data.products : [];
-        const prods = raw.map(function (row) {
+        let prods = raw.map(function (row) {
           if (row.source === "dm_mcp" || (!row.source && cc === "DE")) {
             return typeof normalizeDmProduct === "function" ? normalizeDmProduct(row) : normalizeLiveApiProduct(row);
           }
           return normalizeLiveApiProduct(row);
         }).filter(Boolean);
+        if (isMuellerBrandQuery(q) && !prods.some(function(p){ return p.url && p.url.includes("mueller"); })) {
+          prods.unshift(createMuellerCard(q, cc));
+        } else if (cc === "AT" && !prods.some(function(p){ return p.url && p.url.includes("mueller"); })) {
+          prods.splice(1, 0, createMuellerCard(q, cc));
+        }
         window.currentLiveDmResults = prods;
         window.dmResultsMap = window.dmResultsMap || {};
         prods.forEach(function (pr) {
@@ -177,34 +267,91 @@ async function searchLiveProducts(query, country) {
   if (cc === "DE" && typeof searchDmLive === "function" && searchLiveProducts._viaDm !== true) {
     // fall through to classic pilot inside searchDmLive wrapper
   }
-  if (cc === "DE" && window.DM_PILOT_CACHE && window.DM_PILOT_CACHE.length) {
-    const qLower = q.toLowerCase();
-    const hits = window.DM_PILOT_CACHE.filter(function (r) {
-      return (r.name && r.name.toLowerCase().includes(qLower)) ||
-        (r.brand && r.brand.toLowerCase().includes(qLower)) ||
-        (r.ean && r.ean.includes(q)) ||
-        (r.dan && r.dan.includes(q));
+  const cards = [];
+  const isMuellerQ = isMuellerBrandQuery(q);
+  const muellerCard = createMuellerCard(q, cc);
+
+  if (cc === "AT") {
+    const dmCard = normalizeLiveApiProduct({
+      id: "deeplink_" + cc + "_" + q.slice(0, 24),
+      name: "Im dm Österreich nach „" + q + "“ suchen",
+      brand: "dm Österreich",
+      url: (retailer.shopUrl || "https://www.dm.at/search?query=") + encodeURIComponent(q),
+      store: "dm Österreich",
+      source: "deeplink",
+      deeplinkOnly: true,
+      retailerLabel: "dm Österreich",
+      country: cc,
+      countries: [cc],
+      wirk: "Deep-Link — Verfügbarkeit im Shop prüfen"
     });
-    if (hits.length && typeof normalizeDmPilotRow === "function") {
-      return hits.slice(0, 12).map(normalizeDmPilotRow);
+    if (isMuellerQ) {
+      cards.push(muellerCard, dmCard);
+    } else {
+      cards.push(dmCard, muellerCard);
     }
+  } else if (cc === "CH") {
+    cards.push(muellerCard);
+  } else if (cc === "DE") {
+    if (isMuellerQ) {
+      cards.push(muellerCard);
+    }
+    if (window.DM_PILOT_CACHE && window.DM_PILOT_CACHE.length) {
+      const qLower = q.toLowerCase();
+      const hits = window.DM_PILOT_CACHE.filter(function (r) {
+        return (r.name && r.name.toLowerCase().includes(qLower)) ||
+          (r.brand && r.brand.toLowerCase().includes(qLower)) ||
+          (r.ean && r.ean.includes(q)) ||
+          (r.dan && r.dan.includes(q));
+      });
+      if (hits.length && typeof normalizeDmPilotRow === "function") {
+        cards.push(...hits.slice(0, 12).map(normalizeDmPilotRow));
+      }
+    }
+    if (!cards.length || (cards.length === 1 && isMuellerQ)) {
+      cards.push(normalizeLiveApiProduct({
+        id: "deeplink_" + cc + "_" + q.slice(0, 24),
+        name: "Im " + retailer.label + " nach „" + q + "“ suchen",
+        brand: retailer.label,
+        url: (retailer.shopUrl || "") + encodeURIComponent(q),
+        store: retailer.label,
+        source: "deeplink",
+        deeplinkOnly: true,
+        retailerLabel: retailer.label,
+        country: cc,
+        countries: [cc],
+        wirk: "Deep-Link — Verfügbarkeit im Shop prüfen"
+      }));
+    }
+    if (!isMuellerQ && !cards.some(function(x) { return x.url && x.url.includes("mueller"); })) {
+      cards.push(muellerCard);
+    }
+  } else {
+    // Synthetic deep-link card for other countries
+    const link = (retailer.shopUrl || "") + encodeURIComponent(q);
+    cards.push(normalizeLiveApiProduct({
+      id: "deeplink_" + cc + "_" + q.slice(0, 24),
+      name: "Im " + retailer.label + " nach „" + q + "“ suchen",
+      brand: retailer.label,
+      url: link,
+      store: retailer.label,
+      source: "deeplink",
+      deeplinkOnly: true,
+      retailerLabel: retailer.label,
+      country: cc,
+      countries: [cc],
+      wirk: "Deep-Link — Verfügbarkeit im Shop prüfen"
+    }));
   }
 
-  // Synthetic deep-link card so UI is never empty of guidance
-  const link = (retailer.shopUrl || "") + encodeURIComponent(q);
-  return [normalizeLiveApiProduct({
-    id: "deeplink_" + cc + "_" + q.slice(0, 24),
-    name: "Im " + retailer.label + " nach „" + q + "“ suchen",
-    brand: retailer.label,
-    url: link,
-    store: retailer.label,
-    source: "deeplink",
-    deeplinkOnly: true,
-    retailerLabel: retailer.label,
-    country: cc,
-    countries: [cc],
-    wirk: "Deep-Link — Verfügbarkeit im Shop prüfen"
-  })];
+  window.currentLiveDmResults = cards;
+  window.dmResultsMap = window.dmResultsMap || {};
+  cards.forEach(function (pr) {
+    if (pr && pr.id) window.dmResultsMap[pr.id] = pr;
+    if (pr && pr.ean) window.dmResultsMap[pr.ean] = pr;
+    if (pr && pr.dan) window.dmResultsMap[pr.dan] = pr;
+  });
+  return cards;
 }
 
 // Back-compat: searchDmLive becomes country-aware
@@ -223,4 +370,8 @@ if (typeof window !== "undefined") {
   window.normalizeLiveApiProduct = normalizeLiveApiProduct;
   window.searchLiveProducts = searchLiveProducts;
   window.searchDmLive = searchDmLive;
+  window.MUELLER_BRANDS_RE = MUELLER_BRANDS_RE;
+  window.isMuellerBrandQuery = isMuellerBrandQuery;
+  window.getMuellerShopUrlForCountry = getMuellerShopUrlForCountry;
+  window.createMuellerCard = createMuellerCard;
 }

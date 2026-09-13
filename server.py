@@ -15,7 +15,8 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
+import urllib.parse
 from urllib.request import Request, urlopen
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -115,7 +116,7 @@ def product_from_toon_row(row: dict) -> dict:
         "gtin": str(row.get("gtin") or ""),
         "title": row.get("title") or "",
         "brandName": row.get("brand") or "",
-        "price": {"formattedValue": row.get("price") or ""},
+        "price": str(row.get("price") or "").strip(),
         "relativeProductUrl": path_from_applink(row.get("appLink") or ""),
         "attributes": attributes_from_row(row),
         "category": row.get("category") or "",
@@ -308,7 +309,7 @@ def product_from_pilot(row: dict) -> dict:
         "gtin": str(row.get("ean") or ""),
         "title": row.get("name") or "",
         "brandName": row.get("brand") or "",
-        "price": {"formattedValue": row.get("price") or ""},
+        "price": str(row.get("price") or "").strip(),
         "relativeProductUrl": path_from_applink(link),
         "attributes": [{"name": k} for k, v in flags.items() if v],
         "category": row.get("category") or "",
@@ -396,9 +397,18 @@ OBF_COUNTRY_TAG = {
     "CH": "en:switzerland", "NO": "en:norway", "IS": "en:iceland",
 }
 
+MUELLER_SHOP = {
+    "DE": "https://www.mueller.de/search/?q=",
+    "AT": "https://www.mueller.at/search/?q=",
+    "CH": "https://www.mueller.ch/search/?q=",
+    "HR": "https://www.mueller.hr/pretraga/?q=",
+    "SI": "https://www.mueller.si/iskanje/?q=",
+    "HU": "https://www.mueller.co.hu/kereses/?q=",
+}
+
 RETAILER_META = {
-    "DE": {"primary": "dm", "label": "dm Deutschland", "mode": "mcp", "shop": DM_SHOP["DE"]},
-    "AT": {"primary": "dm", "label": "dm Österreich", "mode": "deeplink_obf", "shop": DM_SHOP["AT"]},
+    "DE": {"primary": "dm", "secondary": "mueller", "label": "dm Deutschland", "mode": "mcp", "shop": DM_SHOP["DE"], "mueller_shop": MUELLER_SHOP["DE"]},
+    "AT": {"primary": "dm", "secondary": "mueller", "label": "dm & Müller Österreich", "mode": "deeplink_obf", "shop": DM_SHOP["AT"], "mueller_shop": MUELLER_SHOP["AT"]},
     "IT": {"primary": "dm", "label": "dm Italia", "mode": "deeplink_obf", "shop": DM_SHOP["IT"]},
     "PL": {"primary": "dm", "label": "dm Polska", "mode": "deeplink_obf", "shop": DM_SHOP["PL"]},
     "CZ": {"primary": "dm", "label": "dm Česko", "mode": "deeplink_obf", "shop": DM_SHOP["CZ"]},
@@ -413,7 +423,7 @@ RETAILER_META = {
     "PT": {"primary": "notino", "label": "Notino PT", "mode": "deeplink_obf", "shop": "https://www.notino.pt/search.asp?q="},
     "NL": {"primary": "douglas", "label": "Douglas / Notino NL", "mode": "deeplink_obf", "shop": "https://www.notino.nl/search.asp?q=", "note": "Auch Kruidvat/Etos"},
     "BE": {"primary": "douglas", "label": "Douglas / Notino BE", "mode": "deeplink_obf", "shop": "https://www.notino.be/search.asp?q=", "note": "Auch Kruidvat"},
-    "CH": {"primary": "mueller", "label": "Müller / Douglas / Notino CH", "mode": "deeplink_obf", "shop": "https://www.notino.ch/search.asp?q="},
+    "CH": {"primary": "mueller", "secondary": "douglas", "label": "Müller Schweiz", "mode": "deeplink_obf", "shop": MUELLER_SHOP["CH"], "mueller_shop": MUELLER_SHOP["CH"]},
     "SE": {"primary": "notino", "label": "Notino SE", "mode": "deeplink_obf", "shop": "https://www.notino.se/search.asp?q="},
     "DK": {"primary": "notino", "label": "Notino DK", "mode": "deeplink_obf", "shop": "https://www.notino.dk/search.asp?q="},
     "FI": {"primary": "notino", "label": "Notino FI", "mode": "deeplink_obf", "shop": "https://www.notino.fi/search.asp?q="},
@@ -428,6 +438,9 @@ RETAILER_META = {
     "NO": {"primary": "notino", "label": "Notino NO", "mode": "deeplink_obf", "shop": "https://www.notino.no/search.asp?q="},
     "IS": {"primary": "notino", "label": "Notino (IS/EU)", "mode": "deeplink_obf", "shop": "https://www.notino.com/search.asp?q="},
 }
+
+EAN_RE = re.compile(r"^\d{8,14}$")
+_EAN_WEB_CACHE: dict[str, dict] = {}
 
 
 def retailer_for_country(cc: str) -> dict:
@@ -446,19 +459,57 @@ def retailer_for_country(cc: str) -> dict:
     }
 
 
+def flatten_price(price) -> str:
+    """API-Preis immer als String — nie nested object."""
+    if price is None:
+        return ""
+    if isinstance(price, str):
+        return price.strip()
+    if isinstance(price, (int, float)) and not isinstance(price, bool):
+        return str(price)
+    if isinstance(price, dict):
+        if "formattedValue" in price:
+            return str(price.get("formattedValue") or "").strip()
+        if price.get("value") not in (None, ""):
+            cur = price.get("currency") or price.get("currencySymbol") or "€"
+            val = str(price.get("value")).strip()
+            return val if cur in val else f"{val} {cur}".strip()
+        if price.get("amount") not in (None, ""):
+            cur = price.get("currency") or price.get("currencySymbol") or "€"
+            val = str(price.get("amount")).strip()
+            return val if cur in val else f"{val} {cur}".strip()
+        return ""
+    return str(price).strip()
+
+
+def ensure_product_price_str(p: dict) -> dict:
+    if not isinstance(p, dict):
+        return p
+    p["price"] = flatten_price(p.get("price"))
+    return p
+
+
+def normalize_gtin(val: str) -> str:
+    digits = re.sub(r"\D", "", str(val or ""))
+    return digits.lstrip("0") or digits
+
+
 def deeplink_card(query: str, meta: dict) -> dict:
     shop = meta.get("shop") or "https://www.notino.com/search.asp?q="
-    url = shop + urllib.parse.quote(query)
+    url = shop + quote(query)
     return {
         "id": "deeplink_" + meta.get("country", "EU") + "_" + query[:20],
         "title": f"Im {meta.get('label', 'Shop')} nach „{query}“ suchen",
+        "name": f"Im {meta.get('label', 'Shop')} nach „{query}“ suchen",
+        "brand": meta.get("label") or "Shop",
         "brandName": meta.get("label") or "Shop",
-        "price": {"formattedValue": ""},
+        "price": "",
         "url": url,
         "appLink": url,
         "source": "deeplink",
         "deeplinkOnly": True,
         "retailerLabel": meta.get("label"),
+        "store": meta.get("label"),
         "country": meta.get("country"),
         "countries": [meta.get("country")] if meta.get("country") else [],
         "gtin": "",
@@ -467,13 +518,74 @@ def deeplink_card(query: str, meta: dict) -> dict:
     }
 
 
+def mueller_deeplink_card(query: str, country: str) -> dict:
+    cc = (country or "AT").strip().upper() or "AT"
+    shop = MUELLER_SHOP.get(cc, MUELLER_SHOP.get("DE", "https://www.mueller.de/search/?q="))
+    url = shop + quote(query)
+
+    brand = "Müller"
+    q_clean = query.strip()
+    q_lower = q_clean.lower()
+    if re.search(r"\b(cv|cadeavera)\b", q_lower):
+        brand = "CV CadeaVera"
+    elif re.search(r"\bterra\s*naturi\b", q_lower):
+        brand = "Terra Naturi"
+    elif re.search(r"\bbeauty\s*baby\b", q_lower):
+        brand = "Beauty Baby"
+    elif re.search(r"\baveo\b", q_lower):
+        brand = "Aveo"
+    elif re.search(r"\baiko\b", q_lower):
+        brand = "Aiko"
+    elif re.search(r"\bduchesse\b", q_lower):
+        brand = "Duchesse"
+
+    kat = "creme"
+    if re.search(r"\b(wasch|reiniger|cleanser|reinigung|schaum|gel|mizell)\b", q_lower):
+        kat = "reiniger"
+    elif re.search(r"\b(serum|ampulle|retinol|niacinamid|vitamin\s*c|aha|bha|peeling)\b", q_lower):
+        kat = "serum"
+    elif re.search(r"\b(sonne|sun|spf|lfs|uv)\b", q_lower):
+        kat = "spf"
+    elif re.search(r"\b(shampoo|haar|spülung|conditioner)\b", q_lower):
+        kat = "haar"
+    elif re.search(r"\b(windel|wundschutz|po-creme|zink|wickel)\b", q_lower):
+        kat = "windel"
+
+    safe_id = re.sub(r"\W+", "_", query)[:24].strip("_")
+    return {
+        "id": f"deeplink_mueller_{cc}_{safe_id}",
+        "title": f"Im Müller Onlineshop ({cc}) nach „{query}“ suchen",
+        "name": f"Im Müller Onlineshop nach „{query}“ suchen",
+        "brand": brand,
+        "brandName": brand,
+        "price": "",
+        "kat": kat,
+        "url": url,
+        "appLink": url,
+        "source": "deeplink",
+        "deeplinkOnly": True,
+        "retailerLabel": f"Müller {cc}",
+        "store": f"Müller {cc}",
+        "country": cc,
+        "countries": [cc],
+        "gtin": "",
+        "dan": "",
+        "attributes": [],
+        "wirk": f"Müller Onlineshop ({cc}) · Deep-Link",
+    }
+
+
+def shop_search_url(meta: dict, query: str) -> str:
+    shop = meta.get("shop") or "https://www.notino.com/search.asp?q="
+    return shop + quote(query)
+
+
 def search_obf(query: str, country: str, page_size: int) -> list:
     """Open Beauty Facts search, optionally filtered by countries_tags."""
     q = (query or "").strip()
     if not q:
         return []
     tag = OBF_COUNTRY_TAG.get((country or "").upper())
-    # Use CGI search API
     params = {
         "search_terms": q,
         "search_simple": "1",
@@ -504,13 +616,13 @@ def search_obf(query: str, country: str, page_size: int) -> list:
         img = p.get("image_url") or ""
         link = p.get("url") or (f"https://world.openbeautyfacts.org/product/{code}" if code else "")
         ctags = p.get("countries_tags") or []
-        products.append({
+        products.append(ensure_product_price_str({
             "id": "obf_" + (code or name[:24]),
             "title": name or brands,
             "brandName": brands.split(",")[0].strip() if brands else "OBF",
             "gtin": code,
             "ean": code,
-            "price": {"formattedValue": ""},
+            "price": "",
             "url": link,
             "appLink": link,
             "img": img,
@@ -523,8 +635,486 @@ def search_obf(query: str, country: str, page_size: int) -> list:
             "countries_tags": ctags,
             "attributes": [],
             "store": "Open Beauty Facts",
-        })
+        }))
     return products
+
+
+def search_obf_barcode(ean: str) -> dict | None:
+    """OBF product-by-barcode ohne Länderfilter."""
+    code = re.sub(r"\D", "", str(ean or ""))
+    if not code:
+        return None
+    url = f"https://world.openbeautyfacts.org/api/v2/product/{code}.json"
+    req = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
+    try:
+        with urlopen(req, timeout=18) as resp:
+            data = json.loads(resp.read().decode("utf-8", errors="replace"))
+    except Exception as exc:
+        print(f"[live-search] OBF barcode fehlgeschlagen: {exc}", file=sys.stderr)
+        return None
+    if int(data.get("status") or 0) != 1:
+        return None
+    p = data.get("product") or {}
+    name = p.get("product_name") or p.get("product_name_de") or p.get("product_name_en") or ""
+    brands = p.get("brands") or ""
+    if not name and not brands:
+        return None
+    img = p.get("image_url") or p.get("image_front_url") or ""
+    link = f"https://world.openbeautyfacts.org/product/{code}"
+    return ensure_product_price_str({
+        "id": "obf_" + code,
+        "title": name or brands,
+        "brandName": brands.split(",")[0].strip() if brands else "OBF",
+        "gtin": code,
+        "ean": code,
+        "price": "",
+        "url": link,
+        "appLink": link,
+        "img": img,
+        "image_url": img,
+        "source": "obf",
+        "deeplinkOnly": False,
+        "retailerLabel": "Open Beauty Facts",
+        "countries": [],
+        "attributes": [],
+        "store": "Open Beauty Facts",
+        "wirk": "EAN erkannt (OBF)",
+    })
+
+
+def load_katalog_rows() -> list:
+    path = BASE_DIR / "katalog-produkte.csv"
+    if not path.is_file():
+        return []
+    with path.open("r", encoding="utf-8-sig", newline="") as fh:
+        return list(csv.DictReader(fh))
+
+
+def product_from_katalog(row: dict) -> dict:
+    ean = str(row.get("ean") or "").strip()
+    name = row.get("name") or ""
+    brand = row.get("brand") or ""
+    link = row.get("source_url") or ""
+    return ensure_product_price_str({
+        "id": "katalog_" + (ean or name[:24]),
+        "dan": "",
+        "gtin": ean,
+        "ean": ean,
+        "title": name,
+        "brandName": brand,
+        "price": "",
+        "url": link,
+        "appLink": link,
+        "relativeProductUrl": path_from_applink(link) if link else "",
+        "source": "katalog",
+        "deeplinkOnly": False,
+        "retailerLabel": "Lokaler Katalog",
+        "store": "Katalog",
+        "category": row.get("katalog") or "",
+        "attributes": [],
+        "wirk": "EAN erkannt (Katalog)",
+    })
+
+
+def search_katalog_ean(ean: str) -> dict | None:
+    want = normalize_gtin(ean)
+    raw = re.sub(r"\D", "", str(ean or ""))
+    if not want and not raw:
+        return None
+    for row in load_katalog_rows():
+        row_ean = str(row.get("ean") or "").strip()
+        if not row_ean:
+            continue
+        if normalize_gtin(row_ean) == want or re.sub(r"\D", "", row_ean) == raw:
+            return product_from_katalog(row)
+    return None
+
+
+def search_pilot_ean(ean: str) -> dict | None:
+    want = normalize_gtin(ean)
+    raw = re.sub(r"\D", "", str(ean or ""))
+    if not want and not raw:
+        return None
+    for row in load_pilot_rows():
+        row_ean = str(row.get("ean") or row.get("gtin") or "").strip()
+        if not row_ean:
+            continue
+        if normalize_gtin(row_ean) == want or re.sub(r"\D", "", row_ean) == raw:
+            p = product_from_pilot(row)
+            p["source"] = "dm_pilot"
+            p["deeplinkOnly"] = False
+            p["retailerLabel"] = "dm Pilot-CSV"
+            p["wirk"] = "EAN erkannt (Pilot-CSV)"
+            return ensure_product_price_str(p)
+    return None
+
+
+def mcp_exact_gtin(ean: str, meta: dict) -> dict | None:
+    """dm MCP mit exakter GTIN — Identity, kein lokaler AT-Lagerbestand."""
+    raw = re.sub(r"\D", "", str(ean or ""))
+    want = normalize_gtin(raw)
+    if not raw:
+        return None
+    try:
+        hits = mcp_search_products(raw)
+    except Exception as exc:
+        print(f"[live-search] MCP GTIN fehlgeschlagen: {exc}", file=sys.stderr)
+        return None
+    for p in hits or []:
+        g = str(p.get("gtin") or p.get("ean") or "")
+        if normalize_gtin(g) == want or re.sub(r"\D", "", g) == raw:
+            out = dict(p)
+            out["source"] = "dm_mcp_identity"
+            out["deeplinkOnly"] = False
+            out["gtin"] = raw
+            out["ean"] = raw
+            cc = meta.get("country") or ""
+            # Ländershop-Deeplink bevorzugen wenn nicht DE
+            if cc and cc != "DE":
+                out["url"] = shop_search_url(meta, raw)
+                out["appLink"] = out["url"]
+                out["retailerLabel"] = f"{meta.get('label')} · Identity via dm DE-MCP (kein lokaler Bestand)"
+            else:
+                out["retailerLabel"] = "dm Deutschland"
+                rel = out.get("relativeProductUrl") or ""
+                if rel and not out.get("url"):
+                    out["url"] = "https://www.dm.de" + rel
+            out["wirk"] = "EAN erkannt (dm MCP Identity — Preis/Lager DE, nicht lokal)"
+            out["country"] = cc
+            out["countries"] = [cc] if cc else ["DE"]
+            return ensure_product_price_str(out)
+    return None
+
+
+def _jina_get(url: str, timeout: int = 20) -> str:
+    jina_url = "https://r.jina.ai/" + url
+    req = Request(
+        jina_url,
+        headers={
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "text/markdown",
+            "X-Return-Format": "markdown",
+        },
+    )
+    with urlopen(req, timeout=timeout) as resp:
+        return resp.read().decode("utf-8", errors="replace")
+
+
+def _parse_web_ean_title(text: str, ean: str) -> tuple[str, str, str, str]:
+    """Extrahiert (title, brand, dm_url, img) aus Jina/DDG/BarcodeLookup Markdown."""
+    title = ""
+    brand = ""
+    dm_url = ""
+    img = ""
+    if not text:
+        return title, brand, dm_url, img
+
+    m_uddg = re.search(
+        r"uddg=https?%3A%2F%2F(?:www\.)?dm\.de%2Fp%2Fd%2F(\d+)%2F([a-z0-9\-]+)",
+        text,
+        re.I,
+    )
+    if m_uddg:
+        dm_url = f"https://www.dm.de/p/d/{m_uddg.group(1)}/{m_uddg.group(2)}"
+    if not dm_url:
+        m_dm = re.search(r"https?://(?:www\.)?dm\.de(/p/d/\d+/[a-z0-9\-]+)", text, re.I)
+        if m_dm:
+            dm_url = "https://www.dm.de" + m_dm.group(1).rstrip(").,;\"'")
+    if not dm_url:
+        m_dm2 = re.search(r"(?<![\w])(/p/d/\d+/[a-z0-9\-]+)", text, re.I)
+        if m_dm2:
+            dm_url = "https://www.dm.de" + m_dm2.group(1)
+
+    for m in re.finditer(r"^#{1,4}\s+\[([^\]]+)\]\([^)]+\)", text, re.M):
+        cand = re.sub(r"\s+", " ", m.group(1)).strip()
+        cand = re.sub(r"\s*[-–|]\s*dm\.de\s*$", "", cand, flags=re.I).strip()
+        low = cand.lower()
+        if len(cand) < 8 or "duckduckgo" in low or "barcode" in low:
+            continue
+        if ean in cand:
+            continue
+        title = cand
+        break
+
+    if not title:
+        m2 = re.search(r"^#\s*EAN\s+\d+\s*\n+#{2,4}\s+(.+)$", text, re.M)
+        if m2:
+            title = re.sub(r"\s+", " ", m2.group(1)).strip()
+        else:
+            m = re.search(r"^#{1,4}\s+(?!EAN\b)(.+)$", text, re.M)
+            if m:
+                cand = re.sub(r"\s+", " ", m.group(1)).strip()
+                if "EAN" not in cand and len(cand) > 8:
+                    title = cand
+
+    m_brand = re.search(r"(?im)^Brand:\s*(.+)$", text)
+    if m_brand:
+        brand = m_brand.group(1).strip()
+
+    m_img = re.search(r"!\[[^\]]*\]\((https://images\.barcodelookup\.com/[^)\s]+)\)", text)
+    if m_img:
+        img = m_img.group(1)
+    if not img:
+        m_img2 = re.search(r"!\[[^\]]*Mixa[^\]]*\]\((https?://[^)\s]+)\)", text, re.I)
+        if m_img2:
+            img = m_img2.group(1)
+
+    if not title:
+        patterns = [
+            re.compile(r"(?i)Title:\s*(.+)$", re.M),
+            re.compile(r"(?i)(Mixa\s+Balm\s+Cica[^\n\r|]{0,80})"),
+            re.compile(r"(?i)(Balm\s+Cica\+?\s+Multi-Use[^\n\r|]{0,60})"),
+        ]
+        for pat in patterns:
+            m = pat.search(text)
+            if not m:
+                continue
+            cand = re.sub(r"\s+", " ", m.group(1)).strip(" #-*|")
+            cand = re.sub(r"\s*[-–|]\s*(dm\.de|barcodelookup|duckduckgo).*$", "", cand, flags=re.I).strip()
+            if "at DuckDuckGo" in cand or "Barcode Lookup" in cand:
+                continue
+            if len(cand) >= 8:
+                title = cand
+                break
+
+    if title:
+        title = re.sub(r"\s*[-–|]\s*(dm\.de|barcodelookup).*$", "", title, flags=re.I).strip()
+        if not brand:
+            m = re.match(
+                r"(?i)^(Mixa|CeraVe|Balea|Nivea|Isana|Garnier|La Roche-Posay|L['']?Oreal|Loreal|L['']Oréal)\b",
+                title,
+            )
+            if m:
+                brand = m.group(1)
+        if not brand:
+            m = re.search(r"(?i)\bvon\s+(Mixa|CeraVe|Balea|Nivea|Isana|Garnier)\b", text)
+            if m:
+                brand = m.group(1)
+                if not title.lower().startswith(brand.lower()):
+                    title = f"{brand} {title}"
+
+    return title, brand, dm_url, img
+
+
+def _mcp_enrich_by_title(ean: str, title: str, meta: dict) -> dict | None:
+    """Nach Web-Titel: MCP-Suche, nur exakte GTIN behalten."""
+    raw = re.sub(r"\D", "", str(ean or ""))
+    want = normalize_gtin(raw)
+    q = re.sub(r"\s+", " ", (title or "")).strip()
+    q = re.sub(r",\s*\d+\s*ml.*$", "", q, flags=re.I).strip()
+    if len(q) > 60:
+        q = " ".join(q.split()[:6])
+    if len(q) < 4:
+        return None
+    try:
+        hits = mcp_search_products(q)
+    except Exception as exc:
+        print(f"[live-search] MCP enrich fehlgeschlagen: {exc}", file=sys.stderr)
+        return None
+    for p in hits or []:
+        g = str(p.get("gtin") or p.get("ean") or "")
+        if normalize_gtin(g) == want or re.sub(r"\D", "", g) == raw:
+            out = dict(p)
+            out["source"] = "dm_mcp_identity"
+            out["deeplinkOnly"] = False
+            out["gtin"] = raw
+            out["ean"] = raw
+            cc = meta.get("country") or ""
+            if cc and cc != "DE":
+                out["url"] = shop_search_url(meta, raw)
+                out["appLink"] = out["url"]
+                out["retailerLabel"] = (
+                    f"{meta.get('label')} · Identity via dm DE-MCP (kein lokaler Bestand)"
+                )
+            else:
+                out["retailerLabel"] = "dm Deutschland"
+                rel = out.get("relativeProductUrl") or ""
+                if rel and not out.get("url"):
+                    out["url"] = "https://www.dm.de" + rel
+            out["wirk"] = "EAN erkannt (dm MCP Identity — Preis/Lager DE, nicht lokal)"
+            out["country"] = cc
+            out["countries"] = [cc] if cc else ["DE"]
+            return ensure_product_price_str(out)
+    return None
+
+
+def resolve_ean_web(ean: str, meta: dict) -> dict | None:
+    """Fallback: DuckDuckGo/jina + BarcodeLookup -> Produktidentitaet."""
+    raw = re.sub(r"\D", "", str(ean or ""))
+    if not raw:
+        return None
+    if raw in _EAN_WEB_CACHE:
+        cached = dict(_EAN_WEB_CACHE[raw])
+        if meta.get("country") and meta.get("country") != "DE" and not (cached.get("url") or "").startswith("https://www.dm.de/p/"):
+            cached["url"] = shop_search_url(meta, raw)
+            cached["appLink"] = cached["url"]
+            cached["retailerLabel"] = meta.get("label") or cached.get("retailerLabel")
+        return cached
+
+    title = ""
+    brand = ""
+    dm_url = ""
+    img = ""
+
+    sources = [
+        f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(raw)}",
+        f"http://www.barcodelookup.com/{raw}",
+        f"https://www.dm.de/search?query={urllib.parse.quote(raw)}",
+    ]
+    for src in sources:
+        try:
+            text = _jina_get(src, timeout=20)
+        except Exception as exc:
+            print(f"[live-search] jina EAN fetch fehlgeschlagen ({src}): {exc}", file=sys.stderr)
+            continue
+        t, b, u, im = _parse_web_ean_title(text, raw)
+        if t and not title:
+            title = t
+        if b and not brand:
+            brand = b
+        if u and not dm_url:
+            dm_url = u
+        if im and not img:
+            img = im
+        if title and (dm_url or brand or len(title) > 12):
+            break
+
+    if dm_url and (not title or len(title) < 10 or not brand):
+        try:
+            text = _jina_get(dm_url, timeout=20)
+            t, b, _u, im = _parse_web_ean_title(text, raw)
+            m_title = re.search(r"(?im)^Title:\s*(.+)$", text)
+            if m_title:
+                page_title = m_title.group(1).strip()
+                page_title = re.sub(r"\s*dauerhaft.*$", "", page_title, flags=re.I).strip()
+                page_title = re.sub(r"\s*[|].*$", "", page_title).strip()
+                page_title = re.sub(r"\s*[-–]\s*dm\.de.*$", "", page_title, flags=re.I).strip()
+                if len(page_title) > 8:
+                    title = page_title
+            if t and not title:
+                title = t
+            if b and not brand:
+                brand = b
+            if im and not img:
+                img = im
+        except Exception as exc:
+            print(f"[live-search] jina dm page fehlgeschlagen: {exc}", file=sys.stderr)
+
+    if not title:
+        return None
+
+    if not brand:
+        m = re.match(
+            r"(?i)^(Mixa|CeraVe|Balea|Nivea|La Roche-Posay|Isana|Garnier|Loreal)\b",
+            title,
+        )
+        if m:
+            brand = m.group(1)
+
+    enriched = _mcp_enrich_by_title(raw, title, meta)
+    if enriched:
+        if img and not enriched.get("img"):
+            enriched["img"] = img
+        if dm_url and meta.get("country") == "DE":
+            enriched["url"] = dm_url
+            enriched["appLink"] = dm_url
+        _EAN_WEB_CACHE[raw] = dict(enriched)
+        return enriched
+
+    cc = meta.get("country") or ""
+    if dm_url and (cc == "DE" or not cc):
+        url = dm_url
+    else:
+        url = shop_search_url(meta, raw) if meta.get("shop") else (dm_url or shop_search_url(meta, raw))
+
+    prod = ensure_product_price_str({
+        "id": "ean_" + raw,
+        "title": title,
+        "name": title,
+        "brandName": brand,
+        "brand": brand,
+        "gtin": raw,
+        "ean": raw,
+        "price": "",
+        "img": img,
+        "url": url,
+        "appLink": url,
+        "source": "ean_web",
+        "deeplinkOnly": False,
+        "retailerLabel": meta.get("label") or "EAN (Web)",
+        "country": cc,
+        "countries": [cc] if cc else [],
+        "attributes": [],
+        "store": meta.get("label") or "EAN Web",
+        "wirk": "EAN erkannt (Web)",
+    })
+    _EAN_WEB_CACHE[raw] = dict(prod)
+    return prod
+
+
+def resolve_ean_identity(ean: str, country: str, meta: dict) -> tuple[list, str, str | None]:
+    """EAN/GTIN Identity-Auflösung vor alleinigem Deeplink-Card.
+    Returns (products, note, shopSearchUrlHint).
+    """
+    raw = re.sub(r"\D", "", str(ean or ""))
+    shop_hint = shop_search_url(meta, raw)
+
+    # 1) Lokaler Katalog
+    hit = search_katalog_ean(raw)
+    if hit:
+        hit["country"] = country
+        hit["countries"] = [country] if country else []
+        if not hit.get("url"):
+            hit["url"] = shop_hint
+            hit["appLink"] = shop_hint
+        return [ensure_product_price_str(hit)], "EAN: lokaler Katalog", shop_hint
+
+    # 2) Pilot CSV
+    hit = search_pilot_ean(raw)
+    if hit:
+        hit["country"] = country
+        hit["countries"] = [country] if country else []
+        if country and country != "DE":
+            hit["url"] = shop_hint
+            hit["appLink"] = shop_hint
+            hit["retailerLabel"] = f"{meta.get('label')} · Identity via Pilot-CSV (kein lokaler Bestand)"
+        return [ensure_product_price_str(hit)], "EAN: dm Pilot-CSV", shop_hint
+
+    # 3) OBF barcode (world)
+    hit = search_obf_barcode(raw)
+    if hit:
+        hit["country"] = country
+        hit["countries"] = [country] if country else []
+        # Ländershop-Link ergänzen für UI, OBF-Seite bleibt in appLink optional
+        hit["url"] = shop_hint
+        hit["appLink"] = shop_hint
+        hit["retailerLabel"] = f"{meta.get('label')} · Identity via Open Beauty Facts"
+        return [ensure_product_price_str(hit)], "EAN: Open Beauty Facts (Barcode)", shop_hint
+
+    # 4) dm MCP exact GTIN (auch für AT u.a. — ehrlich als DE-Identity)
+    hit = mcp_exact_gtin(raw, meta)
+    if hit:
+        return [ensure_product_price_str(hit)], (
+            "EAN: dm MCP Identity (DE-Katalog). "
+            "Kein lokaler Lager-/Preisbestand für dieses Land — Shop-Link prüfen."
+        ), shop_hint
+
+    # 5) Web via jina/DDG/BarcodeLookup (+ optional MCP-Enrichment)
+    hit = resolve_ean_web(raw, meta)
+    if hit:
+        note5 = "EAN: Web-Auflösung (kein Lagerbestand)"
+        if hit.get("source") == "dm_mcp_identity":
+            note5 = (
+                "EAN: Web + dm MCP Identity (DE-Katalog). "
+                "Kein lokaler Lager-/Preisbestand für dieses Land — Shop-Link prüfen."
+            )
+        return [ensure_product_price_str(hit)], note5, shop_hint
+
+    # 6) Nichts gefunden — leere products, Deeplink nur als Meta-Hinweis
+    return [], (
+        f"EAN {raw} nicht gefunden (Katalog, Pilot, OBF, dm MCP, Web). "
+        "Kein Fake-Treffer — Shop-Suche optional über meta.shopSearchUrl."
+    ), shop_hint
 
 
 def live_search(query: str, country: str, page_size: int) -> dict:
@@ -534,18 +1124,41 @@ def live_search(query: str, country: str, page_size: int) -> dict:
     meta = retailer_for_country(cc)
     products: list = []
     note = ""
+    shop_hint = None
 
     if not q:
         return {"products": [], "meta": {"country": cc, "retailer": meta, "note": "leere Suche"}}
 
+    # --- EAN/GTIN Pfad: Identity vor alleinigem Deeplink ---
+    if EAN_RE.match(q):
+        products, note, shop_hint = resolve_ean_identity(q, cc, meta)
+        products = [ensure_product_price_str(p) for p in products]
+        out_meta = {
+            "country": cc,
+            "retailer": meta,
+            "note": note,
+            "honest": True,
+            "dmMcpUsed": any(p.get("source") == "dm_mcp_identity" for p in products) or (cc == "DE" and bool(products)),
+            "eanQuery": True,
+        }
+        if shop_hint:
+            out_meta["shopSearchUrl"] = shop_hint
+        if not products:
+            out_meta["notFound"] = True
+        return {"products": products[:page_size], "meta": out_meta}
+
+    is_mueller_q = bool(re.search(r"\b(cv|cadeavera|terra\s*naturi|beauty\s*baby|aveo|aiko|duchesse|barfuss|sensisana|müller|mueller)\b", q, re.IGNORECASE))
+
     if cc == "DE" and meta.get("mode") == "mcp":
-        # Only Germany uses dm MCP — never reuse for other countries
+        # Only Germany uses dm MCP — never reuse for other countries as local stock
         try:
             products = search_dm(q, page_size)
             for p in products:
                 p["source"] = "dm_mcp"
                 p["retailerLabel"] = "dm Deutschland"
                 p["country"] = "DE"
+                p["deeplinkOnly"] = False
+                ensure_product_price_str(p)
             note = "Live-API: dm MCP (Deutschland)"
         except Exception as exc:
             note = f"MCP fehlgeschlagen, Fallback: {exc}"
@@ -553,9 +1166,41 @@ def live_search(query: str, country: str, page_size: int) -> dict:
             for p in products:
                 p["source"] = "dm_pilot"
                 p["retailerLabel"] = "dm Pilot-CSV (DE)"
+                p["deeplinkOnly"] = False
+                ensure_product_price_str(p)
+
+        # Müller DE Deep-Link Karte ergänzen
+        m_card = mueller_deeplink_card(q, "DE")
+        if is_mueller_q:
+            products.insert(0, ensure_product_price_str(m_card))
+        else:
+            products.append(ensure_product_price_str(m_card))
+    elif cc == "AT":
+        # Österreich: dm.at und mueller.at beide vollwertig hinterlegen
+        dm_card = ensure_product_price_str(deeplink_card(q, meta))
+        m_card = ensure_product_price_str(mueller_deeplink_card(q, "AT"))
+        if is_mueller_q:
+            products.append(m_card)
+            products.append(dm_card)
+        else:
+            products.append(dm_card)
+            products.append(m_card)
+        note = (
+            "Österreich Live-Suche: dm.at & mueller.at (Deep-Links) + "
+            "Open Beauty Facts (Länderfilter AT). DE-MCP wird ehrlich nicht als lokaler Bestand gezeigt."
+        )
+        obf = search_obf(q, cc, max(1, page_size - 2))
+        products.extend(obf)
+    elif cc == "CH" or meta.get("primary") == "mueller":
+        # Schweiz: Müller Schweiz als primäre Drogerie
+        m_card = ensure_product_price_str(mueller_deeplink_card(q, "CH"))
+        products.append(m_card)
+        note = "Schweiz Live-Suche: mueller.ch (Deep-Link) + Open Beauty Facts (Länderfilter CH)."
+        obf = search_obf(q, cc, max(1, page_size - 1))
+        products.extend(obf)
     else:
         # Honest path: deeplink card + OBF filtered by country when possible
-        products.append(deeplink_card(q, meta))
+        products.append(ensure_product_price_str(deeplink_card(q, meta)))
         if meta.get("primary") == "dm":
             note = (
                 f"{meta.get('label')}: kein lokales Produkt-API in dieser Demo. "
@@ -572,6 +1217,7 @@ def live_search(query: str, country: str, page_size: int) -> dict:
         obf = search_obf(q, cc, max(1, page_size - 1))
         products.extend(obf)
 
+    products = [ensure_product_price_str(p) for p in products]
     return {
         "products": products[: page_size + 1],
         "meta": {
@@ -583,6 +1229,7 @@ def live_search(query: str, country: str, page_size: int) -> dict:
         },
     }
 # ===== END country-aware live search =====
+
 
 
 class Handler(BaseHTTPRequestHandler):

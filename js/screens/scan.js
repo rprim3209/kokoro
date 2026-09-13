@@ -51,7 +51,10 @@ function mountProfileDmLiveSearch(opts) {
             </div>
           </div>
         </div>
-        ${p._deeplinkOnly ? `<a class="btn-text" style="background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:700;flex-shrink:0;text-decoration:none" href="${p.url||'#'}" target="_blank" rel="noopener">Im Shop oeffnen</a>` : `<button type="button" class="btn-text" style="background:var(--ok);color:#F7F4D5;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:700;flex-shrink:0" onclick="adoptDmProductToSlot('${p.id}', 'pm')">+ Schrank</button>`}
+        <div style="display:flex;gap:6px;flex-shrink:0" onclick="event.stopPropagation()">
+          ${p.url ? `<a class="btn-text" style="background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:700;flex-shrink:0;text-decoration:none" href="${p.url}" target="_blank" rel="noopener">Shop ↗</a>` : ''}
+          <button type="button" class="btn-text" style="background:var(--ok);color:#F7F4D5;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:700;flex-shrink:0" onclick="adoptDmProductToSlot('${p.id}', 'pm')">+ Schrank</button>
+        </div>
       </div>
     `).join("");
   }
@@ -886,6 +889,17 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
       }
 
       return liveDmItems.map((p, idx) => {
+        let shopLinkText = "Shop ↗";
+        if (p.retailerLabel) {
+          shopLinkText = p.retailerLabel + " ↗";
+        } else if (p.url) {
+          try {
+            const u = new URL(p.url, window.location.href);
+            shopLinkText = u.hostname.replace(/^www\./, "") + " ↗";
+          } catch (e) {
+            shopLinkText = (p.store || "Shop") + " ↗";
+          }
+        }
         return `
           <div class="alt-card" style="padding:0.75rem 0.9rem;border-color:#fca5a5;background:#fff;cursor:pointer" onclick="window.open('${p.url}', '_blank')">
             <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px">
@@ -895,7 +909,7 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
                 <div style="font-size:0.76rem;color:var(--muted);margin-top:1px">
                   <span style="font-weight:700;color:#16a34a">${p.price || 'dm'}</span>
                   ${p.ean ? ` · EAN: ${p.ean}` : ''}
-                  · <span style="color:#2563eb;text-decoration:underline">dm.de ↗</span>
+                  · <span style="color:#2563eb;text-decoration:underline">${escapeHtml(shopLinkText)}</span>
                 </div>
                 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">
                   ${p.ff === true ? '<span class="tag ff" style="font-size:0.65rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.65rem;padding:1px 5px">⚠️ Parfümiert</span>' : '')}
@@ -908,6 +922,7 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
               </div>
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0" onclick="event.stopPropagation()">
+              ${p.url ? `<a class="btn-text" style="background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:700;text-decoration:none" href="${p.url}" target="_blank" rel="noopener">Shop ↗</a>` : ''}
               <button type="button" class="btn-text" style="background:#eaf0f6;color:#204060;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:600" onclick="adoptDmProductToSlot('${p.id}', 'am')">+ Morgen</button>
               <button type="button" class="btn-text" style="background:#f4ece0;color:#5c3e1e;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:600" onclick="adoptDmProductToSlot('${p.id}', 'pm')">+ Abend</button>
             </div>
@@ -932,7 +947,7 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
           ${searchVal ? `
             <div style="margin-top:10px">
               <button type="button" class="btn-text" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:7px 14px;border-radius:8px;font-weight:700;font-size:0.84rem" onclick="window.setAddCat('dm')">
-                🛒 Live bei dm nach „${searchVal}“ suchen ➔
+                🛒 Live im Drogerie-Sortiment nach „${escapeHtml(searchVal)}“ suchen ➔
               </button>
             </div>
           ` : ''}
@@ -1367,7 +1382,7 @@ function openScanModal() {
               <span style="color:#16a34a;font-weight:700">${p.price || 'dm'}</span>
               ${p.ff === true ? ' · <span style="color:#16a34a;font-weight:600">🌸 Parfümfrei</span>' : (p.ff === false ? ' · <span style="color:#d97706">⚠️ Parfümiert</span>' : '')}
               ${p.cf === true ? ' · <span style="color:#6b21a8">🐰 CF</span>' : ''}
-              · <a href="${p.url}" target="_blank" style="color:#2563eb;text-decoration:underline">dm.de ↗</a>
+              · <a href="${p.url}" target="_blank" style="color:#2563eb;text-decoration:underline">${(p.retailerLabel || (p.url && p.url.includes("mueller") ? "mueller ↗" : "dm ↗"))}</a>
             </div>
           </div>
         </div>

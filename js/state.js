@@ -71,6 +71,31 @@ function escapeHtml(str) {
 }
 window.escapeHtml = escapeHtml;
 
+
+/** Normalize poisoned live-API price/wirk objects so UI never shows [object Object]. */
+function sanitizeProductPriceFields(prod) {
+  if (!prod || typeof prod !== "object") return prod;
+  const fmt = (typeof formatLivePrice === "function") ? formatLivePrice : null;
+  if (prod.price != null && typeof prod.price === "object") {
+    prod.price = fmt ? fmt(prod.price) : "";
+  } else if (prod.price != null && typeof prod.price !== "string" && typeof prod.price !== "number") {
+    prod.price = fmt ? fmt(prod.price) : String(prod.price);
+  }
+  if (prod.wirk != null && typeof prod.wirk !== "string") {
+    if (typeof prod.wirk === "object") {
+      prod.wirk = fmt ? (fmt(prod.wirk) || "") : "";
+    } else {
+      prod.wirk = String(prod.wirk);
+    }
+  }
+  if (prod.store != null && typeof prod.store === "object") {
+    prod.store = fmt ? (fmt(prod.store) || "Drogerie") : "Drogerie";
+  }
+  return prod;
+}
+window.sanitizeProductPriceFields = sanitizeProductPriceFields;
+
+
 // ==========================================
 // LOCALSTORAGE PERSISTENZ (Schrank-Speicherung)
 // Speichert auf dem Gerät, auch nach Neu-Laden
@@ -106,6 +131,7 @@ if (saved) {
       }
       // Restore dynamic & live-dm products into DB (+ Klassen-Heuristik)
       for (const [cid, cprod] of Object.entries(appState.customProducts)) {
+        if (cprod && typeof sanitizeProductPriceFields === "function") sanitizeProductPriceFields(cprod);
         if (typeof enrichProductClasses === "function" && cprod) enrichProductClasses(cprod);
         if (typeof DB === "object" && cprod) DB[cid] = cprod;
         if (typeof TEEN_DB === "object" && cprod && !TEEN_DB[cid]) {
@@ -698,16 +724,23 @@ function openRenameProfileModal(profileId) {
   const p = appState.profiles.find(x => x.id === profileId) || getActiveProfile();
   if (!p) return;
 
+  const catLabel = p.category === "adult" ? "Erwachsener"
+    : (p.category === "teen" ? "Teenie"
+    : (p.category === "child" ? "Kind" : "Baby"));
+  const canDelete = (appState.profiles || []).length > 1;
+  const safeId = String(p.id).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+  const safeName = String(p.name || "").replace(/"/g, "&quot;");
+
   showModalSheet(`
     <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">Profil anpassen</div>
-    <h2 style="margin:0.2rem 0 0.3rem;font-size:1.3rem">Profil umbenennen</h2>
+    <h2 style="margin:0.2rem 0 0.3rem;font-size:1.3rem">Profil bearbeiten</h2>
     <p style="font-size:0.86rem;color:var(--muted);margin:0 0 0.9rem;line-height:1.4">
-      Kategorie: ${getCategoryEmoji(p.category)} <strong>${p.category === 'adult' ? 'Erwachsener' : (p.category === 'teen' ? 'Teenie' : (p.category === 'child' ? 'Kind' : 'Baby'))}</strong>
+      Kategorie: ${getCategoryEmoji(p.category)} <strong>${catLabel}</strong>
     </p>
 
     <div style="margin:0.9rem 0">
       <label for="renameProfileInput" style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">Profilname</label>
-      <input type="text" id="renameProfileInput" value="${p.name.replace(/"/g, '&quot;')}" style="width:100%;padding:0.75rem 0.85rem;border:1.5px solid var(--line);border-radius:10px;font-size:0.95rem;font-family:inherit" onkeydown="if(event.key==='Enter'){ submitRenameProfile('${p.id}'); }">
+      <input type="text" id="renameProfileInput" value="${safeName}" style="width:100%;padding:0.75rem 0.85rem;border:1.5px solid var(--line);border-radius:10px;font-size:0.95rem;font-family:inherit" onkeydown="if(event.key==='Enter'){ submitRenameProfile('${safeId}'); }">
     </div>
 
     <div style="margin:0.7rem 0 0.2rem">
@@ -716,12 +749,20 @@ function openRenameProfileModal(profileId) {
       ${typeof renderCountryPickerHtml === "function" ? renderCountryPickerHtml(p.country || 'AT', "window._setRenameCountry", { uid: "renameCountryPicker", maxHeight: "200px" }) : ""}
     </div>
 
-    <div style="display:flex;gap:8px;margin-top:1.1rem">
-      <button class="ghost-btn" style="width:auto;margin-top:0;padding:0.75rem 1.2rem" onclick="closeModal()">Abbrechen</button>
-      <button class="primary" style="margin-top:0;flex:1" onclick="submitRenameProfile('${p.id}')">Speichern</button>
-      ${appState.profiles.length > 1 ? `
-        <button class="ghost-btn" style="width:auto;margin-top:0;color:#b91c1c;border-color:#fecaca" onclick="deleteProfile('${p.id}')" title="Profil löschen">🗑️</button>
-      ` : ''}
+    <div style="display:flex;gap:8px;margin-top:1.1rem;flex-wrap:wrap">
+      <button type="button" class="ghost-btn" style="width:auto;margin-top:0;padding:0.75rem 1.2rem" onclick="closeModal()">Abbrechen</button>
+      <button type="button" class="primary" style="margin-top:0;flex:1;min-width:8rem" onclick="submitRenameProfile('${safeId}')">Speichern</button>
+    </div>
+
+    <div style="margin-top:1rem;padding-top:0.9rem;border-top:1px solid var(--line)">
+      ${canDelete ? `
+        <button type="button" class="ghost-btn profile-delete-btn" style="width:100%;margin-top:0;padding:0.8rem 1rem;color:#b91c1c;border-color:#fecaca;font-weight:700" onclick="deleteProfile('${safeId}')">
+          🗑️ Profil löschen
+        </button>
+        <p style="font-size:0.74rem;color:var(--muted);margin:0.45rem 0 0;line-height:1.35">Löscht dieses Profil und seinen Schrank (Erwachsener, Teenie, Kind und Baby gleich). Andere Profile bleiben.</p>
+      ` : `
+        <p style="font-size:0.8rem;color:var(--muted);margin:0;line-height:1.4">Mindestens ein Profil muss bleiben — deshalb gerade kein Löschen.</p>
+      `}
     </div>
   `);
 
@@ -752,27 +793,47 @@ function submitRenameProfile(profileId) {
 
 // Delete Profile
 function deleteProfile(profileId) {
-  if (!appState.profiles || appState.profiles.length <= 1) {
-    alert("Das letzte verbleibende Profil kann nicht gelöscht werden.");
-    return;
+  try {
+    if (!appState.profiles || !Array.isArray(appState.profiles)) return;
+    if (appState.profiles.length <= 1) {
+      alert("Das letzte Profil kann nicht gelöscht werden. Lege zuerst ein anderes an.");
+      return;
+    }
+    const id = String(profileId || "");
+    const p = appState.profiles.find(x => String(x.id) === id);
+    if (!p) {
+      alert("Profil wurde nicht gefunden.");
+      return;
+    }
+    // Alle Kategorien (adult/teen/child/baby) gleich — kein Sonderfall Teenie
+    const catLabel = p.category === "adult" ? "Erwachsener"
+      : (p.category === "teen" ? "Teenie"
+      : (p.category === "child" ? "Kind" : "Baby"));
+    if (!confirm("Profil \u201e" + p.name + "\u201c (" + catLabel + ") wirklich löschen?\n\nDer Schrank dieses Profils geht verloren.")) {
+      return;
+    }
+    const wasActive = appState.activeProfileId === id || (typeof getActiveProfile === "function" && getActiveProfile() && String(getActiveProfile().id) === id);
+    appState.profiles = appState.profiles.filter(x => String(x.id) !== id);
+    if (wasActive || appState.activeProfileId === id) {
+      const nextP = appState.profiles[0];
+      if (nextP) loadProfileToAppState(nextP);
+    }
+    if (typeof saveState === "function") saveState();
+    if (typeof closeModal === "function") closeModal();
+    if (typeof updateCategoryNav === "function") updateCategoryNav();
+    if (typeof showToast === "function") showToast("Profil \u201e" + p.name + "\u201c gelöscht");
+    if (appState.view === "settings" && typeof renderSettingsScreen === "function") {
+      renderSettingsScreen();
+    } else if (typeof renderCurrentScreen === "function") {
+      renderCurrentScreen();
+    } else if (typeof renderMain === "function") {
+      renderMain();
+    }
+  } catch (err) {
+    console.error("deleteProfile failed", err);
+    alert("Löschen hat nicht geklappt. Bitte nochmal versuchen.");
   }
-  const p = appState.profiles.find(x => x.id === profileId);
-  if (!p) return;
-  if (!confirm(`Möchtest du das Profil "${p.name}" wirklich löschen?`)) {
-    return;
-  }
-  appState.profiles = appState.profiles.filter(x => x.id !== profileId);
-  if (appState.activeProfileId === profileId) {
-    const nextP = appState.profiles[0];
-    loadProfileToAppState(nextP);
-  }
-  saveState();
-  closeModal();
-  updateCategoryNav();
-  renderMain();
 }
-
-
 
 function getProfileCountry(profileOrId) {
   if (appState && appState.country) {
@@ -1047,6 +1108,10 @@ function countryLabel(code) {
   return cc || "—";
 }
 
+
+window.openRenameProfileModal = openRenameProfileModal;
+window.submitRenameProfile = submitRenameProfile;
+window.deleteProfile = deleteProfile;
 window.getProfileCountry = getProfileCountry;
 window.setProfileCountry = setProfileCountry;
 window.coordsToCountryCode = coordsToCountryCode;

@@ -928,12 +928,23 @@ function sortRoutine(arr, isAM = true) {
 }
 
 function openCabinet() {
-  appState.am = sortRoutine(appState.am, true);
-  appState.pm_a = sortRoutine(appState.pm_a, false);
-  appState.pm_b = sortRoutine(appState.pm_b, false);
-  appState.pm_c = sortRoutine(appState.pm_c, false);
+  try {
+    if (Array.isArray(appState.am)) appState.am = sortRoutine(appState.am, true);
+    if (Array.isArray(appState.pm_a)) appState.pm_a = sortRoutine(appState.pm_a, false);
+    if (Array.isArray(appState.pm_b)) appState.pm_b = sortRoutine(appState.pm_b, false);
+    if (Array.isArray(appState.pm_c)) appState.pm_c = sortRoutine(appState.pm_c, false);
+  } catch (e) {
+    console.warn("[openCabinet] sortRoutine:", e);
+  }
   appState.view = "cabinet";
-  renderMain();
+  if (typeof saveState === "function") saveState();
+  if (typeof updateBottomNav === "function") updateBottomNav();
+  try {
+    renderMain(false);
+  } catch (e) {
+    console.error("[openCabinet] renderMain failed:", e);
+    if (typeof showToast === "function") showToast("Schrank konnte nicht vollständig angezeigt werden.");
+  }
 }
 
 function startWithEmptyCabinet() {
@@ -975,7 +986,10 @@ function renderBottle(prod) {
   else if (prod.shape === "jar") { cap = ""; shapeClass = "jar"; }
   else if (prod.shape === "tube") { cap = `<div class="bottle-neck"></div>`; shapeClass = "tube"; }
   const rxClass = prod.rx ? "rx" : "";
-  const shortLbl = ((prod.wirk || prod.name || "Produkt").split(" ")[0] || "").slice(0, 7);
+  const wirkLabel = (typeof formatLivePrice === "function"
+    ? (formatLivePrice(prod.wirk) || formatLivePrice(prod.price) || "")
+    : (typeof prod.wirk === "string" ? prod.wirk : "")) || (prod.name || "Produkt");
+  const shortLbl = (String(wirkLabel).split(" ")[0] || "").slice(0, 7);
 
   return `
     <div class="bottle-icon">
@@ -1196,7 +1210,7 @@ function renderMain(autoSave = true) {
           <div class="step-info">
             <div class="step-cat">${catLabel}</div>
             <div class="step-prod-name" style="font-size:0.92rem;font-weight:700;color:var(--ink);margin:1px 0 2px">${p.name}</div>
-            <div class="step-active-desc">Marke: <strong>${p.brand}</strong> · Wirkstoff: <strong>${p.wirk}</strong> ${p.rx ? '<span class="tag rx">Rx-Arzneimittel</span>' : ''}</div>
+            <div class="step-active-desc">Marke: <strong>${p.brand || ""}</strong> · Wirkstoff: <strong>${(typeof p.wirk === "string" ? p.wirk : ((typeof formatLivePrice === "function" ? formatLivePrice(p.wirk) : "") || (typeof p.price === "string" ? p.price : ((typeof formatLivePrice === "function" ? formatLivePrice(p.price) : "") || ""))))}</strong> ${p.rx ? '<span class="tag rx">Rx-Arzneimittel</span>' : ''}</div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
               ${flagBadge}
               ${classChips}
@@ -1374,8 +1388,16 @@ function adoptDmProductToSlot(prodOrIdOrIdx, target = "am") {
 
   if (!prod.c) prod.c = colors[kat] || "#a4c8a8";
   if (!prod.shape) prod.shape = shapes[kat] || "tube";
-  if (!prod.wirk) prod.wirk = (prod.ff === true ? "Parfümfrei · " : "") + (prod.price ? prod.price + " · " : "") + (prod.brand || "dm");
-  if (!prod.store) prod.store = `dm (${prod.price || "Drogerie"})`;
+  const priceStr = (typeof formatLivePrice === "function")
+    ? formatLivePrice(prod.price)
+    : (typeof prod.price === "string" || typeof prod.price === "number" ? String(prod.price) : "");
+  if (prod.price != null && typeof prod.price === "object") prod.price = priceStr;
+  if (!prod.wirk || typeof prod.wirk !== "string") {
+    const wirkBase = (typeof prod.wirk === "string") ? prod.wirk
+      : ((typeof formatLivePrice === "function" && prod.wirk != null) ? formatLivePrice(prod.wirk) : "");
+    prod.wirk = wirkBase || ((prod.ff === true ? "Parfümfrei · " : "") + (priceStr ? priceStr + " · " : "") + (prod.brand || "dm"));
+  }
+  if (!prod.store) prod.store = `dm (${priceStr || "Drogerie"})`;
   if (typeof enrichProductClasses === "function") {
     enrichProductClasses(prod);
   } else if (!Array.isArray(prod.klassen) || prod.klassen.length === 0) {
@@ -1799,4 +1821,11 @@ function openMarketGuideModal() {
       </div>
     </div>
   `);
+}
+
+if (typeof window !== "undefined") {
+  window.openCabinet = openCabinet;
+  window.renderMain = renderMain;
+  window.renderBottle = renderBottle;
+  window.startWithEmptyCabinet = startWithEmptyCabinet;
 }

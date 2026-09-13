@@ -2543,13 +2543,25 @@ function updateKatalogStatusUI() {
   const text = document.getElementById("katalogStatusText");
   if (!badge || !text) return;
 
-  if (window.katalogStatus && window.katalogStatus.mode === "live") {
+  const mode = window.katalogStatus && window.katalogStatus.mode;
+
+  if (mode === "loading") {
+    badge.style.background = "#fef3c7";
+    badge.style.color = "#92400e";
+    badge.style.borderColor = "#fde68a";
+    badge.innerHTML = `<span style="color:#d97706">●</span> <span id="katalogStatusText">Lade Katalog…</span>`;
+    badge.title = "Katalog wird geladen…";
+    return;
+  }
+
+  if (mode === "live") {
     badge.style.background = "#dcfce7";
     badge.style.color = "#166534";
     badge.style.borderColor = "#bbf7d0";
     badge.innerHTML = `<span style="color:#16a34a">●</span> Live-Katalog (${window.katalogStatus.count || 985})`;
     badge.title = "Verbunden: 985 Produkte live aus katalog-produkte.csv geladen. Kamera-Scanner aktiv.";
   } else {
+    // fallback / unknown → Offline
     badge.style.background = "#fef3c7";
     badge.style.color = "#92400e";
     badge.style.borderColor = "#fde68a";
