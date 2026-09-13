@@ -898,7 +898,10 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
         `;
       }
 
-      return liveDmItems.map((p, idx) => {
+      const realProds = liveDmItems.filter(p => !p._deeplinkOnly);
+      const deeplinks = liveDmItems.filter(p => p._deeplinkOnly);
+
+      const realHtml = realProds.map((p, idx) => {
         let shopLinkText = "Shop ↗";
         if (p.retailerLabel) {
           shopLinkText = p.retailerLabel + " ↗";
@@ -911,17 +914,21 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
           }
         }
         return `
-          <div class="alt-card" style="padding:0.75rem 0.9rem;border-color:#fca5a5;background:#fff;cursor:pointer" onclick="window.open('${p.url}', '_blank')">
-            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px">
-              ${p.img ? `<img src="${p.img}" alt="${p.name}" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #f1f5f9;background:#f8fafc;flex-shrink:0">` : `<div style="width:46px;height:46px;border-radius:8px;background:#fee2e2;color:#b91c1c;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">🛒</div>`}
+          <div class="alt-card" style="padding:0.8rem 0.95rem;border-color:#bbf7d0;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)" data-testid="live-product-card" data-product-id="${escapeHtml(p.id)}">
+            <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+              ${p.img ? `<img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" style="width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;background:#fff;flex-shrink:0" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex'">` : ''}
+              <div style="width:54px;height:54px;border-radius:8px;background:#f1f5f9;color:#64748b;display:${p.img ? 'none' : 'flex'};align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">🧴</div>
               <div style="min-width:0;flex:1">
-                <div style="font-weight:700;font-size:0.88rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.brand} ${p.name}</div>
-                <div style="font-size:0.76rem;color:var(--muted);margin-top:1px">
-                  <span style="font-weight:700;color:#16a34a">${p.price || 'dm'}</span>
-                  ${p.ean ? ` · EAN: ${p.ean}` : ''}
-                  · <span style="color:#2563eb;text-decoration:underline">${escapeHtml(shopLinkText)}</span>
+                <div style="font-weight:700;font-size:0.92rem;color:var(--ink);line-height:1.25">
+                  <span style="color:#0f172a">${escapeHtml(p.brand)}</span> ${escapeHtml(p.name)}
                 </div>
-                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">
+                <div style="font-size:0.76rem;color:var(--muted);margin-top:2px">
+                  ${p.price ? `<span style="font-weight:700;color:#16a34a">${escapeHtml(p.price)}</span> · ` : ''}
+                  <span>${escapeHtml(p.wirk || p.store || '')}</span>
+                  ${p.ean ? ` · <span style="font-family:monospace;font-size:0.73rem">EAN ${escapeHtml(p.ean)}</span>` : ''}
+                  ${p.url ? ` · <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline" onclick="event.stopPropagation()">${escapeHtml(shopLinkText)}</a>` : ''}
+                </div>
+                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
                   ${p.ff === true ? '<span class="tag ff" style="font-size:0.65rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.65rem;padding:1px 5px">⚠️ Parfümiert</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ Duftstoffe offen</span>')}
                   ${p.nc === true ? '<span class="tag nc" style="font-size:0.65rem;padding:1px 5px">🛡️ NC</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.65rem;padding:1px 5px">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ NC offen</span>')}
                   ${p.cf === true ? '<span class="tag cf" style="font-size:0.65rem;padding:1px 5px">🐰 CF</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.65rem;padding:1px 5px">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ CF offen</span>')}
@@ -932,15 +939,60 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
                 </div>
               </div>
             </div>
-            <div style="display:flex;gap:6px;flex-shrink:0" onclick="event.stopPropagation()">
-              <button type="button" class="btn-text" style="background:#f1f5f9;color:#334155;padding:6px 9px;border-radius:6px;font-size:0.75rem;font-weight:600" onclick="openCompatibilityCheckModal('${p.id}', '${appState.tab || 'am'}')">🔍 Prüfen</button>
-              ${p.url ? `<a class="btn-text" style="background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:700;text-decoration:none" href="${p.url}" target="_blank" rel="noopener">Shop ↗</a>` : ''}
-              <button type="button" class="btn-text" style="background:#eaf0f6;color:#204060;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:600" onclick="adoptDmProductToSlot('${p.id}', 'am')">+ Morgen</button>
-              <button type="button" class="btn-text" style="background:#f4ece0;color:#5c3e1e;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:600" onclick="adoptDmProductToSlot('${p.id}', 'pm')">+ Abend</button>
+            <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0" onclick="event.stopPropagation()">
+              <div style="display:flex;gap:5px">
+                <button type="button" class="btn-text" style="background:#f1f5f9;color:#334155;padding:5px 8px;border-radius:6px;font-size:0.75rem;font-weight:600" onclick="openCompatibilityCheckModal('${escapeHtml(p.id)}', '${appState.tab || 'am'}')">🔍 Prüfen</button>
+                ${p.url ? `<a class="btn-text" style="background:#fff7ed;color:#9a3412;padding:5px 8px;border-radius:6px;font-size:0.75rem;font-weight:700;text-decoration:none" href="${escapeHtml(p.url)}" target="_blank" rel="noopener">Shop ↗</a>` : ''}
+              </div>
+              <div style="display:flex;gap:5px">
+                <button type="button" class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 8px;border-radius:6px;font-size:0.75rem;font-weight:600" onclick="adoptDmProductToSlot('${escapeHtml(p.id)}', 'am')">+ Morgen</button>
+                <button type="button" class="btn-text" style="background:#f4ece0;color:#5c3e1e;padding:5px 8px;border-radius:6px;font-size:0.75rem;font-weight:600" onclick="adoptDmProductToSlot('${escapeHtml(p.id)}', 'pm')">+ Abend</button>
+              </div>
             </div>
           </div>
         `;
       }).join("");
+
+      let deeplinkSectionHtml = "";
+      if (deeplinks.length > 0) {
+        if (realProds.length > 0) {
+          deeplinkSectionHtml = `
+            <div style="margin-top:10px;padding:9px 12px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px">
+              <div style="font-size:0.74rem;font-weight:700;color:#475569;margin-bottom:6px">In Drogerie-Onlineshops weitersuchen:</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                ${deeplinks.map(dl => `
+                  <a href="${escapeHtml(dl.url)}" target="_blank" rel="noopener" class="btn-text" style="background:#fff;border:1px solid #cbd5e1;color:#1e293b;padding:5px 10px;border-radius:6px;font-size:0.76rem;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px">
+                    🛒 ${escapeHtml(dl.store || dl.retailerLabel || 'Shop')} ↗
+                  </a>
+                `).join("")}
+              </div>
+            </div>
+          `;
+        } else {
+          deeplinkSectionHtml = `
+            <div style="padding:10px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;margin-bottom:8px;text-align:center">
+              <div style="font-weight:600;font-size:0.86rem;color:#9a3412">Kein konkretes Produkt im Sofort-Katalog für „${escapeHtml(searchVal)}“.</div>
+              <div style="font-size:0.76rem;color:#7c2d12;margin-top:2px">Direkt in den Drogerie-Onlineshops nachsehen:</div>
+            </div>
+            ${deeplinks.map(dl => `
+              <div class="alt-card" style="padding:0.7rem 0.9rem;border-color:#fed7aa;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px">
+                <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
+                  <div style="width:40px;height:40px;border-radius:8px;background:#ffedd5;color:#c2410c;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🛒</div>
+                  <div style="min-width:0;flex:1">
+                    <div style="font-weight:700;font-size:0.86rem;color:var(--ink)">${escapeHtml(dl.name || dl.title)}</div>
+                    <div style="font-size:0.74rem;color:var(--muted)">${escapeHtml(dl.store || dl.retailerLabel || 'Onlineshop')}</div>
+                  </div>
+                </div>
+                <div style="flex-shrink:0">
+                  <a href="${escapeHtml(dl.url)}" target="_blank" rel="noopener" class="btn-text" style="background:#ea580c;color:#fff;padding:6px 12px;border-radius:6px;font-size:0.76rem;font-weight:700;text-decoration:none;display:inline-block">Im Shop öffnen ↗</a>
+                </div>
+              </div>
+            `).join("")}
+          `;
+        }
+      }
+
+      return realHtml + deeplinkSectionHtml;
     }
 
     const filtered = getFilteredProducts();
@@ -981,10 +1033,11 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
       if (p.ean) badges.push(`<span class="tag ean" style="font-size:0.68rem;padding:1px 5px">EAN: ${p.ean}</span>`);
 
       return `
-        <div class="alt-card" style="padding:0.75rem 0.9rem;cursor:pointer" onclick="openProductDetail('${p.id}')">
+        <div class="alt-card" style="padding:0.75rem 0.9rem;cursor:pointer;display:flex;align-items:center;gap:10px" onclick="openProductDetail('${p.id}')">
+          ${p.img ? `<img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;background:#fff;flex-shrink:0" onerror="this.style.display='none'">` : ''}
           <div style="flex:1;min-width:0;margin-right:10px">
             <div style="font-weight:600;font-size:0.9rem">${p.brand} ${p.name}</div>
-            <div style="font-size:0.78rem;color:var(--muted)">Wirkstoff: ${p.wirk} · <span style="color:var(--ok)">${p.store || 'DACH'}</span></div>
+            <div style="font-size:0.78rem;color:var(--muted)">Wirkstoff: ${p.wirk} · <span style="color:var(--ok)">${p.store || 'DACH'}</span>${p.price ? ` · <span style="font-weight:700;color:#16a34a">${escapeHtml(p.price)}</span>` : ''}</div>
             ${badges.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${badges.join("")}</div>` : ''}
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0" onclick="event.stopPropagation()">
@@ -1041,6 +1094,12 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
     inputEl.focus();
     inputEl.oninput = (e) => {
       searchVal = e.target.value;
+      const cleanDigits = searchVal.trim().replace(/\D/g, "");
+      const isEanTyped = cleanDigits.length >= 8 && cleanDigits.length <= 14 && /^\d+$/.test(searchVal.trim());
+      if (currentCat !== "dm" && isEanTyped && getFilteredProducts().length === 0) {
+        window.setAddCat('dm');
+        return;
+      }
       if (currentCat === "dm") {
         clearTimeout(dmDebounceTimer);
         dmDebounceTimer = setTimeout(async () => {
@@ -1821,9 +1880,14 @@ function openProductDetail(prodId) {
   const isLive = !!(p._liveSource || (p.source && /live|mcp|obf|web/i.test(p.source)) || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id)));
 
   showModalSheet(`
-    <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">${p.schiene} · ${p.kat}</div>
-    <h2>${p.brand} ${p.name}</h2>
-    <p style="font-size:0.9rem;color:var(--muted);margin-top:-0.2rem">Wirkstoff: <strong>${p.wirk}</strong> · Erhältlich: ${p.store || "DACH-Handel"}</p>
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:0.5rem">
+      ${p.img ? `<img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" style="width:68px;height:68px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;background:#fff;flex-shrink:0" onerror="this.style.display='none'">` : ''}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">${p.schiene || 'Produkt'} · ${p.kat}</div>
+        <h2 style="margin:2px 0 0.25rem">${p.brand} ${p.name}</h2>
+        <p style="font-size:0.86rem;color:var(--muted);margin:0">Wirkstoff: <strong>${p.wirk}</strong> · Erhältlich: ${p.store || "DACH-Handel"}${p.price ? ` · <span style="font-weight:700;color:#16a34a">${escapeHtml(p.price)}</span>` : ''}</p>
+      </div>
+    </div>
 
     ${evalRes ? `
       <div class="pharma-box" style="background:#f8fafc;border:1px solid #cbd5e1;margin:0.8rem 0">

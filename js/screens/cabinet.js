@@ -994,6 +994,19 @@ function loadPrimPreset() {
 
 
 function renderBottle(prod) {
+  if (prod && prod.img) {
+    return `
+      <div style="display:flex;align-items:center;justify-content:center;margin-right:8px;flex-shrink:0">
+        <img src="${escapeHtml(prod.img)}" alt="${escapeHtml(prod.name || '')}" style="width:42px;height:42px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='block'">
+        <div class="bottle-icon" style="display:none">
+          <div class="bottle-neck"></div>
+          <div class="bottle-body ${prod.shape || ''} ${prod.rx ? 'rx' : ''}" style="--b-color:${prod.c || '#2563eb'}">
+            <span class="bottle-label">${(String(prod.brand || prod.name || '').slice(0, 7))}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
   let cap = `<div class="bottle-neck"></div>`;
   let shapeClass = "";
   if (prod.shape === "serum") cap = `<div class="bottle-dropper"></div><div class="bottle-neck"></div>`;
@@ -1887,10 +1900,15 @@ function openCompatibilityCheckModal(prodId, tab) {
   }
 
   showModalSheet(`
-    <div style="font-size:0.74rem;text-transform:uppercase;color:var(--muted);font-weight:700">🔬 Gegenprüfung: Routine- &amp; Hauttyp-Check</div>
-    <h2 style="margin:2px 0 0.4rem;font-size:1.3rem">${p.brand || ""} ${p.name || ""}</h2>
-    <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.9rem">
-      Einsatz: <strong>${tabLabel}</strong> · Kategorie: <strong>${p.kat || "Pflege"}</strong>
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:0.6rem">
+      ${p.img ? `<img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name || '')}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;background:#fff;flex-shrink:0" onerror="this.style.display='none'">` : ''}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.74rem;text-transform:uppercase;color:var(--muted);font-weight:700">🔬 Gegenprüfung: Routine- &amp; Hauttyp-Check</div>
+        <h2 style="margin:2px 0 0.25rem;font-size:1.25rem">${escapeHtml(p.brand || "")} ${escapeHtml(p.name || "")}</h2>
+        <div style="font-size:0.8rem;color:var(--muted)">
+          Einsatz: <strong>${tabLabel}</strong> · Kategorie: <strong>${escapeHtml(p.kat || "Pflege")}</strong>${p.price ? ` · <span style="font-weight:700;color:#16a34a">${escapeHtml(p.price)}</span>` : ''}
+        </div>
+      </div>
     </div>
 
     <!-- Status Banner -->

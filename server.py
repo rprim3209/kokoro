@@ -756,7 +756,9 @@ def product_from_katalog(row: dict) -> dict:
         "gtin": ean,
         "ean": ean,
         "title": name,
+        "name": name,
         "brandName": brand,
+        "brand": brand,
         "price": "",
         "url": link,
         "appLink": link,
@@ -1107,6 +1109,69 @@ def resolve_ean_web(ean: str, meta: dict) -> dict | None:
     return prod
 
 
+def fetch_dmtech_search(query: str, page_size: int = 10) -> list[dict]:
+    """Direkte, schnelle dmtech-Produktsuche (inkl. hochauflösender Produktbilder und Preisen)."""
+    q = str(query or "").strip()
+    if not q:
+        return []
+    url = f"https://product-search.services.dmtech.com/de/search?query={quote(q)}&pageSize={max(1, min(page_size, 20))}"
+    req = Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+    try:
+        with urlopen(req, timeout=4) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            out = []
+            for p in data.get("products", []):
+                tile = p.get("tileData", {})
+                imgs = tile.get("images", [])
+                img = imgs[0].get("tileSrc") if imgs else ""
+                price_val = tile.get("price", {}).get("price", {}).get("current", {}).get("value") or ""
+                self_path = tile.get("self") or ""
+                dan = str(p.get("dan") or tile.get("dan") or "")
+                gtin = str(p.get("gtin") or tile.get("gtin") or "")
+                brand = p.get("brandName") or (tile.get("brand") or {}).get("name") or ""
+                title = p.get("title") or (tile.get("title") or {}).get("tileHeadline") or ""
+                full_url = f"https://www.dm.de{self_path}" if self_path else ""
+
+                kat = "creme"
+                title_lower = (title + " " + brand).lower()
+                if re.search(r"\b(wasch|reiniger|cleanser|reinigung|schaum|gel|mizell|seife)\b", title_lower):
+                    kat = "reiniger"
+                elif re.search(r"\b(serum|ampulle|retinol|niacinamid|vitamin\s*c|aha|bha|peeling|elixier)\b", title_lower):
+                    kat = "serum"
+                elif re.search(r"\b(sonne|sun|spf|lfs|uv)\b", title_lower):
+                    kat = "spf"
+                elif re.search(r"\b(shampoo|haar|spülung|conditioner)\b", title_lower):
+                    kat = "haar"
+                elif re.search(r"\b(windel|wundschutz|po-creme|zink|wickel)\b", title_lower):
+                    kat = "windel"
+
+                safe_id = re.sub(r"\W+", "_", dan or gtin or title)[:24].strip("_")
+                out.append({
+                    "id": f"dmtech_{safe_id}",
+                    "dan": dan,
+                    "gtin": gtin,
+                    "ean": gtin,
+                    "title": title,
+                    "name": title,
+                    "brand": brand,
+                    "brandName": brand,
+                    "price": price_val,
+                    "img": img,
+                    "image_url": img,
+                    "kat": kat,
+                    "relativeProductUrl": self_path,
+                    "url": full_url,
+                    "appLink": full_url,
+                    "store": "dm",
+                    "source": "dm_live",
+                    "deeplinkOnly": False,
+                    "wirk": f"dm Sortiment · {price_val}" if price_val else "dm Sortiment"
+                })
+            return out
+    except Exception as exc:
+        print(f"[dmtech-search] Fehler bei Suche '{q}':", exc)
+        return []
+
 def resolve_ean_identity(ean: str, country: str, meta: dict) -> tuple[list, str, str | None]:
     """EAN/GTIN Identity-Auflösung vor alleinigem Deeplink-Card.
     Returns (products, note, shopSearchUrlHint).
@@ -1119,6 +1184,18 @@ def resolve_ean_identity(ean: str, country: str, meta: dict) -> tuple[list, str,
     if hit:
         hit["country"] = country
         hit["countries"] = [country] if country else []
+        # Hochauflösendes Produktbild & Preis aus dmtech anreichern falls im CSV nicht vorhanden
+        if not hit.get("img") or not hit.get("price"):
+            dmtech_hits = fetch_dmtech_search(raw, 1)
+            if dmtech_hits:
+                if not hit.get("img") and dmtech_hits[0].get("img"):
+                    hit["img"] = dmtech_hits[0]["img"]
+                    hit["image_url"] = dmtech_hits[0]["img"]
+                if not hit.get("price") and dmtech_hits[0].get("price"):
+                    hit["price"] = dmtech_hits[0]["price"]
+                if dmtech_hits[0].get("url") and not hit.get("url"):
+                    hit["url"] = dmtech_hits[0]["url"]
+                    hit["appLink"] = dmtech_hits[0]["appLink"]
         if not hit.get("url"):
             hit["url"] = shop_hint
             hit["appLink"] = shop_hint
@@ -1134,6 +1211,18 @@ def resolve_ean_identity(ean: str, country: str, meta: dict) -> tuple[list, str,
             hit["appLink"] = shop_hint
             hit["retailerLabel"] = f"{meta.get('label')} · Identity via Pilot-CSV (kein lokaler Bestand)"
         return [ensure_product_price_str(hit)], "EAN: dm Pilot-CSV", shop_hint
+
+    # 2b) dmtech Direktsuche (Echtzeit-Identität mit echtem hochauflösendem Produktfoto & Preis!)
+    dmtech_hits = fetch_dmtech_search(raw, 1)
+    if dmtech_hits:
+        hit = dmtech_hits[0]
+        hit["country"] = country
+        hit["countries"] = [country] if country else []
+        hit["retailerLabel"] = f"{meta.get('label')} · EAN Identität via dm-Katalog"
+        if country and country != "DE":
+            hit["url"] = shop_hint
+            hit["appLink"] = shop_hint
+        return [ensure_product_price_str(hit)], "EAN: dm Live-Katalog (inkl. Produktbild & Details)", shop_hint
 
     # 3) OBF barcode (world)
     hit = search_obf_barcode(raw)
@@ -1248,9 +1337,18 @@ def live_search(query: str, country: str, page_size: int) -> dict:
             products.append(dm_card)
             products.append(b_card)
             products.append(m_card)
+        # Direkte Produktsuche bei dmtech für echte Produktkarten mit Bild
+        dmtech_prods = fetch_dmtech_search(q, page_size)
+        if dmtech_prods:
+            for p in dmtech_prods:
+                p["country"] = "AT"
+                p["countries"] = ["AT"]
+                p["retailerLabel"] = "dm Österreich"
+                ensure_product_price_str(p)
+            products = dmtech_prods + products
         note = (
-            "Österreich Live-Suche: dm.at, bipa.at & mueller.at (Deep-Links) + "
-            "Open Beauty Facts (Länderfilter AT). DE-MCP wird ehrlich nicht als lokaler Bestand gezeigt."
+            "Österreich Live-Suche: dm Sortiment (Live-Treffer) + "
+            "dm.at, bipa.at & mueller.at (Onlineshop-Suche)."
         )
         obf = search_obf(q, cc, max(1, page_size - 3))
         products.extend(obf)

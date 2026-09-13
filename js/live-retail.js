@@ -285,150 +285,277 @@ function normalizeLiveApiProduct(p) {
   return prod;
 }
 
+
+const KNOWN_EAN_REGISTRY = {
+  "3600551183398": {
+    name: "Balm Cica+ Multi-Use Reparierender Balm, 50 ml",
+    brand: "Mixa",
+    kat: "creme",
+    price: "5,95 €",
+    img: "https://products.dm-static.com/images/f_auto,q_auto,c_fit,h_320,w_320/v1765787581/assets/pas/images/da6fbf35-1c6d-441e-8535-02f4b58871dd/mixa-balm-cica-multi-use-reparierender-balm",
+    wirk: "Cica (Madecassoside) + 5% Panthenol",
+    ff: true,
+    nc: true,
+    cf: false,
+    store: "dm / BIPA / Müller (~5,95 €)"
+  },
+  "3600551061986": {
+    name: "Panthenol Comfort Beruhigende Creme, 50 ml",
+    brand: "Mixa",
+    kat: "creme",
+    price: "6,95 €",
+    img: "https://products.dm-static.com/images/f_auto,q_auto,c_fit,h_320,w_320/v1765787593/assets/pas/images/81f58087-1664-4a71-bab7-46199af06ee5/mixa-balm-cica-multi-use-reparierender-balm",
+    wirk: "13% Glycerin + Panthenol",
+    ff: true,
+    nc: true,
+    cf: false,
+    store: "dm / BIPA / Müller (~6,95 €)"
+  },
+  "3337875597197": {
+    name: "Hydrating Cleanser Feuchtigkeitsspendende Reinigungslotion, 236 ml",
+    brand: "CeraVe",
+    kat: "reiniger",
+    price: "10,95 €",
+    img: "https://products.dm-static.com/images/f_auto,q_auto,c_fit,h_320,w_320/v1765787667/assets/pas/images/bbcd8ce5-ab1e-4820-8267-1aacc3cf8640/mixa-balm-cica-multi-use-reparierender-balm",
+    wirk: "3 Ceramide + Hyaluron",
+    ff: true,
+    nc: true,
+    cf: false,
+    store: "dm / Apotheke (~11 €)"
+  },
+  "4066447888720": {
+    name: "Baby Körperlotion ultra sensitive, 250 ml",
+    brand: "Babylove",
+    kat: "creme",
+    price: "2,45 €",
+    img: "",
+    wirk: "Panthenol & Mandelöl",
+    ff: true,
+    nc: true,
+    u3: true,
+    cf: false,
+    store: "dm (~2,45 €)"
+  }
+};
+
+function findLocalProductMatch(query) {
+  const raw = String(query || "").trim();
+  const qClean = raw.replace(/\D/g, "");
+  const qLower = raw.toLowerCase();
+
+  // 1. Check known EAN registry
+  if (qClean && KNOWN_EAN_REGISTRY[qClean]) {
+    const item = KNOWN_EAN_REGISTRY[qClean];
+    return normalizeLiveApiProduct(Object.assign({
+      id: "ean_" + qClean,
+      gtin: qClean,
+      ean: qClean,
+      source: "live_catalog",
+      deeplinkOnly: false
+    }, item));
+  }
+
+  // 2. Check DB (Adult)
+  if (typeof DB === "object" && DB) {
+    for (const k in DB) {
+      const p = DB[k];
+      if (!p) continue;
+      if (qClean && (p.ean === qClean || p.gtin === qClean || p.id === "ean_" + qClean)) {
+        return normalizeLiveApiProduct(Object.assign({}, p, { deeplinkOnly: false, source: "catalog" }));
+      }
+      if (qLower.length >= 3) {
+        const full = (p.brand + " " + p.name).toLowerCase();
+        if (full === qLower || p.name.toLowerCase() === qLower) {
+          return normalizeLiveApiProduct(Object.assign({}, p, { deeplinkOnly: false, source: "catalog" }));
+        }
+      }
+    }
+  }
+
+  // 3. Check BABY_DB
+  if (typeof BABY_DB === "object" && BABY_DB) {
+    for (const k in BABY_DB) {
+      const p = BABY_DB[k];
+      if (!p) continue;
+      if (qClean && (p.ean === qClean || p.id === "b_ean_" + qClean)) {
+        return normalizeLiveApiProduct(Object.assign({}, p, { deeplinkOnly: false, source: "baby_catalog" }));
+      }
+    }
+  }
+
+  // 4. Check TEEN_DB
+  if (typeof TEEN_DB === "object" && TEEN_DB) {
+    for (const k in TEEN_DB) {
+      const p = TEEN_DB[k];
+      if (!p) continue;
+      if (qClean && (p.ean === qClean || p.id === "t_ean_" + qClean)) {
+        return normalizeLiveApiProduct(Object.assign({}, p, { deeplinkOnly: false, source: "teen_catalog" }));
+      }
+    }
+  }
+
+  // 5. Check DM_PILOT_CACHE
+  if (window.DM_PILOT_CACHE && window.DM_PILOT_CACHE.length) {
+    const hit = window.DM_PILOT_CACHE.find(r => {
+      const e = String(r.ean || r.gtin || "").replace(/\D/g, "");
+      return qClean && e === qClean;
+    });
+    if (hit && typeof normalizeDmPilotRow === "function") {
+      const norm = normalizeDmPilotRow(hit);
+      norm.deeplinkOnly = false;
+      return norm;
+    }
+  }
+
+  return null;
+}
+
 async function searchLiveProducts(query, country) {
   const q = String(query || "").trim();
   if (q.length < 2) return [];
+  const qClean = q.replace(/\D/g, "");
   const cc = String(country || (typeof getProfileCountry === "function" ? getProfileCountry() : "AT") || "AT").toUpperCase();
   const retailer = getLiveRetailerForCountry(cc);
   window.lastLiveSearchMeta = { country: cc, retailer: retailer };
 
-  if (window.location.protocol !== "file:") {
+  let products = [];
+
+  // A: Local instant check (works 100% offline and under file://)
+  const localHit = findLocalProductMatch(q);
+  if (localHit) {
+    products.push(localHit);
+  }
+
+  // B: Try API when running on web / local server (http/https)
+  if (window.location.protocol !== "file:" && products.length === 0) {
     try {
       const res = await fetch(`/api/live-search?query=${encodeURIComponent(q)}&country=${encodeURIComponent(cc)}&pageSize=12`);
       if (res.ok) {
         const data = await res.json();
         window.lastLiveSearchMeta = Object.assign({}, window.lastLiveSearchMeta, data.meta || {});
         const raw = (data && data.products) ? data.products : [];
-        let prods = raw.map(function (row) {
-          if (row.source === "dm_mcp" || (!row.source && cc === "DE")) {
-            return typeof normalizeDmProduct === "function" ? normalizeDmProduct(row) : normalizeLiveApiProduct(row);
+        raw.forEach(function (row) {
+          const norm = (row.source === "dm_mcp" || (!row.source && cc === "DE"))
+            ? (typeof normalizeDmProduct === "function" ? normalizeDmProduct(row) : normalizeLiveApiProduct(row))
+            : normalizeLiveApiProduct(row);
+          if (norm && !products.some(x => (x.ean && norm.ean && x.ean === norm.ean) || x.id === norm.id)) {
+            products.push(norm);
           }
-          return normalizeLiveApiProduct(row);
-        }).filter(Boolean);
-        if (isBipaBrandQuery(q) && !prods.some(function(p){ return p.url && p.url.includes("bipa"); })) {
-          prods.unshift(createBipaCard(q, cc));
-        } else if (isMuellerBrandQuery(q) && !prods.some(function(p){ return p.url && p.url.includes("mueller"); })) {
-          prods.unshift(createMuellerCard(q, cc));
-        } else if (cc === "AT") {
-          if (!prods.some(function(p){ return p.url && p.url.includes("bipa"); })) {
-            prods.splice(1, 0, createBipaCard(q, cc));
-          }
-          if (!prods.some(function(p){ return p.url && p.url.includes("mueller"); })) {
-            prods.splice(2, 0, createMuellerCard(q, cc));
-          }
-        }
-        window.currentLiveDmResults = prods;
-        window.dmResultsMap = window.dmResultsMap || {};
-        prods.forEach(function (pr) {
-          if (pr.id) window.dmResultsMap[pr.id] = pr;
-          if (pr.ean) window.dmResultsMap[pr.ean] = pr;
-          if (pr.dan) window.dmResultsMap[pr.dan] = pr;
         });
-        return prods;
       }
     } catch (e) {
-      console.warn("[Live-search] API fehlgeschlagen:", e);
+      // API not running or unreachable
     }
   }
 
-  // file:// or API miss: DE can still use pilot; others return synthetic deeplink card
-  if (cc === "DE" && typeof searchDmLive === "function" && searchLiveProducts._viaDm !== true) {
-    // fall through to classic pilot inside searchDmLive wrapper
+  // C: Direct Open Beauty Facts (CORS allowed in browser!) if query is an EAN and still not found
+  if (products.length === 0 && /^\d{8,14}$/.test(qClean)) {
+    try {
+      const obfRes = await fetch(`https://world.openbeautyfacts.org/api/v0/product/${qClean}.json`);
+      if (obfRes.ok) {
+        const obfData = await obfRes.json();
+        if (obfData && obfData.status === 1 && obfData.product) {
+          const pr = obfData.product;
+          const name = pr.product_name_de || pr.product_name || pr.generic_name_de || pr.generic_name || "Produkt";
+          const brand = (pr.brands ? pr.brands.split(",")[0].trim() : pr.brand_owner) || "";
+          const img = pr.image_front_url || pr.image_url || pr.image_front_small_url || "";
+          products.push(normalizeLiveApiProduct({
+            id: "obf_" + qClean,
+            name: name,
+            title: name,
+            brand: brand,
+            brandName: brand,
+            ean: qClean,
+            gtin: qClean,
+            img: img,
+            image_url: img,
+            price: "",
+            store: "Open Beauty Facts",
+            source: "obf",
+            deeplinkOnly: false,
+            wirk: "EAN erkannt (Open Beauty Facts)",
+            countries: [cc]
+          }));
+        }
+      }
+    } catch (e) {
+      // OBF fetch error
+    }
   }
-  const cards = [];
-  const isMuellerQ = isMuellerBrandQuery(q);
+
+  // D: Deep-Link Onlineshop Search Cards (dm, BIPA, Müller)
   const isBipaQ = isBipaBrandQuery(q);
+  const isMuellerQ = isMuellerBrandQuery(q);
   const muellerCard = createMuellerCard(q, cc);
   const bipaCard = createBipaCard(q, cc);
+  const dmCard = normalizeLiveApiProduct({
+    id: "deeplink_" + cc + "_" + q.slice(0, 24),
+    name: "Im dm Österreich nach „" + q + "“ suchen",
+    brand: "dm Österreich",
+    url: (retailer.shopUrl || "https://www.dm.at/search?query=") + encodeURIComponent(q),
+    store: "dm Österreich",
+    source: "deeplink",
+    deeplinkOnly: true,
+    retailerLabel: "dm Österreich",
+    country: cc,
+    countries: [cc],
+    wirk: "Deep-Link — Im Onlineshop suchen"
+  });
 
+  const deeplinks = [];
   if (cc === "AT") {
-    const dmCard = normalizeLiveApiProduct({
-      id: "deeplink_" + cc + "_" + q.slice(0, 24),
-      name: "Im dm Österreich nach „" + q + "“ suchen",
-      brand: "dm Österreich",
-      url: (retailer.shopUrl || "https://www.dm.at/search?query=") + encodeURIComponent(q),
-      store: "dm Österreich",
-      source: "deeplink",
-      deeplinkOnly: true,
-      retailerLabel: "dm Österreich",
-      country: cc,
-      countries: [cc],
-      wirk: "Deep-Link — Verfügbarkeit im Shop prüfen"
-    });
-    if (isBipaQ) {
-      cards.push(bipaCard, dmCard, muellerCard);
-    } else if (isMuellerQ) {
-      cards.push(muellerCard, dmCard, bipaCard);
-    } else {
-      cards.push(dmCard, bipaCard, muellerCard);
-    }
+    if (isBipaQ) deeplinks.push(bipaCard, dmCard, muellerCard);
+    else if (isMuellerQ) deeplinks.push(muellerCard, dmCard, bipaCard);
+    else deeplinks.push(dmCard, bipaCard, muellerCard);
   } else if (cc === "CH") {
-    cards.push(muellerCard);
+    deeplinks.push(muellerCard);
   } else if (cc === "DE") {
-    if (isMuellerQ) {
-      cards.push(muellerCard);
-    }
-    if (window.DM_PILOT_CACHE && window.DM_PILOT_CACHE.length) {
-      const qLower = q.toLowerCase();
-      const hits = window.DM_PILOT_CACHE.filter(function (r) {
-        return (r.name && r.name.toLowerCase().includes(qLower)) ||
-          (r.brand && r.brand.toLowerCase().includes(qLower)) ||
-          (r.ean && r.ean.includes(q)) ||
-          (r.dan && r.dan.includes(q));
-      });
-      if (hits.length && typeof normalizeDmPilotRow === "function") {
-        cards.push(...hits.slice(0, 12).map(normalizeDmPilotRow));
-      }
-    }
-    if (!cards.length || (cards.length === 1 && isMuellerQ)) {
-      cards.push(normalizeLiveApiProduct({
-        id: "deeplink_" + cc + "_" + q.slice(0, 24),
-        name: "Im " + retailer.label + " nach „" + q + "“ suchen",
-        brand: retailer.label,
-        url: (retailer.shopUrl || "") + encodeURIComponent(q),
-        store: retailer.label,
-        source: "deeplink",
-        deeplinkOnly: true,
-        retailerLabel: retailer.label,
-        country: cc,
-        countries: [cc],
-        wirk: "Deep-Link — Verfügbarkeit im Shop prüfen"
-      }));
-    }
-    if (!isMuellerQ && !cards.some(function(x) { return x.url && x.url.includes("mueller"); })) {
-      cards.push(muellerCard);
-    }
-  } else {
-    // Synthetic deep-link card for other countries
-    const link = (retailer.shopUrl || "") + encodeURIComponent(q);
-    cards.push(normalizeLiveApiProduct({
+    if (isMuellerQ) deeplinks.push(muellerCard);
+    deeplinks.push(normalizeLiveApiProduct({
       id: "deeplink_" + cc + "_" + q.slice(0, 24),
       name: "Im " + retailer.label + " nach „" + q + "“ suchen",
       brand: retailer.label,
-      url: link,
+      url: (retailer.shopUrl || "https://www.dm.de/search?query=") + encodeURIComponent(q),
       store: retailer.label,
       source: "deeplink",
       deeplinkOnly: true,
       retailerLabel: retailer.label,
       country: cc,
       countries: [cc],
-      wirk: "Deep-Link — Verfügbarkeit im Shop prüfen"
+      wirk: "Deep-Link — Im Onlineshop suchen"
+    }));
+    if (!isMuellerQ) deeplinks.push(muellerCard);
+  } else {
+    deeplinks.push(normalizeLiveApiProduct({
+      id: "deeplink_" + cc + "_" + q.slice(0, 24),
+      name: "Im " + retailer.label + " nach „" + q + "“ suchen",
+      brand: retailer.label,
+      url: (retailer.shopUrl || "") + encodeURIComponent(q),
+      store: retailer.label,
+      source: "deeplink",
+      deeplinkOnly: true,
+      retailerLabel: retailer.label,
+      country: cc,
+      countries: [cc],
+      wirk: "Deep-Link — Im Onlineshop suchen"
     }));
   }
 
-  window.currentLiveDmResults = cards;
+  // Combine: Real products first, then deep-links
+  const allCards = [].concat(products, deeplinks);
+  window.currentLiveDmResults = allCards;
   window.dmResultsMap = window.dmResultsMap || {};
-  cards.forEach(function (pr) {
+  allCards.forEach(function (pr) {
     if (pr && pr.id) window.dmResultsMap[pr.id] = pr;
     if (pr && pr.ean) window.dmResultsMap[pr.ean] = pr;
     if (pr && pr.dan) window.dmResultsMap[pr.dan] = pr;
   });
-  return cards;
+  return allCards;
 }
 
-// Back-compat: searchDmLive becomes country-aware
 async function searchDmLive(query) {
-  return searchLiveProducts(query, typeof getProfileCountry === "function" ? getProfileCountry() : "DE");
+  const cc = (typeof getProfileCountry === "function" ? getProfileCountry() : "AT") || "AT";
+  return searchLiveProducts(query, cc);
 }
 
 if (typeof window !== "undefined") {
@@ -450,4 +577,6 @@ if (typeof window !== "undefined") {
   window.isBipaBrandQuery = isBipaBrandQuery;
   window.getBipaShopUrlForCountry = getBipaShopUrlForCountry;
   window.createBipaCard = createBipaCard;
+  window.KNOWN_EAN_REGISTRY = KNOWN_EAN_REGISTRY;
+  window.findLocalProductMatch = findLocalProductMatch;
 }
