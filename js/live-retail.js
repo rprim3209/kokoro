@@ -242,10 +242,34 @@ function liveDmHonestyBadgeHtml(cc) {
   return '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px" title="' + (h.short || "") + '">' + (h.badge || h.chip) + "</span>";
 }
 
+/** Preis immer als String — nie {formattedValue:...} → "[object Object]". */
+function formatLivePrice(price) {
+  if (price == null) return "";
+  if (typeof price === "string") return price.trim();
+  if (typeof price === "number" && isFinite(price)) return String(price);
+  if (typeof price === "object") {
+    if (Object.prototype.hasOwnProperty.call(price, "formattedValue")) {
+      return String(price.formattedValue == null ? "" : price.formattedValue).trim();
+    }
+    if (price.value != null && price.value !== "") {
+      const cur = price.currency || price.currencySymbol || "€";
+      return String(price.value).trim() + (String(price.value).includes(cur) ? "" : " " + cur);
+    }
+    if (price.amount != null && price.amount !== "") {
+      const cur = price.currency || price.currencySymbol || "€";
+      return String(price.amount).trim() + (String(price.amount).includes(cur) ? "" : " " + cur);
+    }
+    return "";
+  }
+  return String(price);
+}
+
 function normalizeLiveApiProduct(p) {
   if (!p) return null;
   // Already normalized dm shape
   if (p.id && (p.name || p.brand) && p._liveSource) {
+    p.price = formatLivePrice(p.price);
+    if (p.wirk != null && typeof p.wirk !== "string") p.wirk = formatLivePrice(p.wirk) || String(p.wirk);
     if (typeof enrichProductClasses === "function") return enrichProductClasses(p);
     return p;
   }
@@ -266,13 +290,13 @@ function normalizeLiveApiProduct(p) {
     klassen: [],
     shape: "tube",
     c: "#fecaca",
-    wirk: p.wirk || ((p.price && p.price.formattedValue) ? p.price.formattedValue : (p.price || "")) || source,
+    wirk: p.wirk || formatLivePrice(p.price) || source,
     store: p.store || (p.retailerLabel || source),
     ean: ean,
     dan: dan,
     url: url,
     img: p.img || p.image_url || "",
-    price: (p.price && p.price.formattedValue) ? p.price.formattedValue : (p.price || ""),
+    price: formatLivePrice(p.price),
     ff: p.ff != null ? p.ff : null,
     cf: p.cf != null ? p.cf : null,
     nc: p.nc != null ? p.nc : null,
@@ -761,6 +785,7 @@ if (typeof window !== "undefined") {
   window.getLiveSearchHonesty = getLiveSearchHonesty;
   window.getLiveDmHonesty = getLiveDmHonesty;
   window.liveDmHonestyBadgeHtml = liveDmHonestyBadgeHtml;
+  window.formatLivePrice = formatLivePrice;
   window.normalizeLiveApiProduct = normalizeLiveApiProduct;
   window.searchLiveProducts = searchLiveProducts;
   window.searchDmLive = searchDmLive;

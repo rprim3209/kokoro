@@ -45,7 +45,7 @@ function mountProfileDmLiveSearch(opts) {
           <div style="min-width:0;flex:1">
             <div style="font-weight:700;font-size:0.84rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.brand)} ${escapeHtml(p.name)}</div>
             <div style="font-size:0.74rem;color:var(--muted)">
-              <span style="color:#16a34a;font-weight:700">${escapeHtml(p.price || "dm")}</span>
+              <span style="color:#16a34a;font-weight:700">${(typeof formatLivePrice==="function"?escapeHtml(formatLivePrice(p.price)||"dm"):(p.price&&typeof p.price==="object"?escapeHtml(String(p.price.formattedValue||"dm")):escapeHtml(p.price||"dm")))}</span>
               ${p.ff === true ? ' · <span style="color:#16a34a;font-weight:600">🌸 Parfümfrei</span>' : (p.ff === false ? ' · <span style="color:#d97706">⚠️ Parfümiert</span>' : '')}
               · ${typeof liveDmHonestyBadgeHtml==="function" ? liveDmHonestyBadgeHtml() : '<span style="color:#991b1b;font-weight:600">Live dm</span>'}
             </div>
@@ -1054,7 +1054,7 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
                   <span style="color:#0f172a">${escapeHtml(p.brand)}</span> ${escapeHtml(p.name)}
                 </div>
                 <div style="font-size:0.76rem;color:var(--muted);margin-top:2px">
-                  ${p.price ? `<span style="font-weight:700;color:#16a34a">${escapeHtml(p.price)}</span> · ` : ''}
+                  ${p.price ? `<span style="font-weight:700;color:#16a34a">${(typeof formatLivePrice==="function"?escapeHtml(formatLivePrice(p.price)||""):(typeof p.price==="object"?"":escapeHtml(p.price||"")))}</span> · ` : ''}
                   <span>${escapeHtml(p.wirk || p.store || '')}</span>
                   ${p.ean ? ` · <span style="font-family:monospace;font-size:0.73rem">EAN ${escapeHtml(p.ean)}</span>` : ''}
                   ${p.url ? ` · <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline" onclick="event.stopPropagation()">${escapeHtml(shopLinkText)}</a>` : ''}
@@ -1168,7 +1168,7 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
           ${p.img ? `<img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;background:#fff;flex-shrink:0" onerror="this.style.display='none'">` : ''}
           <div style="flex:1;min-width:0;margin-right:10px">
             <div style="font-weight:600;font-size:0.9rem">${p.brand} ${p.name}</div>
-            <div style="font-size:0.78rem;color:var(--muted)">Wirkstoff: ${p.wirk} · <span style="color:var(--ok)">${p.store || 'DACH'}</span>${p.price ? ` · <span style="font-weight:700;color:#16a34a">${escapeHtml(p.price)}</span>` : ''}</div>
+            <div style="font-size:0.78rem;color:var(--muted)">Wirkstoff: ${p.wirk} · <span style="color:var(--ok)">${p.store || 'DACH'}</span>${p.price ? ` · <span style="font-weight:700;color:#16a34a">${(typeof formatLivePrice==="function"?escapeHtml(formatLivePrice(p.price)||""):(typeof p.price==="object"?"":escapeHtml(p.price||"")))}</span>` : ''}</div>
             ${badges.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${badges.join("")}</div>` : ''}
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0" onclick="event.stopPropagation()">
@@ -1636,7 +1636,7 @@ function openScanModal() {
             <div style="min-width:0;flex:1">
               <div style="font-weight:700;font-size:0.84rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.brand || '')} ${escapeHtml(p.name || '')}</div>
               <div style="font-size:0.74rem;color:var(--muted)">
-                ${p.price ? `<span style="color:#16a34a;font-weight:700">${escapeHtml(p.price)}</span> · ` : ''}
+                ${p.price ? `<span style="color:#16a34a;font-weight:700">${(typeof formatLivePrice==="function"?escapeHtml(formatLivePrice(p.price)||""):(typeof p.price==="object"?"":escapeHtml(p.price||"")))}</span> · ` : ''}
                 ${p.ff === true ? '<span style="color:#16a34a;font-weight:600">🌸 Parfümfrei</span> · ' : (p.ff === false ? '<span style="color:#d97706">⚠️ Parfüm</span> · ' : '')}
                 ${p.nc === true ? '<span style="color:#2563eb;font-weight:600">🛡️ NC</span> · ' : ''}
                 ${p.cf === true ? '<span style="color:#6b21a8;font-weight:600">🐰 CF</span> · ' : ''}
@@ -2121,7 +2121,7 @@ function openProductDetail(prodId) {
       <div style="flex:1;min-width:0">
         <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">${p.schiene || 'Produkt'} · ${p.kat}</div>
         <h2 style="margin:2px 0 0.25rem">${p.brand} ${p.name}</h2>
-        <p style="font-size:0.86rem;color:var(--muted);margin:0">Wirkstoff: <strong>${p.wirk}</strong> · Erhältlich: ${p.store || "DACH-Handel"}${p.price ? ` · <span style="font-weight:700;color:#16a34a">${escapeHtml(p.price)}</span>` : ''}</p>
+        <p style="font-size:0.86rem;color:var(--muted);margin:0">Wirkstoff: <strong>${p.wirk}</strong> · Erhältlich: ${p.store || "DACH-Handel"}${p.price ? ` · <span style="font-weight:700;color:#16a34a">${(typeof formatLivePrice==="function"?escapeHtml(formatLivePrice(p.price)||""):(typeof p.price==="object"?"":escapeHtml(p.price||"")))}</span>` : ''}</p>
       </div>
     </div>
 

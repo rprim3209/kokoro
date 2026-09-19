@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -209,6 +209,88 @@
     const stored = JSON.parse(localStorage.getItem("schrank"));
     assert(stored && stored.profiles && stored.profiles.length === 2, "2 profiles persisted in localStorage");
     assert(stored.profiles.some(p => p.name === "Baby Emma"), "Baby Emma persisted in localStorage");
+
+    // ==========================================
+    // 8. DIRECT SKIN TYPE SELECTION & EMPTY CABINET ON NULL
+    // ==========================================
+    log.push("--- 8. DIRECT SKIN TYPE & EMPTY START ---");
+    openNewProfileModal();
+    selectNewProfileCategory("adult");
+    const adultInp = document.getElementById("newProfileNameInput");
+    adultInp.value = "Maximilian Trocken";
+    selectNewProfileMode("direct");
+    selectNewProfileSkinType("dry_fragile");
+    selectNewProfileCabinetFill("empty"); // explicit empty
+    submitCreateProfile();
+
+    assert(appState.profile === "adult", "New profile Maximilian Trocken is adult");
+    assert(getActiveProfile().name === "Maximilian Trocken", "Active profile is Maximilian Trocken");
+    assert(getActiveProfile().subtitle === "Trocken & Sensibel", "Subtitle set to Trocken & Sensibel");
+    assert(appState.am.length === 0, "Morning routine starts completely on 0 (am.length === 0)");
+    assert(appState.pm_a.length === 0, "Evening routine starts completely on 0 (pm_a.length === 0)");
+    
+    // Check empty shelf UI contains action buttons
+    const emptyShelfEl = document.querySelector(".empty-shelf");
+    assert(!!emptyShelfEl, "Empty shelf container rendered in cabinet");
+    assert(emptyShelfEl.innerHTML.includes("openQuizModal"), "Empty shelf has Quiz button");
+    assert(emptyShelfEl.innerHTML.includes("openSkinTypePickerModal"), "Empty shelf has Skin-Type Picker button");
+    assert(emptyShelfEl.innerHTML.includes("loadStarterRoutineForActiveProfile"), "Empty shelf has Starter Routine button");
+
+    // ==========================================
+    // 9. LOAD STARTER ROUTINE FOR ACTIVE PROFILE
+    // ==========================================
+    log.push("--- 9. LOAD STARTER ROUTINE ---");
+    loadStarterRoutineForActiveProfile();
+    assert(appState.am.length > 0, "Morning routine now populated with starter items");
+    assert(appState.pm_a.length > 0, "Evening routine now populated with starter items");
+
+    // ==========================================
+    // 10. DIRECT SKIN TYPE SELECTION WITH STARTER ROUTINE FILL
+    // ==========================================
+    log.push("--- 10. DIRECT SKIN TYPE WITH STARTER ROUTINE ---");
+    openNewProfileModal();
+    selectNewProfileCategory("teen");
+    const teenStarterInp = document.getElementById("newProfileNameInput");
+    teenStarterInp.value = "Mia Teenie Starter";
+    selectNewProfileMode("direct");
+    selectNewProfileSkinType("teen_acne");
+    selectNewProfileCabinetFill("starter"); // starter routine
+    submitCreateProfile();
+
+    assert(appState.profile === "teen", "New profile Mia Teenie Starter is teen");
+    assert(getActiveProfile().name === "Mia Teenie Starter", "Active profile is Mia Teenie Starter");
+    assert(getActiveProfile().subtitle === "Basis & Akne", "Subtitle set to Basis & Akne");
+    const miaProds = Object.values(appState.teen).flat();
+    assert(miaProds.length > 0, "Teen cabinet immediately populated with starter routine (count: " + miaProds.length + ")");
+
+    // ==========================================
+    // 11. QUICK SKIN TYPE SWITCHER MODAL
+    // ==========================================
+    log.push("--- 11. QUICK SKIN TYPE SWITCHER ---");
+    openSkinTypePickerModal();
+    assert(document.getElementById("modalContainer").innerHTML.includes("Hauttyp anpassen"), "Skin type picker modal rendered");
+    applySkinTypeToActiveProfile("teen_dry");
+    assert(getActiveProfile().subtitle === "Trocken & Sensibel", "Subtitle updated to Trocken & Sensibel");
+    assert(getActiveProfile().tags.includes("Sensibel"), "Tags updated to Sensibel");
+
+    // ==========================================
+    // 12. NEW PROFILE WITH QUIZ MODE
+    // ==========================================
+    log.push("--- 12. NEW PROFILE QUIZ MODE ---");
+    let quizLaunched = false;
+    const origOpenQuiz = window.openQuizModal;
+    window.openQuizModal = function() { quizLaunched = true; };
+    
+    openNewProfileModal();
+    selectNewProfileCategory("adult");
+    const quizInp = document.getElementById("newProfileNameInput");
+    quizInp.value = "Quiz Tester";
+    selectNewProfileMode("quiz");
+    submitCreateProfile();
+
+    assert(quizLaunched === true, "Quiz modal automatically launched for quiz mode profile");
+    assert(appState.am.length === 0 && appState.pm_a.length === 0, "Profile for Quiz started completely clean on 0");
+    window.openQuizModal = origOpenQuiz;
 
     log.push("ALL_DYNAMIC_PROFILE_TESTS_PASSED");
   } catch(err) {

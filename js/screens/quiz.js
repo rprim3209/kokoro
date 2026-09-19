@@ -770,3 +770,5 @@ function applyStarterRoutine() {
   showToast(`🎯 Starter-Routine (${sub}) in den Schrank gestellt!`);
 }
 
+window.openQuizModal = openQuizModal;
+

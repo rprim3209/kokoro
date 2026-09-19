@@ -271,6 +271,8 @@ function renderBabyCabinet(container) {
         </div>
       </div>
       <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn-text" onclick="openSkinTypePickerModal()" style="color:#1d4ed8;font-weight:600">⚡ Hauttyp</button>
+        <button class="btn-text" onclick="openQuizModal()" style="color:#1d4ed8">Quiz</button>
         <button class="btn-text" onclick="loadBabyPreset()" style="color:#1d4ed8;font-weight:600">Beispiel</button>
         <button class="btn-text" onclick="clearBabyCabinet()" style="color:#92580a">Leeren</button>
         <button class="btn-text" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
@@ -300,12 +302,21 @@ function renderBabyCabinet(container) {
     html += `
       <div style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #bfdbfe;border-radius:14px;margin:0.8rem 0 1.2rem">
         <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">👶</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Noch keine Produkte — Scan oder Beispiel</div>
-        <div style="font-size:0.85rem;color:var(--muted);max-width:420px;margin:4px auto 14px;line-height:1.45">
-          Wähle milde, babygerechte Produkte für deinen Liebling oder übernimm geprüfte Empfehlungen mit 1 Klick aus dem Pädiatrie-Ideal-Vergleich darunter.
+        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Baby-Schrank ist noch leer (auf Null)</div>
+        <div style="font-size:0.85rem;color:var(--muted);max-width:440px;margin:4px auto 14px;line-height:1.45">
+          Wähle den Hauttyp deines Babys, starte den Pflege-Check, lade geprüfte Empfehlungen oder stelle eigene Produkte hinein.
         </div>
         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button type="button" class="btn-scan" style="padding:7px 14px;font-size:0.85rem;background:#2563eb" onclick="openAddBabyProductModal('all', 'baby')">
+          <button type="button" class="btn-scan" style="padding:7px 14px;font-size:0.85rem;background:#2563eb" onclick="openSkinTypePickerModal()">
+            ⚡ Hauttyp / Pflegeziel wählen
+          </button>
+          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:#2563eb;color:#1d4ed8;font-weight:600" onclick="openQuizModal()">
+            🔬 Baby-Pflege-Check
+          </button>
+          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line);color:#1d4ed8" onclick="loadStarterRoutineForActiveProfile()">
+            🎯 Pädiatrie-Starter laden
+          </button>
+          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line)" onclick="openAddBabyProductModal('all', 'baby')">
             + Baby-Produkt hinzufügen
           </button>
           <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line);color:#1d4ed8" onclick="openBabySafetyGuideModal()">
@@ -435,6 +446,8 @@ function renderChildCabinet(container) {
         </div>
       </div>
       <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn-text" onclick="openSkinTypePickerModal()" style="color:#b45309;font-weight:600">⚡ Hauttyp</button>
+        <button class="btn-text" onclick="openQuizModal()" style="color:#b45309">Quiz</button>
         <button class="btn-text" onclick="loadChildPreset()" style="color:#b45309;font-weight:600">Beispiel</button>
         <button class="btn-text" onclick="clearChildCabinet()" style="color:#92580a">Leeren</button>
         <button class="btn-text" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
@@ -464,12 +477,21 @@ function renderChildCabinet(container) {
     html += `
       <div style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #fde68a;border-radius:14px;margin:0.8rem 0 1.2rem">
         <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">🧒</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Noch keine Produkte — Scan oder Beispiel</div>
-        <div style="font-size:0.85rem;color:var(--muted);max-width:420px;margin:4px auto 14px;line-height:1.45">
-          Wähle sanfte, kindgerechte Produkte für Haut & Haar oder übernimm geprüfte Empfehlungen mit 1 Klick aus dem Kinder-Ideal-Vergleich darunter.
+        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Kinder-Schrank ist noch leer (auf Null)</div>
+        <div style="font-size:0.85rem;color:var(--muted);max-width:440px;margin:4px auto 14px;line-height:1.45">
+          Wähle den Hauttyp des Kindes, starte das Pflege-Quiz, lade kindgerechte Empfehlungen oder stelle eigene Produkte hinein.
         </div>
         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button type="button" class="btn-scan" style="padding:7px 14px;font-size:0.85rem;background:#d97706" onclick="openAddBabyProductModal('all', 'child')">
+          <button type="button" class="btn-scan" style="padding:7px 14px;font-size:0.85rem;background:#d97706" onclick="openSkinTypePickerModal()">
+            ⚡ Hauttyp wählen
+          </button>
+          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:#d97706;color:#b45309;font-weight:600" onclick="openQuizModal()">
+            🔬 Kinder-Pflege-Quiz
+          </button>
+          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line);color:#b45309" onclick="loadStarterRoutineForActiveProfile()">
+            🎯 Kinder-Routine laden
+          </button>
+          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line)" onclick="openAddBabyProductModal('all', 'child')">
             + Kinder-Produkt hinzufügen
           </button>
           <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line);color:#b45309" onclick="openBabySafetyGuideModal()">
@@ -665,6 +687,8 @@ function renderTeenCabinet(container) {
         </div>
       </div>
       <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn-text" onclick="openSkinTypePickerModal()" style="color:#0d9488;font-weight:600">⚡ Hauttyp</button>
+        <button class="btn-text" onclick="openQuizModal()" style="color:#0f766e">Quiz</button>
         <button class="btn-text" onclick="loadTeenPreset()" style="color:#0d9488;font-weight:600">Beispiel</button>
         <button class="btn-text" onclick="clearTeenCabinet()" style="color:#92580a">Leeren</button>
         <button class="btn-text" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
@@ -694,13 +718,22 @@ function renderTeenCabinet(container) {
     html += `
       <div style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #99f6e4;border-radius:14px;margin:0.8rem 0 1.2rem">
         <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">🧑‍🦱</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Noch keine Produkte — Scan oder Beispiel</div>
-        <div style="font-size:0.85rem;color:var(--muted);max-width:420px;margin:4px auto 14px;line-height:1.45">
-          Stelle deine täglichen Pflegeprodukte zusammen oder übernimm geprüfte Empfehlungen mit 1 Klick aus dem Teenie-Ideal-Vergleich darunter.
+        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Teenie-Schrank ist noch leer (auf Null)</div>
+        <div style="font-size:0.85rem;color:var(--muted);max-width:440px;margin:4px auto 14px;line-height:1.45">
+          Ermittle deinen Hauttyp mit dem Teenie-Quiz, wähle ihn direkt aus, lade eine Teenie-Routine oder stelle deine Produkte zusammen.
         </div>
         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button type="button" class="btn-scan" style="padding:7px 14px;font-size:0.85rem;background:#0d9488" onclick="openAddTeenProductModal('all')">
-            + Teenie-Produkt hinzufügen
+          <button type="button" class="btn-scan" style="padding:7px 14px;font-size:0.85rem;background:#0d9488" onclick="openQuizModal()">
+            🔬 Hauttyp-Quiz machen
+          </button>
+          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:#0d9488;color:#0f766e;font-weight:600" onclick="openSkinTypePickerModal()">
+            ⚡ Hauttyp wählen
+          </button>
+          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line);color:#0f766e" onclick="loadStarterRoutineForActiveProfile()">
+            🎯 Teenie-Routine laden
+          </button>
+          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line)" onclick="openAddTeenProductModal('all')">
+            + Produkt hinzufügen
           </button>
           <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line);color:#0f766e" onclick="openTeenSafetyGuideModal()">
             Teenie-Leitlinie
@@ -1101,6 +1134,7 @@ function renderMain(autoSave = true) {
         </div>
       </div>
       <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn-text" onclick="openSkinTypePickerModal()" style="color:#4f46e5;font-weight:600">⚡ Hauttyp</button>
         <button class="btn-text" id="btnEditProfile">Quiz</button>
         <button class="btn-text" onclick="startWithEmptyCabinet()" style="color:#92580a">Leeren</button>
         <button class="btn-text" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
@@ -1205,18 +1239,27 @@ function renderMain(autoSave = true) {
   // Render Step-by-Step Cards or Empty Shelf (KEINE leeren Placeholder!)
   if (currentList.length === 0) {
     html += `
-      <div class="empty-shelf" style="text-align:center;padding:1.8rem 1.2rem;margin:0.8rem 0 1.2rem">
+      <div class="empty-shelf" style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #cbd5e1;border-radius:14px;margin:0.8rem 0 1.2rem">
         <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">🧴</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein ${isAM ? 'Morgen-Schrank' : 'Abend-Schrank'} ist noch leer</div>
-        <div style="font-size:0.85rem;color:var(--muted);max-width:400px;margin:4px auto 14px;line-height:1.45">
-          Stelle deine eigenen Produkte hinein oder übernimm passende Empfehlungen mit 1 Klick aus dem Ideal-Vergleich darunter.
+        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein ${isAM ? 'Morgen-Schrank' : 'Abend-Schrank'} ist noch leer (auf Null)</div>
+        <div style="font-size:0.85rem;color:var(--muted);max-width:440px;margin:4px auto 14px;line-height:1.45">
+          Ermittle deinen Hauttyp mit dem Quiz, wähle ihn direkt aus, lade eine Starter-Routine oder stelle deine eigenen Produkte hinein.
         </div>
         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button type="button" class="btn-scan" style="padding:7px 14px;font-size:0.85rem" onclick="openAddProductModal('${appState.tab}')">
+          <button type="button" class="btn-scan" style="padding:7px 14px;font-size:0.85rem" onclick="openQuizModal()">
+            🔬 Hauttyp-Quiz machen
+          </button>
+          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--primary,#4f46e5);color:var(--primary,#4f46e5);font-weight:600" onclick="openSkinTypePickerModal()">
+            ⚡ Hauttyp wählen
+          </button>
+          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line)" onclick="loadStarterRoutineForActiveProfile()">
+            🎯 Starter-Routine laden
+          </button>
+          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line)" onclick="openAddProductModal('${appState.tab}')">
             + Produkt hinzufügen
           </button>
           <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line)" onclick="openScanModal()">
-            Barcode scannen
+            📷 Barcode scannen
           </button>
         </div>
       </div>

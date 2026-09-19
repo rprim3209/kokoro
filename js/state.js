@@ -602,48 +602,250 @@ function updateCategoryNav() {
   }
 }
 
-// Modal for Creating a New Profile
+// ==========================================
+// Dynamic Profile & Skin-Type Onboarding
+// ==========================================
+
+const CATEGORY_SKIN_TYPES = {
+  adult: [
+    {
+      id: "acne_barrier",
+      name: "Akne & Unreinheiten",
+      desc: "Pickel, verstopfte Poren, Rx-Optionen (BPO/Adapalen) & Barriere-Support",
+      subtitle: "Akne & Barriere",
+      tags: ["Akne-prone", "Barriere-Support"],
+      badge: "🔴 Akne & Poren",
+      routineId: "acne_barrier"
+    },
+    {
+      id: "oily_pores",
+      name: "Ölige Haut & Mischhaut",
+      desc: "Talgüberschuss, Glanz in der T-Zone, Mitesser & vergrößerte Poren",
+      subtitle: "Ölig & Poren",
+      tags: ["Ölig", "Mischhaut"],
+      badge: "🔵 Sebum & Glanz",
+      routineId: "oily_pores"
+    },
+    {
+      id: "dry_fragile",
+      name: "Trockene & sensible Haut",
+      desc: "Spannungsgefühl, Trockenheitsschuppen, Rötungen & Barriere-Ceramide",
+      subtitle: "Trocken & Sensibel",
+      tags: ["Trocken", "Sensibel"],
+      badge: "🟠 Trocken & Barriere",
+      routineId: "dry_fragile"
+    },
+    {
+      id: "healthy_glow",
+      name: "Normale Haut & Prävention",
+      desc: "Ausgeglichene Haut, Feuchte-Balance & täglicher Breitband-UV-Schutz",
+      subtitle: "Gesunde Haut",
+      tags: ["Gesunde Haut", "Prävention & LSF"],
+      badge: "🟢 Ausgeglichen",
+      routineId: "healthy_glow"
+    }
+  ],
+  teen: [
+    {
+      id: "teen_acne",
+      name: "Talg, Mitesser & Pickel",
+      desc: "Sanfte BHA-Klärung & Porenbalance ohne schädliche Anti-Aging-Stoffe",
+      subtitle: "Basis & Akne",
+      tags: ["Teen", "Akne-prone"],
+      badge: "🔴 Akne & Talg"
+    },
+    {
+      id: "teen_dry",
+      name: "Trocken & Sensibel",
+      desc: "Spannungsgefühl & raue Stellen; milde Tenside & reizfreie Pflege",
+      subtitle: "Trocken & Sensibel",
+      tags: ["Teen", "Sensibel", "Trocken"],
+      badge: "🟠 Trocken"
+    },
+    {
+      id: "teen_normal",
+      name: "Gesunde Teenie-Basispflege",
+      desc: "Ausgeglichene junge Haut; milde Reinigung, Feuchtigkeit & LSF 30–50+",
+      subtitle: "Normale Haut",
+      tags: ["Teen", "Gesunde Basis"],
+      badge: "🟢 Ausgeglichen"
+    }
+  ],
+  child: [
+    {
+      id: "child_normal",
+      name: "Sanfte Kinder-Basispflege",
+      desc: "Milde Dusche/Waschlotion & LSF 50+ für Schule, Sport und Hofpause",
+      subtitle: "Sanft & LSF 50+",
+      tags: ["Kind", "Sanfte Basis"],
+      badge: "🟢 Ausgeglichen"
+    },
+    {
+      id: "child_dry",
+      name: "Trockene Kinderhaut",
+      desc: "Neigung zu rauen Stellen oder Neurodermitis; rückfettende Barrierepflege",
+      subtitle: "Trocken & Sensibel",
+      tags: ["Kind", "Trocken"],
+      badge: "🟠 Trocken"
+    }
+  ],
+  baby: [
+    {
+      id: "baby_normal",
+      name: "Sanfter Säuglingsschutz",
+      desc: "100% parfümfreie, minimalistische Säuglingspflege für zarte Haut",
+      subtitle: "Parfümfrei-Prio",
+      tags: ["Baby", "Parfümfrei"],
+      badge: "🟢 Normal"
+    },
+    {
+      id: "baby_dry",
+      name: "Trockene Babyhaut / Schuppung",
+      desc: "Barriere-Emollient für sensible Wangen & Schienbeine",
+      subtitle: "Trockene Barriere",
+      tags: ["Baby", "Trockene Barriere"],
+      badge: "🟠 Trocken"
+    },
+    {
+      id: "baby_diaper",
+      name: "Sensible Windelzone",
+      desc: "Zinkhaltiger Wundschutz gegen Rötungen & Feuchtigkeitsreiz",
+      subtitle: "Sensible Windelzone",
+      tags: ["Baby", "Windelbereich"],
+      badge: "🟡 Windel-SOS"
+    }
+  ]
+};
+
 let newProfileSelectedCat = "adult";
+let newProfileSelectedMode = "direct"; // "direct" | "quiz"
+let newProfileSelectedSkinType = "acne_barrier";
+let newProfileCabinetFillMode = "empty"; // "empty" | "starter"
+
+function renderNewProfileSkinTypesHtml(cat) {
+  const list = CATEGORY_SKIN_TYPES[cat] || CATEGORY_SKIN_TYPES.adult;
+  return list.map((st, idx) => {
+    const isSelected = (newProfileSelectedSkinType === st.id) || (!newProfileSelectedSkinType && idx === 0);
+    return `
+      <div class="choice-card st-choice-card ${isSelected ? 'active' : ''}" id="stChoice_${st.id}" onclick="selectNewProfileSkinType('${st.id}')" style="padding:0.65rem 0.85rem;cursor:pointer;border:2px solid ${isSelected ? '#0a3323' : 'var(--line)'};border-radius:10px;background:${isSelected ? '#f4f8f5' : '#fff'};margin-bottom:0">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong style="font-size:0.88rem;color:var(--ink)">${st.name}</strong>
+          <span style="font-size:0.68rem;background:#f1f5f9;color:#334155;padding:1px 6px;border-radius:4px;font-weight:700">${st.badge}</span>
+        </div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;line-height:1.3">${st.desc}</div>
+      </div>
+    `;
+  }).join("");
+}
 
 function openNewProfileModal() {
   newProfileSelectedCat = "adult";
-  showModalSheet(`
-    <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">Neues Profil anlegen</div>
-    <h2 style="margin:0.2rem 0 0.3rem;font-size:1.3rem">Für wen möchtest du pflegen?</h2>
-    <p style="font-size:0.86rem;color:var(--muted);margin:0 0 0.9rem;line-height:1.4">
-      Wähle die passende Kategorie und vergib direkt am Anfang einen Namen:
-    </p>
+  newProfileSelectedMode = "direct";
+  newProfileSelectedSkinType = "acne_barrier";
+  newProfileCabinetFillMode = "empty";
 
-    <div style="margin:0.6rem 0">
-      <label style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">1. Kategorie auswählen</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="newProfCatGrid">
-        <div class="choice-card active" id="catChoice_adult" onclick="selectNewProfileCategory('adult')" style="padding:0.75rem;cursor:pointer;border:2px solid #0a3323;border-radius:10px;background:#f4f8f5;margin-bottom:0">
-          <div style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:6px">👤 Erwachsener</div>
-          <div style="font-size:0.74rem;color:var(--muted);margin-top:2px">Akne, Skin Cycling & Barriere</div>
-        </div>
-        <div class="choice-card" id="catChoice_teen" onclick="selectNewProfileCategory('teen')" style="padding:0.75rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0">
-          <div style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:6px">🧑‍🦱 Teenie (12–17 J.)</div>
-          <div style="font-size:0.74rem;color:var(--muted);margin-top:2px">Basis & Akne, kein Anti-Aging</div>
-        </div>
-        <div class="choice-card" id="catChoice_child" onclick="selectNewProfileCategory('child')" style="padding:0.75rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0">
-          <div style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:6px">🧒 Kind (3–11 J.)</div>
-          <div style="font-size:0.74rem;color:var(--muted);margin-top:2px">Sanfte Barriere & LSF 50+</div>
-        </div>
-        <div class="choice-card" id="catChoice_baby" onclick="selectNewProfileCategory('baby')" style="padding:0.75rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0">
-          <div style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:6px">👶 Baby (&lt;3 J.)</div>
-          <div style="font-size:0.74rem;color:var(--muted);margin-top:2px">100% Parfümfrei & Säuglings-Schutz</div>
+  showModalSheet(`
+    <div style="max-height:85vh;overflow-y:auto;padding-right:2px">
+      <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">Neues Profil anlegen</div>
+      <h2 style="margin:0.2rem 0 0.25rem;font-size:1.28rem">Für wen möchtest du pflegen?</h2>
+      <p style="font-size:0.84rem;color:var(--muted);margin:0 0 0.8rem;line-height:1.4">
+        Wähle die Kategorie, vergib einen Namen und bestimme deinen Start-Weg:
+      </p>
+
+      <!-- 1. Kategorie -->
+      <div style="margin:0.5rem 0">
+        <label style="display:block;font-size:0.74rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.35rem">1. Kategorie auswählen</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="newProfCatGrid">
+          <div class="choice-card active" id="catChoice_adult" onclick="selectNewProfileCategory('adult')" style="padding:0.65rem 0.75rem;cursor:pointer;border:2px solid #0a3323;border-radius:10px;background:#f4f8f5;margin-bottom:0">
+            <div style="font-weight:700;font-size:0.88rem;display:flex;align-items:center;gap:6px">👤 Erwachsener</div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">Akne, Skin Cycling &amp; Barriere</div>
+          </div>
+          <div class="choice-card" id="catChoice_teen" onclick="selectNewProfileCategory('teen')" style="padding:0.65rem 0.75rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0">
+            <div style="font-weight:700;font-size:0.88rem;display:flex;align-items:center;gap:6px">🧑‍🦱 Teenie (12–17 J.)</div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">Basis &amp; Akne, kein Anti-Aging</div>
+          </div>
+          <div class="choice-card" id="catChoice_child" onclick="selectNewProfileCategory('child')" style="padding:0.65rem 0.75rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0">
+            <div style="font-weight:700;font-size:0.88rem;display:flex;align-items:center;gap:6px">🧒 Kind (3–11 J.)</div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">Sanfte Barriere &amp; LSF 50+</div>
+          </div>
+          <div class="choice-card" id="catChoice_baby" onclick="selectNewProfileCategory('baby')" style="padding:0.65rem 0.75rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0">
+            <div style="font-weight:700;font-size:0.88rem;display:flex;align-items:center;gap:6px">👶 Baby (&lt;3 J.)</div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">100% Parfümfrei &amp; Säuglings-Schutz</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div style="margin:0.9rem 0">
-      <label for="newProfileNameInput" style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">2. Profilname (frei wählbar)</label>
-      <input type="text" id="newProfileNameInput" placeholder="z. B. Mama, Papa, Baby Emma, Lukas..." style="width:100%;padding:0.75rem 0.85rem;border:1.5px solid var(--line);border-radius:10px;font-size:0.95rem;font-family:inherit" value="Erwachsener" onkeydown="if(event.key==='Enter'){ submitCreateProfile(); }">
-    </div>
+      <!-- 2. Profilname -->
+      <div style="margin:0.75rem 0">
+        <label for="newProfileNameInput" style="display:block;font-size:0.74rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.35rem">2. Profilname (frei wählbar)</label>
+        <input type="text" id="newProfileNameInput" placeholder="z. B. Mama, Papa, Sarah, Lukas..." style="width:100%;padding:0.65rem 0.8rem;border:1.5px solid var(--line);border-radius:10px;font-size:0.92rem;font-family:inherit" value="Erwachsener" onkeydown="if(event.key==='Enter'){ submitCreateProfile(); }">
+      </div>
 
-    <div style="display:flex;gap:8px;margin-top:1.1rem">
-      <button class="ghost-btn" style="width:auto;margin-top:0;padding:0.75rem 1.2rem" onclick="closeModal()">Abbrechen</button>
-      <button class="primary" style="margin-top:0;flex:1" onclick="submitCreateProfile()">Profil anlegen & öffnen →</button>
+      <!-- 3. Wie möchtest du starten? -->
+      <div style="margin:0.85rem 0">
+        <label style="display:block;font-size:0.74rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.35rem">3. Hautprofil &amp; Schrank-Setup</label>
+        
+        <!-- Toggle Tabs: Direkt vs Quiz -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#f1f5f9;padding:4px;border-radius:10px;margin-bottom:0.75rem">
+          <button type="button" class="btn-text" id="btnModeDirect" onclick="selectNewProfileMode('direct')" style="padding:7px 10px;border-radius:8px;font-size:0.82rem;font-weight:700;background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,0.06);border:none">
+            ⚡ Hauttyp direkt wählen
+          </button>
+          <button type="button" class="btn-text" id="btnModeQuiz" onclick="selectNewProfileMode('quiz')" style="padding:7px 10px;border-radius:8px;font-size:0.82rem;font-weight:600;background:transparent;color:var(--muted);border:none">
+            🔬 Hauttyp per Quiz ermitteln
+          </button>
+        </div>
+
+        <!-- Sektion A: Direktauswahl -->
+        <div id="newProfDirectSection" style="display:block">
+          <div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.4rem">
+            Wähle deinen Hauttyp. Kosmetikschrank richtet die Wächter-Filterung und Produktempfehlungen darauf aus:
+          </div>
+          <div style="display:grid;grid-template-columns:1fr;gap:6px" id="newProfSkinTypesContainer">
+            ${renderNewProfileSkinTypesHtml('adult')}
+          </div>
+
+          <!-- Schrank-Initialisierung: Leer (auf Null) vs Starter-Routine -->
+          <div style="background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:0.75rem;margin-top:0.75rem">
+            <div style="font-size:0.76rem;font-weight:700;color:var(--ink);margin-bottom:0.4rem">Schrank-Ausstattung bei Erstellung:</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:0.82rem;line-height:1.35">
+                <input type="radio" name="newProfFillMode" id="fillMode_empty" value="empty" checked onchange="selectNewProfileCabinetFill('empty')" style="margin-top:2px">
+                <div>
+                  <strong>🧴 Schrank komplett leer starten (auf Null)</strong>
+                  <div style="font-size:0.72rem;color:var(--muted)">0 Produkte im Schrank – eigene Produkte selbst scannen oder einsortieren.</div>
+                </div>
+              </label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:0.82rem;line-height:1.35">
+                <input type="radio" name="newProfFillMode" id="fillMode_starter" value="starter" onchange="selectNewProfileCabinetFill('starter')" style="margin-top:2px">
+                <div>
+                  <strong>🎯 Empfohlene Starter-Routine für diesen Hauttyp laden</strong>
+                  <div style="font-size:0.72rem;color:var(--muted)">Stellt die passenden Basis-Produkte direkt in deinen Schrank.</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sektion B: Quiz-Hinweis -->
+        <div id="newProfQuizSection" style="display:none;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:0.85rem">
+          <div style="font-weight:700;font-size:0.88rem;color:#166534;display:flex;align-items:center;gap:6px">
+            🔬 Wissenschaftliche Hautanalyse
+          </div>
+          <div style="font-size:0.8rem;color:#166534;margin-top:4px;line-height:1.4">
+            Du beantwortest kurze Fragen zu deinem Hautgefühl (Spannen, Sebum/Glanz, Unreinheiten) und gewünschtem Aufwand. Kosmetikschrank ermittelt deinen Hauttyp und erstellt danach deinen Schrank.
+          </div>
+          <div style="font-size:0.72rem;color:#15803d;margin-top:6px;font-style:italic">
+            ✓ Das Profil startet komplett auf Null und wird nach dem Quiz eingerichtet.
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:1rem">
+        <button type="button" class="ghost-btn" style="width:auto;margin-top:0;padding:0.7rem 1.1rem" onclick="closeModal()">Abbrechen</button>
+        <button type="button" class="primary" id="btnSubmitNewProfile" style="margin-top:0;flex:1" onclick="submitCreateProfile()">
+          Profil anlegen &amp; Schrank öffnen →
+        </button>
+      </div>
     </div>
   `);
 
@@ -651,6 +853,70 @@ function openNewProfileModal() {
     const inp = document.getElementById("newProfileNameInput");
     if (inp) inp.select();
   }, 50);
+}
+
+function selectNewProfileMode(mode) {
+  newProfileSelectedMode = mode;
+  const directSec = document.getElementById("newProfDirectSection");
+  const quizSec = document.getElementById("newProfQuizSection");
+  const btnDirect = document.getElementById("btnModeDirect");
+  const btnQuiz = document.getElementById("btnModeQuiz");
+  const submitBtn = document.getElementById("btnSubmitNewProfile");
+
+  if (mode === "quiz") {
+    if (directSec) directSec.style.display = "none";
+    if (quizSec) quizSec.style.display = "block";
+    if (btnDirect) {
+      btnDirect.style.background = "transparent";
+      btnDirect.style.color = "var(--muted)";
+      btnDirect.style.boxShadow = "none";
+    }
+    if (btnQuiz) {
+      btnQuiz.style.background = "#fff";
+      btnQuiz.style.color = "var(--ink)";
+      btnQuiz.style.boxShadow = "0 1px 2px rgba(0,0,0,0.06)";
+    }
+    if (submitBtn) submitBtn.innerHTML = "Profil anlegen &amp; Quiz starten ➔";
+  } else {
+    if (directSec) directSec.style.display = "block";
+    if (quizSec) quizSec.style.display = "none";
+    if (btnDirect) {
+      btnDirect.style.background = "#fff";
+      btnDirect.style.color = "var(--ink)";
+      btnDirect.style.boxShadow = "0 1px 2px rgba(0,0,0,0.06)";
+    }
+    if (btnQuiz) {
+      btnQuiz.style.background = "transparent";
+      btnQuiz.style.color = "var(--muted)";
+      btnQuiz.style.boxShadow = "none";
+    }
+    if (submitBtn) submitBtn.innerHTML = "Profil anlegen &amp; Schrank öffnen →";
+  }
+}
+
+function selectNewProfileSkinType(stId) {
+  newProfileSelectedSkinType = stId;
+  const cat = newProfileSelectedCat || "adult";
+  const list = CATEGORY_SKIN_TYPES[cat] || CATEGORY_SKIN_TYPES.adult;
+  list.forEach(st => {
+    const el = document.getElementById("stChoice_" + st.id);
+    if (!el) return;
+    if (st.id === stId) {
+      el.style.borderColor = "#0a3323";
+      el.style.background = "#f4f8f5";
+    } else {
+      el.style.borderColor = "var(--line)";
+      el.style.background = "#ffffff";
+    }
+  });
+}
+
+function selectNewProfileCabinetFill(fill) {
+  newProfileCabinetFillMode = fill;
+  const rEmpty = document.getElementById("fillMode_empty");
+  const rStarter = document.getElementById("fillMode_starter");
+  if (rEmpty) rEmpty.checked = (fill === "empty");
+  if (rStarter) rStarter.checked = (fill === "starter");
 }
 
 function selectNewProfileCategory(cat) {
@@ -673,7 +939,14 @@ function selectNewProfileCategory(cat) {
       el.style.background = "#ffffff";
     }
   });
-  
+
+  const skinTypes = CATEGORY_SKIN_TYPES[cat] || CATEGORY_SKIN_TYPES.adult;
+  newProfileSelectedSkinType = skinTypes[0] ? skinTypes[0].id : "acne_barrier";
+  const container = document.getElementById("newProfSkinTypesContainer");
+  if (container) {
+    container.innerHTML = renderNewProfileSkinTypesHtml(cat);
+  }
+
   const inp = document.getElementById("newProfileNameInput");
   if (inp) {
     const defaultNames = {
@@ -694,17 +967,19 @@ function submitCreateProfile() {
   const cat = newProfileSelectedCat || "adult";
   const defaultNames = { adult: "Erwachsener", teen: "Teenie 12–17 J.", child: "Kind 3–11 J.", baby: "Baby <3 J." };
   const finalName = rawName || defaultNames[cat];
-  const defaultSubs = { adult: "Akne & Barriere", teen: "Basis & Akne", child: "Sanft & LSF 50+", baby: "Parfümfrei-Prio" };
 
   syncActiveProfileFromWorkingState();
+
+  const skinTypeList = CATEGORY_SKIN_TYPES[cat] || CATEGORY_SKIN_TYPES.adult;
+  const selectedSkin = skinTypeList.find(s => s.id === newProfileSelectedSkinType) || skinTypeList[0];
 
   const newP = {
     id: "p_" + cat + "_" + Date.now(),
     name: finalName,
     category: cat,
-    subtitle: defaultSubs[cat],
+    subtitle: selectedSkin.subtitle || "Basis & Barriere",
     complexity: "basis",
-    tags: cat === "adult" ? ["Eigene Routine"] : [],
+    tags: Array.isArray(selectedSkin.tags) ? selectedSkin.tags.slice() : ["Eigene Routine"],
     country: getProfileCountry(),
     data: cat === "adult" ? { am: [], pm_a: [], pm_b: [], pm_c: [], pmMode: "a", useSkinCycling: false } :
           cat === "baby" ? { reiniger: [], creme: [], windel: [], spf: [] } :
@@ -714,10 +989,138 @@ function submitCreateProfile() {
 
   appState.profiles.push(newP);
   loadProfileToAppState(newP);
+
+  if (cat === "adult" && selectedSkin.routineId) {
+    window.selectedIdealRoutineId = selectedSkin.routineId;
+  }
+
   closeModal();
   updateCategoryNav();
   renderMain();
+
+  if (newProfileSelectedMode === "quiz") {
+    // Start Quiz immediately for this fresh profile
+    if (typeof openQuizModal === "function") {
+      openQuizModal();
+    }
+    showToast(`🔬 Starte Hautanalyse für <strong>${escapeHtml(finalName)}</strong>...`);
+    return;
+  }
+
+  // Direct Mode
+  if (newProfileCabinetFillMode === "starter") {
+    if (cat === "adult") {
+      if (typeof syncAdultRoutineToComplexity === "function") {
+        syncAdultRoutineToComplexity("basis", selectedSkin.routineId || "acne_barrier", true);
+      }
+    } else if (cat === "teen") {
+      if (typeof loadTeenPreset === "function") loadTeenPreset();
+    } else if (cat === "baby") {
+      if (typeof loadBabyPreset === "function") loadBabyPreset();
+    } else if (cat === "child") {
+      if (typeof loadChildPreset === "function") loadChildPreset();
+    }
+    saveState();
+    renderMain();
+    showToast(`🎯 Profil <strong>${escapeHtml(finalName)}</strong> mit Starter-Routine (${selectedSkin.subtitle}) angelegt!`);
+  } else {
+    // Completely empty (auf Null)
+    saveState();
+    renderMain();
+    showToast(`🧴 Profil <strong>${escapeHtml(finalName)}</strong> angelegt (Schrank komplett auf Null)!`);
+  }
 }
+
+// Quick Skin-Type Picker Modal for existing profiles
+function openSkinTypePickerModal() {
+  const activeP = getActiveProfile();
+  const cat = activeP.category || "adult";
+  const skinTypes = CATEGORY_SKIN_TYPES[cat] || CATEGORY_SKIN_TYPES.adult;
+
+  showModalSheet(`
+    <div style="max-height:85vh;overflow-y:auto;padding-right:2px">
+      <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">Hauttyp anpassen</div>
+      <h2 style="margin:0.2rem 0 0.3rem;font-size:1.3rem">Hauttyp für ${escapeHtml(activeP.name)}</h2>
+      <p style="font-size:0.86rem;color:var(--muted);margin:0 0 0.9rem;line-height:1.4">
+        Wähle deinen aktuellen Hauttyp. Der Wächter gleicht deine Produkte und Empfehlungen sofort darauf ab:
+      </p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem">
+        ${skinTypes.map(st => {
+          const isCurrent = activeP.subtitle === st.subtitle;
+          return `
+            <div class="choice-card" onclick="applySkinTypeToActiveProfile('${st.id}')" style="padding:0.8rem 0.95rem;cursor:pointer;border:2px solid ${isCurrent ? '#0a3323' : 'var(--line)'};border-radius:10px;background:${isCurrent ? '#f4f8f5' : '#fff'}">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <strong style="font-size:0.92rem;color:var(--ink)">${st.name}</strong>
+                <span style="font-size:0.7rem;background:#f1f5f9;color:#334155;padding:2px 7px;border-radius:4px;font-weight:700">${st.badge}</span>
+              </div>
+              <div style="font-size:0.76rem;color:var(--muted);margin-top:3px;line-height:1.35">${st.desc}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="ghost-btn" style="flex:1;margin-top:0" onclick="closeModal()">Abbrechen</button>
+        <button class="primary" style="flex:1;margin-top:0" onclick="closeModal(); openQuizModal();">🔬 Lieber Quiz machen</button>
+      </div>
+    </div>
+  `);
+}
+
+function applySkinTypeToActiveProfile(typeId) {
+  const activeP = getActiveProfile();
+  const cat = activeP.category || "adult";
+  const skinTypes = CATEGORY_SKIN_TYPES[cat] || CATEGORY_SKIN_TYPES.adult;
+  const st = skinTypes.find(s => s.id === typeId) || skinTypes[0];
+
+  activeP.subtitle = st.subtitle;
+  activeP.tags = Array.isArray(st.tags) ? st.tags.slice() : [];
+  if (!appState.profileSubtitles) appState.profileSubtitles = {};
+  appState.profileSubtitles[cat] = st.subtitle;
+  appState.tags = activeP.tags;
+
+  if (cat === "adult" && st.routineId && typeof setIdealRoutineType === "function") {
+    window.selectedIdealRoutineId = st.routineId;
+  }
+
+  saveState();
+  closeModal();
+  updateCategoryNav();
+  renderMain();
+  showToast(`🪵 Hauttyp auf <strong>${st.name}</strong> umgestellt!`);
+}
+
+function loadStarterRoutineForActiveProfile() {
+  const activeP = getActiveProfile();
+  const cat = activeP.category || "adult";
+  if (cat === "adult") {
+    const routineId = typeof getSelectedIdealRoutineId === "function" ? getSelectedIdealRoutineId() : "acne_barrier";
+    if (typeof syncAdultRoutineToComplexity === "function") {
+      syncAdultRoutineToComplexity("basis", routineId, true);
+    }
+  } else if (cat === "teen") {
+    if (typeof loadTeenPreset === "function") loadTeenPreset();
+  } else if (cat === "baby") {
+    if (typeof loadBabyPreset === "function") loadBabyPreset();
+  } else if (cat === "child") {
+    if (typeof loadChildPreset === "function") loadChildPreset();
+  }
+  saveState();
+  renderMain();
+  const sub = (appState.profileSubtitles && appState.profileSubtitles[cat]) || "Starter-Routine";
+  showToast(`🎯 Starter-Routine (${sub}) in den Schrank gestellt!`);
+}
+
+window.CATEGORY_SKIN_TYPES = CATEGORY_SKIN_TYPES;
+window.renderNewProfileSkinTypesHtml = renderNewProfileSkinTypesHtml;
+window.openNewProfileModal = openNewProfileModal;
+window.selectNewProfileCategory = selectNewProfileCategory;
+window.selectNewProfileMode = selectNewProfileMode;
+window.selectNewProfileSkinType = selectNewProfileSkinType;
+window.selectNewProfileCabinetFill = selectNewProfileCabinetFill;
+window.submitCreateProfile = submitCreateProfile;
+window.openSkinTypePickerModal = openSkinTypePickerModal;
+window.applySkinTypeToActiveProfile = applySkinTypeToActiveProfile;
+window.loadStarterRoutineForActiveProfile = loadStarterRoutineForActiveProfile;
 
 // Rename Profile Modal
 function openRenameProfileModal(profileId) {
