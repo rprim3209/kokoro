@@ -445,6 +445,50 @@ function openBabyProductDetail(prodId) {
         </div>
       ` : ''}
 
+      ${(() => {
+        const babyCat = inBaby ? "baby" : "child";
+        const similarProds = typeof findSimilarProducts === "function" ? findSimilarProducts(p.id, { limit: 3, category: babyCat }) : [];
+        if (!similarProds || similarProds.length === 0) return '';
+        return `
+          <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:0.85rem;margin:0.8rem 0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div style="font-weight:700;font-size:0.86rem;color:#1e293b;display:flex;align-items:center;gap:6px">
+                <span>✨ Ähnliche ${inBaby ? 'Baby' : 'Kinder'}-Alternativen</span>
+                <span style="font-size:0.7rem;background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:4px;font-weight:700">${similarProds.length} Alternativen</span>
+              </div>
+            </div>
+            <div style="font-size:0.76rem;color:var(--muted);margin-bottom:8px">
+              Pädiatrisch geprüfte Alternativen mit ähnlichem Schutz- &amp; Wirkstoff-Profil:
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              ${similarProds.map(s => {
+                const cand = s.candidate;
+                const comp = s.comp;
+                return `
+                  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;cursor:pointer" onclick="openProductComparisonModal('${p.id}', '${cand.id}')">
+                      ${cand.img ? `<img src="${escapeHtml(cand.img)}" alt="${escapeHtml(cand.name)}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #f1f5f9;flex-shrink:0" onerror="this.style.display='none'">` : '<div style="width:36px;height:36px;border-radius:6px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">👶</div>'}
+                      <div style="min-width:0;flex:1">
+                        <div style="font-weight:700;font-size:0.82rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                          ${escapeHtml(cand.brand || '')} ${escapeHtml(cand.name || '')}
+                        </div>
+                        <div style="font-size:0.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                          <span style="font-weight:700;color:#1d4ed8">✨ ${comp.score}% Match</span>
+                          ${comp.sharedActives.length > 0 ? ` · ${escapeHtml(comp.sharedActives.map(a => a.label.split('(')[0].trim()).slice(0, 2).join(', '))}` : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn-text" style="font-size:0.72rem;padding:4px 8px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;font-weight:700;flex-shrink:0" onclick="openProductComparisonModal('${p.id}', '${cand.id}')">
+                      ⚖️ Vergleichen
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      })()}
+
       <!-- Disclaimer -->
       <div style="font-size:0.73rem;color:var(--muted);text-align:center;margin-bottom:10px">
         ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
@@ -802,6 +846,49 @@ function openTeenProductDetail(prodId) {
           </a>
         </div>
       ` : ''}
+
+      ${(() => {
+        const similarProds = typeof findSimilarProducts === "function" ? findSimilarProducts(p.id, { limit: 3, category: "teen" }) : [];
+        if (!similarProds || similarProds.length === 0) return '';
+        return `
+          <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:0.85rem;margin:0.8rem 0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div style="font-weight:700;font-size:0.86rem;color:#1e293b;display:flex;align-items:center;gap:6px">
+                <span>✨ Ähnliche Teenie-Alternativen</span>
+                <span style="font-size:0.7rem;background:#ccfbf1;color:#0f766e;padding:2px 6px;border-radius:4px;font-weight:700">${similarProds.length} Alternativen</span>
+              </div>
+            </div>
+            <div style="font-size:0.76rem;color:var(--muted);margin-bottom:8px">
+              Hautschonende Alternativen für Teenager mit ähnlichem Wirkstoff-Fokus:
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              ${similarProds.map(s => {
+                const cand = s.candidate;
+                const comp = s.comp;
+                return `
+                  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;cursor:pointer" onclick="openProductComparisonModal('${p.id}', '${cand.id}')">
+                      ${cand.img ? `<img src="${escapeHtml(cand.img)}" alt="${escapeHtml(cand.name)}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #f1f5f9;flex-shrink:0" onerror="this.style.display='none'">` : '<div style="width:36px;height:36px;border-radius:6px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">🧴</div>'}
+                      <div style="min-width:0;flex:1">
+                        <div style="font-weight:700;font-size:0.82rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                          ${escapeHtml(cand.brand || '')} ${escapeHtml(cand.name || '')}
+                        </div>
+                        <div style="font-size:0.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                          <span style="font-weight:700;color:#0f766e">✨ ${comp.score}% Match</span>
+                          ${comp.sharedActives.length > 0 ? ` · ${escapeHtml(comp.sharedActives.map(a => a.label.split('(')[0].trim()).slice(0, 2).join(', '))}` : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn-text" style="font-size:0.72rem;padding:4px 8px;background:#f0fdfa;color:#0f766e;border:1px solid #99f6e4;border-radius:6px;font-weight:700;flex-shrink:0" onclick="openProductComparisonModal('${p.id}', '${cand.id}')">
+                      ⚖️ Vergleichen
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      })()}
 
       <!-- Disclaimer -->
       <div style="font-size:0.73rem;color:var(--muted);text-align:center;margin-bottom:10px">
@@ -2011,10 +2098,264 @@ function openProductDetail(prodId) {
       </div>
     ` : ""}
 
+    ${(() => {
+      const similarProds = typeof findSimilarProducts === "function" ? findSimilarProducts(p.id, { limit: 3 }) : [];
+      if (!similarProds || similarProds.length === 0) return '';
+      return `
+        <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:0.85rem;margin:0.8rem 0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:700;font-size:0.88rem;color:#1e293b;display:flex;align-items:center;gap:6px">
+              <span>✨ Ähnliche Produkte &amp; Dupe-Vergleich</span>
+              <span style="font-size:0.7rem;background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-weight:700">${similarProds.length} Alternativen</span>
+            </div>
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:8px">
+            Ähnliche Inhaltsstoffe &amp; vergleichbare Wirkung. Wähle eine Alternative für den Direkt-Vergleich:
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${similarProds.map(s => {
+              const cand = s.candidate;
+              const comp = s.comp;
+              const isHigh = comp.score >= 80;
+              return `
+                <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;cursor:pointer" onclick="openProductComparisonModal('${p.id}', '${cand.id}')">
+                    ${cand.img ? `<img src="${escapeHtml(cand.img)}" alt="${escapeHtml(cand.name)}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;border:1px solid #f1f5f9;flex-shrink:0" onerror="this.style.display='none'">` : '<div style="width:38px;height:38px;border-radius:6px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">🧴</div>'}
+                    <div style="min-width:0;flex:1">
+                      <div style="font-weight:700;font-size:0.84rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        ${escapeHtml(cand.brand || '')} ${escapeHtml(cand.name || '')}
+                      </div>
+                      <div style="font-size:0.74rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        <span style="font-weight:700;color:${isHigh ? '#059669' : '#0284c7'}">✨ ${comp.score}% Match</span>
+                        ${comp.sharedActives.length > 0 ? ` · <span style="color:#475569">${escapeHtml(comp.sharedActives.map(a => a.label.split('(')[0].trim()).slice(0, 2).join(', '))}</span>` : ''}
+                        ${comp.priceB ? ` · <strong style="color:#16a34a">${escapeHtml(comp.priceB)}</strong>` : ''}
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-text" style="font-size:0.74rem;padding:4px 8px;background:#f0f9ff;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;font-weight:700;flex-shrink:0" onclick="openProductComparisonModal('${p.id}', '${cand.id}')">
+                    ⚖️ Vergleichen
+                  </button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    })()}
+
     <button class="ghost-btn" style="color:var(--no);border-color:#ecc" onclick="removeProduct('${p.id}', '${appState.tab}'); closeModal()">Aus dieser Routine entfernen</button>
     <button class="ghost-btn" onclick="closeModal()">Schließen</button>
   `);
 }
+
+function openProductComparisonModal(originalId, candidateId) {
+  const prodA = (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(originalId) : null)
+    || (typeof resolveCabinetProduct === "function" ? resolveCabinetProduct(originalId) : null)
+    || (typeof DB !== "undefined" ? DB[originalId] : null)
+    || (typeof EU_FLAG_CATALOG !== "undefined" ? EU_FLAG_CATALOG[originalId] : null)
+    || (typeof TEEN_DB !== "undefined" ? TEEN_DB[originalId] : null)
+    || (typeof BABY_DB !== "undefined" ? BABY_DB[originalId] : null);
+
+  if (!prodA) return;
+
+  const activeP = typeof getActiveProfile === "function" ? getActiveProfile() : { category: "adult" };
+  const cat = activeP.category || "adult";
+  const similarList = typeof findSimilarProducts === "function" ? findSimilarProducts(prodA.id, { limit: 5, category: cat }) : [];
+
+  let chosenCandidateId = candidateId;
+  if (!chosenCandidateId && similarList.length > 0) {
+    chosenCandidateId = similarList[0].candidate.id;
+  }
+
+  const prodB = (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(chosenCandidateId) : null)
+    || (typeof resolveCabinetProduct === "function" ? resolveCabinetProduct(chosenCandidateId) : null)
+    || (typeof DB !== "undefined" ? DB[chosenCandidateId] : null)
+    || (typeof EU_FLAG_CATALOG !== "undefined" ? EU_FLAG_CATALOG[chosenCandidateId] : null)
+    || (typeof TEEN_DB !== "undefined" ? TEEN_DB[chosenCandidateId] : null)
+    || (typeof BABY_DB !== "undefined" ? BABY_DB[chosenCandidateId] : null);
+
+  if (!prodB) {
+    showModalSheet(`
+      <div style="padding:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+          <h3 style="margin:0">✨ Keine Alternativen gefunden</h3>
+          <button class="btn-text" onclick="closeModal()" style="font-size:1.2rem;color:var(--muted)">✕</button>
+        </div>
+        <p style="color:var(--muted);font-size:0.86rem;line-height:1.4">Für <strong>${escapeHtml(prodA.brand || '')} ${escapeHtml(prodA.name || '')}</strong> liegen im aktuellen Katalog derzeit keine ähnlich formulierten Alternativen vor.</p>
+        <button type="button" class="ghost-btn" onclick="${cat === 'teen' ? `openTeenProductDetail('${prodA.id}')` : (cat === 'baby' || cat === 'child' ? `openBabyProductDetail('${prodA.id}')` : `openProductDetail('${prodA.id}')`)}">➔ Zurück zu Produktdetails</button>
+      </div>
+    `);
+    return;
+  }
+
+  const comp = typeof compareTwoProducts === "function" ? compareTwoProducts(prodA, prodB) : null;
+  if (!comp) return;
+
+  // Render candidate selection pills
+  const candidatePillsHtml = similarList.length > 1 ? `
+    <div style="margin:0.5rem 0 0.85rem;display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
+      ${similarList.map((s, idx) => {
+        const c = s.candidate;
+        const isSelected = c.id === prodB.id;
+        return `
+          <button type="button" class="btn-text" style="padding:4px 9px;border-radius:18px;font-size:0.74rem;white-space:nowrap;cursor:pointer;background:${isSelected ? '#0284c7' : '#f1f5f9'};color:${isSelected ? '#fff' : '#334155'};border:1px solid ${isSelected ? '#0284c7' : '#cbd5e1'};font-weight:${isSelected ? '700' : '600'}" onclick="openProductComparisonModal('${prodA.id}', '${c.id}')">
+            ${idx + 1}. ${escapeHtml(c.brand || '')} (${s.score}%)
+          </button>
+        `;
+      }).join('')}
+    </div>
+  ` : '';
+
+  const isHighMatch = comp.score >= 80;
+  const matchColor = isHighMatch ? '#059669' : (comp.score >= 65 ? '#0284c7' : '#d97706');
+  const matchBg = isHighMatch ? '#ecfdf5' : (comp.score >= 65 ? '#f0f9ff' : '#fffbeb');
+  const matchBorder = isHighMatch ? '#a7f3d0' : (comp.score >= 65 ? '#bae6fd' : '#fde68a');
+
+  // Shared actives badges
+  const sharedActivesHtml = comp.sharedActives.length > 0
+    ? comp.sharedActives.map(a => `<span class="tag" style="background:#dcfce7;color:#166534;border:1px solid #bbf7d0;font-weight:700">✅ ${escapeHtml(a.label)}</span>`).join(' ')
+    : `<span style="font-size:0.78rem;color:#64748b">Keine direkten Namensüberschneidungen bei den Hauptwirkstoffen (vergleichbare Pflegebasis).</span>`;
+
+  // Only in A / Only in B
+  const diffAHtml = comp.onlyInA.length > 0
+    ? `<div style="font-size:0.78rem;color:#475569;margin-top:4px"><strong>${escapeHtml(prodA.brand)} enthält speziell:</strong> ${comp.onlyInA.map(a => a.label.split('(')[0].trim()).join(', ')}</div>`
+    : '';
+  const diffBHtml = comp.onlyInB.length > 0
+    ? `<div style="font-size:0.78rem;color:#475569;margin-top:4px"><strong>${escapeHtml(prodB.brand)} enthält zusätzlich:</strong> ${comp.onlyInB.map(b => b.label.split('(')[0].trim()).join(', ')}</div>`
+    : '';
+
+  // Shared effects
+  const sharedEffectsHtml = comp.sharedEffects.length > 0
+    ? comp.sharedEffects.map(e => `<span class="tag" style="background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;font-size:0.74rem">${escapeHtml(e.label)}</span>`).join(' ')
+    : `<span style="font-size:0.78rem;color:#64748b">Vergleichbare Hautpflege &amp; Verträglichkeit.</span>`;
+
+  const modalHTML = `
+    <div style="padding:0.2rem 0">
+      <!-- Title & Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem">
+        <div style="font-size:0.74rem;text-transform:uppercase;color:var(--muted);font-weight:700">⚖️ Dupe- &amp; Wirkstoff-Vergleich</div>
+        <button class="btn-text" onclick="closeModal()" style="font-size:1.2rem;color:var(--muted);padding:0 4px">✕</button>
+      </div>
+      <h2 style="margin:2px 0 0.35rem;font-size:1.25rem">Produkt-Vergleich &amp; Alternativen</h2>
+      <p style="font-size:0.82rem;color:var(--muted);margin:0 0 0.4rem">
+        Gegenüberstellung nach Inhaltsstoffen, Wirkung, Hautverträglichkeit &amp; Sparpotenzial.
+      </p>
+
+      ${candidatePillsHtml}
+
+      <!-- Match Highlight Banner -->
+      <div style="background:${matchBg};border:1px solid ${matchBorder};border-radius:10px;padding:0.75rem 0.95rem;margin-bottom:0.85rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+          <div style="font-weight:800;font-size:1.05rem;color:${matchColor}">
+            ✨ ${comp.score}% Übereinstimmung
+          </div>
+          <span style="font-size:0.72rem;background:#fff;color:${matchColor};padding:2px 8px;border-radius:6px;border:1px solid ${matchBorder};font-weight:700">
+            ${comp.tier}
+          </span>
+        </div>
+        <div style="font-size:0.82rem;color:var(--ink);margin-top:5px;line-height:1.4">
+          ${escapeHtml(comp.verdictSummary)}
+        </div>
+      </div>
+
+      <!-- Side-by-Side Product Cards -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0.9rem">
+        <!-- Original Product Card -->
+        <div style="background:#fff;border:2px solid #cbd5e1;border-radius:10px;padding:0.75rem;display:flex;flex-direction:column;justify-content:space-between">
+          <div>
+            <div style="font-size:0.68rem;text-transform:uppercase;color:#64748b;font-weight:700;margin-bottom:4px">🏠 Im Schrank (Original)</div>
+            ${prodA.img ? `<img src="${escapeHtml(prodA.img)}" alt="${escapeHtml(prodA.name)}" style="width:100%;height:75px;object-fit:cover;border-radius:6px;margin-bottom:6px;border:1px solid #f1f5f9" onerror="this.style.display='none'">` : ''}
+            <div style="font-weight:700;font-size:0.84rem;color:var(--ink);line-height:1.25;margin-bottom:2px">${escapeHtml(prodA.brand || '')}</div>
+            <div style="font-size:0.76rem;color:var(--ink);line-height:1.3;margin-bottom:6px">${escapeHtml(prodA.name || '')}</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem;color:#16a34a;font-weight:700;margin-bottom:3px">${escapeHtml(comp.priceA || 'Preis n/a')}</div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-bottom:4px">${escapeHtml(prodA.store || 'Handel')}</div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap">
+              ${prodA.ff === true ? '<span class="tag ff" style="font-size:0.6rem;padding:1px 4px">🌸 PF</span>' : (prodA.ff === false ? '<span class="tag warn" style="font-size:0.6rem;padding:1px 4px">⚠️ Parfüm</span>' : '')}
+              ${prodA.nc === true ? '<span class="tag nc" style="font-size:0.6rem;padding:1px 4px">🛡️ NC</span>' : ''}
+              ${prodA.cf === true ? '<span class="tag cf" style="font-size:0.6rem;padding:1px 4px">🐰 CF</span>' : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- Alternative Product Card -->
+        <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:0.75rem;display:flex;flex-direction:column;justify-content:space-between">
+          <div>
+            <div style="font-size:0.68rem;text-transform:uppercase;color:#166534;font-weight:700;margin-bottom:4px">✨ Alternative (Dupe)</div>
+            ${prodB.img ? `<img src="${escapeHtml(prodB.img)}" alt="${escapeHtml(prodB.name)}" style="width:100%;height:75px;object-fit:cover;border-radius:6px;margin-bottom:6px;border:1px solid #dcfce7" onerror="this.style.display='none'">` : ''}
+            <div style="font-weight:700;font-size:0.84rem;color:var(--ink);line-height:1.25;margin-bottom:2px">${escapeHtml(prodB.brand || '')}</div>
+            <div style="font-size:0.76rem;color:var(--ink);line-height:1.3;margin-bottom:6px">${escapeHtml(prodB.name || '')}</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem;color:#16a34a;font-weight:700;margin-bottom:3px">${escapeHtml(comp.priceB || 'Preis n/a')}</div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-bottom:4px">${escapeHtml(prodB.store || 'Drogerie')}</div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap">
+              ${prodB.ff === true ? '<span class="tag ff" style="font-size:0.6rem;padding:1px 4px">🌸 PF</span>' : (prodB.ff === false ? '<span class="tag warn" style="font-size:0.6rem;padding:1px 4px">⚠️ Parfüm</span>' : '')}
+              ${prodB.nc === true ? '<span class="tag nc" style="font-size:0.6rem;padding:1px 4px">🛡️ NC</span>' : ''}
+              ${prodB.cf === true ? '<span class="tag cf" style="font-size:0.6rem;padding:1px 4px">🐰 CF</span>' : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1. Inhaltsstoffe & Wirkstoffe Section -->
+      <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem">
+        <div style="font-weight:700;font-size:0.85rem;color:var(--ink);margin-bottom:6px">
+          🌿 Inhaltsstoffe &amp; Wirkstoffe
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">
+          ${sharedActivesHtml}
+        </div>
+        ${diffAHtml}
+        ${diffBHtml}
+      </div>
+
+      <!-- 2. Wirkung & Hautnutzen Section -->
+      <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem">
+        <div style="font-weight:700;font-size:0.85rem;color:var(--ink);margin-bottom:6px">
+          🎯 Wirkung &amp; Hautfokus
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">
+          ${sharedEffectsHtml}
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:4px">
+          Textur: <strong>${escapeHtml(comp.profA.texture)}</strong> vs. <strong>${escapeHtml(comp.profB.texture)}</strong>
+        </div>
+      </div>
+
+      <!-- 3. Preis & Ersparnis Section -->
+      ${comp.priceDiffText ? `
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.85rem">
+          <div style="font-weight:700;font-size:0.85rem;color:#166534;margin-bottom:3px">
+            💶 Preisvergleich &amp; Sparpotenzial
+          </div>
+          <div style="font-size:0.82rem;color:#15803d;line-height:1.4">
+            ${escapeHtml(comp.priceDiffText)}
+          </div>
+          ${prodB.store ? `<div style="font-size:0.74rem;color:#475569;margin-top:3px">Erhältlich bei: <strong>${escapeHtml(prodB.store)}</strong></div>` : ''}
+        </div>
+      ` : ''}
+
+      <!-- Action Buttons -->
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:0.9rem">
+        <button type="button" class="primary" style="background:#16a34a;border-color:#16a34a;color:#fff;font-weight:700;padding:11px" onclick="replaceCabinetProduct('${prodA.id}', '${prodB.id}')">
+          🔄 Im Schrank durch diese Alternative ersetzen
+        </button>
+        <button type="button" class="ghost-btn" onclick="openCompatibilityCheckModal('${prodB.id}', '${appState.tab || 'am'}')">
+          🔬 Routine- &amp; Verträglichkeits-Check für Alternative
+        </button>
+        <button type="button" class="ghost-btn" onclick="${cat === 'teen' ? `openTeenProductDetail('${prodA.id}')` : (cat === 'baby' || cat === 'child' ? `openBabyProductDetail('${prodA.id}')` : `openProductDetail('${prodA.id}')`)}">
+          ➔ Zurück zu Produktdetails
+        </button>
+      </div>
+    </div>
+  `;
+
+  showModalSheet(modalHTML);
+}
+window.openProductComparisonModal = openProductComparisonModal;
+
 
 
 

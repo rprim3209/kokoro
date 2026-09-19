@@ -341,8 +341,9 @@ function renderBabyCabinet(container) {
               ${p.spfNote ? '<span class="tag ped-amber" style="font-size:0.66rem;padding:1px 5px">☀️ AAP &lt;6m</span>' : ''}
               ${(p._liveSource || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id))) ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.65rem;padding:1px 5px;font-weight:700">⚠️ Live-Katalog</span>' : ''}
             </div>
-            <div style="margin-top:5px">
+            <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap">
               <button type="button" class="btn-text" style="font-size:0.72rem;color:#1d4ed8;padding:2px 7px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:3px" onclick="event.stopPropagation(); openCompatibilityCheckModal('${p.id}', 'baby')">🔍 Routine- &amp; Hauttyp-Check</button>
+              <button type="button" class="btn-text" style="font-size:0.72rem;color:#0369a1;padding:2px 7px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:3px" onclick="event.stopPropagation(); openSimilarProductsForCabinet('${p.id}')">✨ Ähnliche Alternativen</button>
             </div>
           </div>
           <div class="step-actions">
@@ -504,8 +505,9 @@ function renderChildCabinet(container) {
               ${p.spfNote ? '<span class="tag ped-amber" style="font-size:0.66rem;padding:1px 5px">☀️ AAP &lt;6m</span>' : ''}
               ${(p._liveSource || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id))) ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.65rem;padding:1px 5px;font-weight:700">⚠️ Live-Katalog</span>' : ''}
             </div>
-            <div style="margin-top:5px">
+            <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap">
               <button type="button" class="btn-text" style="font-size:0.72rem;color:#b45309;padding:2px 7px;background:#fefce8;border:1px solid #fde68a;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:3px" onclick="event.stopPropagation(); openCompatibilityCheckModal('${p.id}', 'child')">🔍 Routine- &amp; Hauttyp-Check</button>
+              <button type="button" class="btn-text" style="font-size:0.72rem;color:#0369a1;padding:2px 7px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:3px" onclick="event.stopPropagation(); openSimilarProductsForCabinet('${p.id}')">✨ Ähnliche Alternativen</button>
             </div>
           </div>
           <div class="step-actions">
@@ -733,8 +735,9 @@ function renderTeenCabinet(container) {
               ${p.notForMinors ? '<span class="tag" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;font-size:0.66rem;padding:1px 5px">🛑 Kein Teen-Vorschlag</span>' : ''}
               ${(p._liveSource || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id))) ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.65rem;padding:1px 5px;font-weight:700">⚠️ Live-Katalog</span>' : ''}
             </div>
-            <div style="margin-top:5px">
+            <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap">
               <button type="button" class="btn-text" style="font-size:0.72rem;color:#0f766e;padding:2px 7px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:3px" onclick="event.stopPropagation(); openCompatibilityCheckModal('${p.id}', 'teen')">🔍 Routine- &amp; Hauttyp-Check</button>
+              <button type="button" class="btn-text" style="font-size:0.72rem;color:#0369a1;padding:2px 7px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:3px" onclick="event.stopPropagation(); openSimilarProductsForCabinet('${p.id}')">✨ Ähnliche Alternativen</button>
             </div>
           </div>
           <div class="step-actions">
@@ -1251,8 +1254,9 @@ function renderMain(autoSave = true) {
               ${p.pih === true ? '<span class="tag soc-pih" style="font-size:0.66rem;padding:1px 5px" title="Evidenzbasierter Wirkstoff gegen Pickelmale/PIH">🎯 PIH-Fokus</span>' : ''}
               ${isLiveProd ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.65rem;padding:1px 5px;font-weight:700" title="Live aus Drogerie-Katalog geladen (INCI/Claims unvollständig)">⚠️ Live-Katalog</span>' : ''}
             </div>
-            <div style="margin-top:5px">
+            <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap">
               <button type="button" class="btn-text" style="font-size:0.72rem;color:#4338ca;padding:2px 7px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:3px" onclick="event.stopPropagation(); openCompatibilityCheckModal('${p.id}', '${appState.tab}')">🔍 Routine- &amp; Hauttyp-Check</button>
+              <button type="button" class="btn-text" style="font-size:0.72rem;color:#0369a1;padding:2px 7px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:3px" onclick="event.stopPropagation(); openSimilarProductsForCabinet('${p.id}')">✨ Ähnliche Alternativen</button>
             </div>
           </div>
           <div class="step-actions">
@@ -1366,6 +1370,74 @@ function removeProduct(prodId, tab) {
   saveState();
   renderMain();
 }
+
+function replaceCabinetProduct(oldId, newId, tabOrSlot) {
+  if (!oldId || !newId) return;
+  const pOld = typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(oldId) : null;
+  const pNew = typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(newId) : (typeof DB !== "undefined" ? DB[newId] : null);
+
+  const activeP = typeof getActiveProfile === "function" ? getActiveProfile() : { category: "adult" };
+  const cat = activeP.category || "adult";
+
+  if (cat === "teen") {
+    if (appState.teen) {
+      Object.keys(appState.teen).forEach(slot => {
+        if (Array.isArray(appState.teen[slot])) {
+          appState.teen[slot] = appState.teen[slot].map(id => id === oldId ? newId : id);
+        }
+      });
+    }
+  } else if (cat === "baby") {
+    if (appState.baby) {
+      Object.keys(appState.baby).forEach(slot => {
+        if (Array.isArray(appState.baby[slot])) {
+          appState.baby[slot] = appState.baby[slot].map(id => id === oldId ? newId : id);
+        }
+      });
+    }
+  } else if (cat === "child") {
+    if (appState.child) {
+      Object.keys(appState.child).forEach(slot => {
+        if (Array.isArray(appState.child[slot])) {
+          appState.child[slot] = appState.child[slot].map(id => id === oldId ? newId : id);
+        }
+      });
+    }
+  } else {
+    if (Array.isArray(appState.am)) {
+      appState.am = sortRoutine(appState.am.map(id => id === oldId ? newId : id), true);
+    }
+    if (Array.isArray(appState.pm_a)) {
+      appState.pm_a = sortRoutine(appState.pm_a.map(id => id === oldId ? newId : id), false);
+    }
+    if (Array.isArray(appState.pm_b)) {
+      appState.pm_b = sortRoutine(appState.pm_b.map(id => id === oldId ? newId : id), false);
+    }
+    if (Array.isArray(appState.pm_c)) {
+      appState.pm_c = sortRoutine(appState.pm_c.map(id => id === oldId ? newId : id), false);
+    }
+  }
+
+  saveState();
+  renderMain();
+  if (typeof closeModal === "function") closeModal();
+
+  const newName = pNew ? `${pNew.brand || ''} ${pNew.name || ''}`.trim() : "Neues Produkt";
+  if (typeof showToast === "function") {
+    showToast(`🔄 Im Schrank ersetzt: <strong>${escapeHtml(newName)}</strong> ist jetzt in deiner Routine!`);
+  }
+}
+window.replaceCabinetProduct = replaceCabinetProduct;
+
+function openSimilarProductsForCabinet(prodId) {
+  if (typeof openProductComparisonModal === "function") {
+    openProductComparisonModal(prodId);
+  } else if (typeof openProductDetail === "function") {
+    openProductDetail(prodId);
+  }
+}
+window.openSimilarProductsForCabinet = openSimilarProductsForCabinet;
+
 
 
 function addProductToSlot(prodId, target) {
@@ -1945,6 +2017,7 @@ function openCompatibilityCheckModal(prodId, tab) {
 
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:1.1rem">
       <button type="button" class="primary" onclick="closeModal()">Verstanden</button>
+      <button type="button" class="ghost-btn" style="color:#0284c7;border-color:#bae6fd;background:#f0f9ff;font-weight:600" onclick="openProductComparisonModal('${p.id}')">✨ Ähnliche Produkte &amp; Alternativen vergleichen</button>
       <button type="button" class="ghost-btn" onclick="${evalRes.skinTypeFit.category === 'teen' ? `openTeenProductDetail('${p.id}')` : (evalRes.skinTypeFit.category === 'baby' || evalRes.skinTypeFit.category === 'child' ? `openBabyProductDetail('${p.id}')` : `openProductDetail('${p.id}')`)}">Vollständige Produkt-Details ansehen ➔</button>
     </div>
   `);

@@ -1917,6 +1917,348 @@ function enrichAllDbProducts() {
 
 
 // ==========================================
+// SIMILAR PRODUCTS & DUPE COMPARISON ENGINE
+// Vergleicht Produkte nach Inhaltsstoffen, Wirkung, Galenik & Preis
+// ==========================================
+
+const KEY_ACTIVES_DEFINITIONS = [
+  { id: "panthenol", label: "Panthenol (Provitamin B5)", rx: /\b(panthenol|d-panthenol|provitamin\s*b5)\b/i, category: "barriere" },
+  { id: "cica", label: "Cica / Madecassoside", rx: /\b(cica|centella|madecassoside|asiaticoside|madécassoside)\b/i, category: "barriere" },
+  { id: "ceramide", label: "Ceramide (Lipide)", rx: /\b(ceramid|ceramide|ceramides|phytosphingosine)\b/i, category: "barriere" },
+  { id: "hyaluron", label: "Hyaluronsäure (HA)", rx: /\b(hyaluron|hyaluronsäure|hyaluronic|sodium\s*hyaluronate|\bha\b)\b/i, category: "feuchte" },
+  { id: "glycerin_nmf", label: "Glycerin & NMF", rx: /\b(glycerin|glyzerin|\bnmf\b|feuchthaltefaktor|natural\s*moisturizing)\b/i, category: "feuchte" },
+  { id: "beta_glucan", label: "Beta-Glucan", rx: /\b(beta-?glucan|betaglucan)\b/i, category: "feuchte" },
+  { id: "ectoin", label: "Ectoin", rx: /\b(ectoin|ektoin)\b/i, category: "barriere" },
+  { id: "squalane", label: "Squalan", rx: /\b(squalan|squalane)\b/i, category: "barriere" },
+  { id: "urea", label: "Urea (Harnstoff)", rx: /\b(urea|harnstoff)\b/i, category: "feuchte" },
+  { id: "aloe", label: "Bio-Aloe Vera", rx: /\b(aloe|aloe\s*vera)\b/i, category: "feuchte" },
+  { id: "kaktusfeige", label: "Kaktusfeige", rx: /\b(kaktus|kaktusfeige|opuntia)\b/i, category: "feuchte" },
+  { id: "hafer", label: "Kolloidaler Hafer (Oat)", rx: /\b(hafer|avena|oat)\b/i, category: "barriere" },
+  { id: "niacinamide", label: "Niacinamid (Vitamin B3)", rx: /\b(niacinamid|niacinamide|vitamin\s*b3)\b/i, category: "clarifying" },
+  { id: "zinc", label: "Zink (Sebumkontrolle)", rx: /\b(zink|zinc|zinkgluconat|zinc\s*pca)\b/i, category: "clarifying" },
+  { id: "azelaic", label: "Azelainsäure / PAD", rx: /\b(azelain|azelaic|\bapad\b|azeloyl)\b/i, category: "active" },
+  { id: "bha", label: "Salicylsäure (BHA / LHA)", rx: /\b(salicyl|salicylic|\bbha\b|lipohydroxy|\blha\b)\b/i, category: "active" },
+  { id: "aha", label: "AHA-Fruchtsäuren", rx: /\b(glycol|glykol|lactic|milchsäure|mandel|mandelic|\baha\b|fruchtsäure)\b/i, category: "active" },
+  { id: "retinoid", label: "Retinoid (Zellregeneration)", rx: /\b(retinol|retinal|adapalen|retinoid|tretinoin|granactive|hpr)\b/i, category: "active" },
+  { id: "bpo", label: "Benzoylperoxid (BPO)", rx: /\b(benzoyl|bpo)\b/i, category: "active" },
+  { id: "ascorbic", label: "Vitamin C (Antioxidans)", rx: /\b(ascorb|vitamin\s*c|vit\.?\s*c|\bl-aa\b|c-glow)\b/i, category: "active" },
+  { id: "uv_filter", label: "Breitband-UV-Filter", rx: /\b(mexoryl|uvmune|tinosorb|uvinul|avobenzone|breitbandfilter|lsf|spf)\b/i, category: "uv" },
+  { id: "iron_ox", label: "Eisenoxide (HEV-Blaulichtschutz)", rx: /\b(eisenoxid|iron\s*oxide|ci\s*77491|ci\s*77492|ci\s*77499)\b/i, category: "uv" },
+  { id: "zinkoxid", label: "Zinkoxid (Wund- & Nässeschutz)", rx: /\b(zinkoxid|zinc\s*oxide|wundschutz|zinksalbe)\b/i, category: "windel" },
+  { id: "mild_tenside", label: "Milde Tenside / Syndet pH 5.5", rx: /\b(syndet|seifenfrei|ampho|tensid|ph\s*5[.,]5|milde\s*reinigung|mizell)\b/i, category: "reinigung" }
+];
+
+const EFFECT_DEFINITIONS = [
+  { id: "feuchte", label: "💧 Feuchtigkeitsspende & Hydratation", rx: /\b(feucht|hydrat|hydro|water|moist|trocken)\b/i, activeIds: ["hyaluron", "glycerin_nmf", "beta_glucan", "urea", "aloe", "kaktusfeige"] },
+  { id: "barriere", label: "🛡️ Barriere-Reparatur & Schutz", rx: /\b(barriere|repair|intensiv|ceramid|lipid|hautschutz)\b/i, activeIds: ["ceramide", "panthenol", "cica", "ectoin", "squalane", "hafer"] },
+  { id: "beruhigung", label: "🌿 Beruhigung von Rötungen & Reizungen", rx: /\b(beruhig|sensitiv|sensitive|irritat|anti-rötung|sos|sooth)\b/i, activeIds: ["cica", "panthenol", "azelaic", "aloe"] },
+  { id: "unreinheiten", label: "🎯 Anti-Pickel & Klärend", rx: /\b(pickel|unrein|akne|blemish|anti-pickel|sos)\b/i, activeIds: ["azelaic", "bha", "bpo", "retinoid"] },
+  { id: "sebum_poren", label: "✨ Sebumkontrolle & Mattierung", rx: /\b(matt|poren|sebum|talg|glanz|klärend)\b/i, activeIds: ["niacinamide", "zinc", "bha"] },
+  { id: "pigment_pih", label: "🌸 Pickelmale (PIH) & Ebenmäßigkeit", rx: /\b(pickelmale|pih|melasma|pigment|flecken|glow|even)\b/i, activeIds: ["azelaic", "niacinamide", "ascorbic", "iron_ox"] },
+  { id: "uv_schutz", label: "☀️ Hoher UV-Sonnenschutz", rx: /\b(sonnenschutz|sun|sonnenfluid|uv|lsf|spf)\b/i, activeIds: ["uv_filter", "iron_ox"] },
+  { id: "milde_reinigung", label: "🫧 Milde Tensid-Reinigung", rx: /\b(wasch|reinig|cleanser|mizell|schaum)\b/i, activeIds: ["mild_tenside"] },
+  { id: "wundschutz", label: "👶 Wund- & Nässeschutz", rx: /\b(windel|wundschutz|po-creme|zinksalbe)\b/i, activeIds: ["zinkoxid", "panthenol"] }
+];
+
+function extractProductActiveProfile(p) {
+  if (!p) return { actives: [], effects: [], kat: "", texture: "" };
+  const blob = [
+    p.name || "",
+    p.brand || "",
+    p.wirk || "",
+    p.notes || "",
+    p.truth || "",
+    Array.isArray(p.klassen) ? p.klassen.join(" ") : ""
+  ].join(" ").toLowerCase();
+
+  const kat = p.kat || p.slot || "creme";
+
+  // 1. Actives
+  const detectedActives = [];
+  KEY_ACTIVES_DEFINITIONS.forEach(def => {
+    if (def.rx.test(blob)) {
+      detectedActives.push({ id: def.id, label: def.label, category: def.category });
+    }
+  });
+
+  // 2. Effects
+  const detectedEffects = [];
+  EFFECT_DEFINITIONS.forEach(eff => {
+    const hasTextMatch = eff.rx.test(blob);
+    const hasActiveMatch = eff.activeIds.some(aid => detectedActives.some(a => a.id === aid));
+    if (hasTextMatch || hasActiveMatch || (eff.id === "uv_schutz" && kat === "spf") || (eff.id === "milde_reinigung" && kat === "reiniger") || (eff.id === "wundschutz" && kat === "windel")) {
+      detectedEffects.push({ id: eff.id, label: eff.label });
+    }
+  });
+
+  // 3. Texture
+  let texture = "Creme / Lotion";
+  if (/\b(gel|hydro)\b/i.test(blob)) texture = "Gel / Feuchtigkeitsgel";
+  else if (/\b(balsam|balm)\b/i.test(blob)) texture = "Balsam / Reichhaltig";
+  else if (/\b(fluid|liquid)\b/i.test(blob)) texture = "Leichtes Fluid";
+  else if (/\b(schaum|foam)\b/i.test(blob)) texture = "Milder Schaum";
+  else if (/\b(serum|konzentrat)\b/i.test(blob)) texture = "Serum / Konzentrat";
+  else if (/\b(mizell|wasser|water)\b/i.test(blob)) texture = "Mizellenwasser / Toner";
+
+  return {
+    actives: detectedActives,
+    effects: detectedEffects,
+    kat: kat,
+    texture: texture
+  };
+}
+
+function calculateProductSimilarity(target, candidate) {
+  if (!target || !candidate || target.id === candidate.id) return { score: 0, details: null };
+
+  const profA = extractProductActiveProfile(target);
+  const profB = extractProductActiveProfile(candidate);
+
+  const katA = profA.kat;
+  const katB = profB.kat;
+
+  let katScore = 0;
+  if (katA === katB) {
+    katScore = 35;
+  } else if ((katA === "creme" && katB === "support") || (katA === "support" && katB === "creme")) {
+    katScore = 32;
+  } else if ((katA === "serum" && katB === "active") || (katA === "active" && katB === "serum")) {
+    katScore = 30;
+  } else if ((katA === "reiniger" && katB === "bad") || (katA === "bad" && katB === "reiniger")) {
+    katScore = 28;
+  } else {
+    // Incompatible categories (e.g. cleanser vs spf)
+    return { score: 10, details: { reason: "Verschiedene Pflegekategorien" } };
+  }
+
+  // Actives overlap
+  const activesA = profA.actives.map(a => a.id);
+  const activesB = profB.actives.map(b => b.id);
+  const sharedActives = activesA.filter(id => activesB.includes(id));
+
+  let activesScore = 0;
+  if (activesA.length > 0 && activesB.length > 0) {
+    const jaccard = sharedActives.length / new Set([...activesA, ...activesB]).size;
+    activesScore = Math.round(jaccard * 35);
+    if (sharedActives.length >= 2) activesScore += 8;
+  } else if (katA === katB && (katA === "reiniger" || katA === "spf")) {
+    activesScore = 22; // All gentle cleansers / sunscreens share base functional actives
+  }
+
+  // Broad active category synergy (e.g. both have barrier/hydration actives)
+  const catsA = new Set(profA.actives.map(a => a.category));
+  const catsB = new Set(profB.actives.map(b => b.category));
+  const sharedCats = [...catsA].filter(c => catsB.has(c));
+  if (sharedCats.length > 0) activesScore += Math.min(10, sharedCats.length * 5);
+
+  // Effects overlap
+  const effA = profA.effects.map(e => e.id);
+  const effB = profB.effects.map(e => e.id);
+  const sharedEffects = effA.filter(id => effB.includes(id));
+
+  let effectScore = 0;
+  if (effA.length > 0 && effB.length > 0) {
+    const effJaccard = sharedEffects.length / new Set([...effA, ...effB]).size;
+    effectScore = Math.round(effJaccard * 20);
+  }
+
+  // Tolerance criteria match
+  let tolScore = 0;
+  if (target.ff === candidate.ff && target.ff === true) tolScore += 5;
+  if (target.nc === candidate.nc && target.nc === true) tolScore += 4;
+  if (target.cf === candidate.cf && target.cf === true) tolScore += 3;
+
+  // Texture match
+  let texScore = profA.texture === profB.texture ? 5 : 0;
+
+  let totalScore = katScore + activesScore + effectScore + tolScore + texScore;
+  totalScore = Math.min(98, Math.max(15, totalScore));
+
+  return {
+    score: totalScore,
+    profA: profA,
+    profB: profB,
+    sharedActives: sharedActives,
+    sharedEffects: sharedEffects
+  };
+}
+
+function compareTwoProducts(prodA, prodB) {
+  const sim = calculateProductSimilarity(prodA, prodB);
+  const profA = sim.profA || extractProductActiveProfile(prodA);
+  const profB = sim.profB || extractProductActiveProfile(prodB);
+
+  const sharedActiveObjs = profA.actives.filter(a => profB.actives.some(b => b.id === a.id));
+  const onlyInA = profA.actives.filter(a => !profB.actives.some(b => b.id === a.id));
+  const onlyInB = profB.actives.filter(b => !profA.actives.some(a => a.id === b.id));
+
+  const sharedEffectObjs = profA.effects.filter(ea => profB.effects.some(eb => eb.id === ea.id));
+  const onlyEffectsA = profA.effects.filter(ea => !profB.effects.some(eb => eb.id === ea.id));
+  const onlyEffectsB = profB.effects.filter(eb => !profA.effects.some(ea => ea.id === eb.id));
+
+  // Parse price
+  const parseNumPrice = str => {
+    if (!str) return null;
+    const m = String(str).match(/(\d+[,.]\d{2})/);
+    return m ? parseFloat(m[1].replace(",", ".")) : null;
+  };
+  const numA = parseNumPrice(prodA.price || prodA.store);
+  const numB = parseNumPrice(prodB.price || prodB.store);
+
+  let priceDiffText = "";
+  let saving = null;
+  if (numA != null && numB != null) {
+    if (numB < numA) {
+      saving = +(numA - numB).toFixed(2);
+      priceDiffText = `💰 Günstigere Drogerie-Alternative: Du sparst ca. ${saving.toFixed(2).replace(".", ",")} €!`;
+    } else if (numB > numA) {
+      const diff = +(numB - numA).toFixed(2);
+      priceDiffText = `Aufpreis: ca. ${diff.toFixed(2).replace(".", ",")} € teurer als dein bisheriges Produkt.`;
+    } else {
+      priceDiffText = `Gleicher Preisbereich (~${numA.toFixed(2).replace(".", ",")} €).`;
+    }
+  }
+
+  let tier = "Vergleichbare Basispflege";
+  if (sim.score >= 82) tier = "Exzellentes Dupe / Fast identisch";
+  else if (sim.score >= 68) tier = "Sehr ähnliche Alternative";
+
+  // Formulate expert summary
+  let verdictSummary = "";
+  if (sharedActiveObjs.length > 0) {
+    const actNames = sharedActiveObjs.map(a => a.label.split("(")[0].trim()).join(" & ");
+    verdictSummary = `Teilt dieselben Hauptwirkstoffe (${actNames}) und verfolgt denselben Wirkungsfokus.`;
+  } else if (sharedEffectObjs.length > 0) {
+    const effNames = sharedEffectObjs.map(e => e.label.replace(/^[^\s]+\s*/, "")).join(" sowie ");
+    verdictSummary = `Vergleichbare Wirkung auf die Haut: Fokussiert auf ${effNames}.`;
+  } else {
+    verdictSummary = `Vergleichbare Formulierung aus derselben Pflegekategorie.`;
+  }
+  if (saving && saving >= 2.0) {
+    verdictSummary += ` Bietet einen deutlichen Preisvorteil in der Drogerie.`;
+  }
+
+  return {
+    score: sim.score,
+    tier: tier,
+    prodA: prodA,
+    prodB: prodB,
+    sharedActives: sharedActiveObjs,
+    onlyInA: onlyInA,
+    onlyInB: onlyInB,
+    sharedEffects: sharedEffectObjs,
+    onlyEffectsA: onlyEffectsA,
+    onlyEffectsB: onlyEffectsB,
+    profA: profA,
+    profB: profB,
+    priceA: prodA.price || (numA ? `${numA.toFixed(2).replace(".", ",")} €` : ""),
+    priceB: prodB.price || (numB ? `${numB.toFixed(2).replace(".", ",")} €` : ""),
+    priceDiffText: priceDiffText,
+    saving: saving,
+    verdictSummary: verdictSummary,
+    tolerance: {
+      ff: { a: prodA.ff, b: prodB.ff, bothFF: prodA.ff === true && prodB.ff === true },
+      nc: { a: prodA.nc, b: prodB.nc, bothNC: prodA.nc === true && prodB.nc === true },
+      cf: { a: prodA.cf, b: prodB.cf, bothCF: prodA.cf === true && prodB.cf === true }
+    }
+  };
+}
+
+function getCatalogCandidatesPool(profileCategory = "adult") {
+  const pool = {};
+  if (profileCategory === "teen") {
+    if (typeof TEEN_DB === "object") Object.assign(pool, TEEN_DB);
+    if (typeof DB === "object") {
+      Object.keys(DB).forEach(id => {
+        const p = DB[id];
+        if (p && !p.rx && p.schiene !== "arzneimittel" && !/anti-age|wrinkle|retinoid_rx/i.test(p.wirk || "")) {
+          if (!pool[id]) pool[id] = p;
+        }
+      });
+    }
+  } else if (profileCategory === "baby" || profileCategory === "child") {
+    if (typeof BABY_DB === "object") Object.assign(pool, BABY_DB);
+  } else {
+    if (typeof DB === "object") Object.assign(pool, DB);
+    if (typeof EU_FLAG_CATALOG === "object") {
+      Object.keys(EU_FLAG_CATALOG).forEach(id => {
+        if (!pool[id]) pool[id] = EU_FLAG_CATALOG[id];
+      });
+    }
+  }
+
+  // Include user's custom products and scanned items
+  if (typeof appState === "object" && appState.customProducts) {
+    Object.keys(appState.customProducts).forEach(id => {
+      if (!pool[id]) pool[id] = appState.customProducts[id];
+    });
+  }
+  // Include dmResultsMap if populated
+  if (typeof window === "object" && window.dmResultsMap) {
+    Object.keys(window.dmResultsMap).forEach(id => {
+      const p = window.dmResultsMap[id];
+      if (p && !p._deeplinkOnly && p.source !== "deeplink" && !pool[id]) {
+        pool[id] = p;
+      }
+    });
+  }
+
+  return pool;
+}
+
+function findSimilarProducts(targetProdOrId, options = {}) {
+  let target = null;
+  if (typeof targetProdOrId === "object" && targetProdOrId !== null) {
+    target = targetProdOrId;
+  } else if (typeof targetProdOrId === "string") {
+    target = (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(targetProdOrId) : null)
+      || (typeof DB === "object" ? DB[targetProdOrId] : null)
+      || (typeof EU_FLAG_CATALOG === "object" ? EU_FLAG_CATALOG[targetProdOrId] : null)
+      || (typeof TEEN_DB === "object" ? TEEN_DB[targetProdOrId] : null)
+      || (typeof BABY_DB === "object" ? BABY_DB[targetProdOrId] : null)
+      || (typeof appState === "object" && appState.customProducts ? appState.customProducts[targetProdOrId] : null);
+  }
+  if (!target) return [];
+
+  const limit = options.limit || 4;
+  const category = options.category || (typeof getActiveProfile === "function" ? getActiveProfile().category : "adult") || "adult";
+  const pool = options.pool || getCatalogCandidatesPool(category);
+
+  const candidates = Object.values(pool).filter(c => {
+    if (!c || typeof c !== "object") return false;
+    if (c.id === target.id) return false;
+    if (c.ean && target.ean && c.ean === target.ean) return false;
+    if (c._deeplinkOnly || c.source === "deeplink") return false;
+    return true;
+  });
+
+  const scored = [];
+  candidates.forEach(cand => {
+    const comp = compareTwoProducts(target, cand);
+    if (comp && comp.score >= 35) {
+      scored.push({
+        candidate: cand,
+        comp: comp,
+        score: comp.score
+      });
+    }
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit);
+}
+
+// Exports
+window.KEY_ACTIVES_DEFINITIONS = KEY_ACTIVES_DEFINITIONS;
+window.EFFECT_DEFINITIONS = EFFECT_DEFINITIONS;
+window.extractProductActiveProfile = extractProductActiveProfile;
+window.calculateProductSimilarity = calculateProductSimilarity;
+window.compareTwoProducts = compareTwoProducts;
+window.getCatalogCandidatesPool = getCatalogCandidatesPool;
+window.findSimilarProducts = findSimilarProducts;
+
+
+// ==========================================
 // LIVE-DM INTEGRATION (Echtzeit-Produktsuche & EAN-Abfrage frisch bei dm)
 // ==========================================
 
