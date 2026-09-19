@@ -444,12 +444,9 @@ function loadProfileToAppState(p) {
   appState.activeProfileId = p.id;
   appState.profile = p.category;
   if (!appState.profileSubtitles) {
-    const defaultSubs = { adult: "Akne & Barriere", teen: "Basis & Akne", child: "Sanft & LSF 50+", baby: "Parfümfrei-Prio" };
-    appState.profileSubtitles = defaultSubs;
+    appState.profileSubtitles = {};
   }
-  if (p.subtitle) {
-    appState.profileSubtitles[p.category] = p.subtitle;
-  }
+  appState.profileSubtitles[p.category] = p.subtitle || "";
   if (appState.country) {
     p.country = appState.country;
   } else if (p.country) {
@@ -541,7 +538,7 @@ function updateCategoryNav() {
             ${isActive ? `<span style="font-size:0.62rem;position:absolute;bottom:-1px;right:-5px;background:#f4ece0;border-radius:4px;padding:0 2px" title="Umbenennen">✏️</span>` : ''}
           </div>
           <span class="c-title">${p.name}</span>
-          <span class="c-sub" id="${subId}">${p.subtitle || getCategoryDefaultSubtitle(p.category)}</span>
+          <span class="c-sub" id="${subId}">${(p.subtitle && p.subtitle.trim()) ? escapeHtml(p.subtitle) : ''}</span>
         </button>
       `;
     });
@@ -755,22 +752,18 @@ function openNewProfileModal() {
       <!-- 1. Kategorie -->
       <div style="margin:0.5rem 0">
         <label style="display:block;font-size:0.74rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.35rem">1. Kategorie auswählen</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="newProfCatGrid">
-          <div class="choice-card active" id="catChoice_adult" onclick="selectNewProfileCategory('adult')" style="padding:0.65rem 0.75rem;cursor:pointer;border:2px solid #0a3323;border-radius:10px;background:#f4f8f5;margin-bottom:0">
-            <div style="font-weight:700;font-size:0.88rem;display:flex;align-items:center;gap:6px">👤 Erwachsener</div>
-            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">Akne, Skin Cycling &amp; Barriere</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="newProfCatGrid">
+          <div class="choice-card active" id="catChoice_adult" onclick="selectNewProfileCategory('adult')" style="padding:0.75rem 0.85rem;cursor:pointer;border:2px solid #0a3323;border-radius:10px;background:#f4f8f5;margin-bottom:0;display:flex;align-items:center;justify-content:center">
+            <div style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:6px">👤 Erwachsene</div>
           </div>
-          <div class="choice-card" id="catChoice_teen" onclick="selectNewProfileCategory('teen')" style="padding:0.65rem 0.75rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0">
-            <div style="font-weight:700;font-size:0.88rem;display:flex;align-items:center;gap:6px">🧑‍🦱 Teenie (12–17 J.)</div>
-            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">Basis &amp; Akne, kein Anti-Aging</div>
+          <div class="choice-card" id="catChoice_teen" onclick="selectNewProfileCategory('teen')" style="padding:0.75rem 0.85rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0;display:flex;align-items:center;justify-content:center">
+            <div style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:6px">🧑‍🦱 Teenie</div>
           </div>
-          <div class="choice-card" id="catChoice_child" onclick="selectNewProfileCategory('child')" style="padding:0.65rem 0.75rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0">
-            <div style="font-weight:700;font-size:0.88rem;display:flex;align-items:center;gap:6px">🧒 Kind (3–11 J.)</div>
-            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">Sanfte Barriere &amp; LSF 50+</div>
+          <div class="choice-card" id="catChoice_child" onclick="selectNewProfileCategory('child')" style="padding:0.75rem 0.85rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0;display:flex;align-items:center;justify-content:center">
+            <div style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:6px">🧒 Kind</div>
           </div>
-          <div class="choice-card" id="catChoice_baby" onclick="selectNewProfileCategory('baby')" style="padding:0.65rem 0.75rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0">
-            <div style="font-weight:700;font-size:0.88rem;display:flex;align-items:center;gap:6px">👶 Baby (&lt;3 J.)</div>
-            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">100% Parfümfrei &amp; Säuglings-Schutz</div>
+          <div class="choice-card" id="catChoice_baby" onclick="selectNewProfileCategory('baby')" style="padding:0.75rem 0.85rem;cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;margin-bottom:0;display:flex;align-items:center;justify-content:center">
+            <div style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:6px">👶 Baby</div>
           </div>
         </div>
       </div>
@@ -778,7 +771,7 @@ function openNewProfileModal() {
       <!-- 2. Profilname -->
       <div style="margin:0.75rem 0">
         <label for="newProfileNameInput" style="display:block;font-size:0.74rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.35rem">2. Profilname (frei wählbar)</label>
-        <input type="text" id="newProfileNameInput" placeholder="z. B. Mama, Papa, Sarah, Lukas..." style="width:100%;padding:0.65rem 0.8rem;border:1.5px solid var(--line);border-radius:10px;font-size:0.92rem;font-family:inherit" value="Erwachsener" onkeydown="if(event.key==='Enter'){ submitCreateProfile(); }">
+        <input type="text" id="newProfileNameInput" placeholder="z. B. Mama, Papa, Sarah, Lukas..." style="width:100%;padding:0.65rem 0.8rem;border:1.5px solid var(--line);border-radius:10px;font-size:0.92rem;font-family:inherit" value="Erwachsene" onkeydown="if(event.key==='Enter'){ submitCreateProfile(); }">
       </div>
 
       <!-- 3. Wie möchtest du starten? -->
@@ -950,7 +943,7 @@ function selectNewProfileCategory(cat) {
   const inp = document.getElementById("newProfileNameInput");
   if (inp) {
     const defaultNames = {
-      adult: "Erwachsener",
+      adult: "Erwachsene",
       teen: "Teenie",
       child: "Kind",
       baby: "Baby"
@@ -965,7 +958,7 @@ function submitCreateProfile() {
   const inp = document.getElementById("newProfileNameInput");
   const rawName = inp ? inp.value.trim() : "";
   const cat = newProfileSelectedCat || "adult";
-  const defaultNames = { adult: "Erwachsener", teen: "Teenie 12–17 J.", child: "Kind 3–11 J.", baby: "Baby <3 J." };
+  const defaultNames = { adult: "Erwachsene", teen: "Teenie", child: "Kind", baby: "Baby" };
   const finalName = rawName || defaultNames[cat];
 
   syncActiveProfileFromWorkingState();
@@ -977,7 +970,7 @@ function submitCreateProfile() {
     id: "p_" + cat + "_" + Date.now(),
     name: finalName,
     category: cat,
-    subtitle: selectedSkin.subtitle || "Basis & Barriere",
+    subtitle: newProfileCabinetFillMode === "starter" ? (selectedSkin.subtitle || "") : "",
     complexity: "basis",
     tags: Array.isArray(selectedSkin.tags) ? selectedSkin.tags.slice() : ["Eigene Routine"],
     country: getProfileCountry(),
