@@ -429,6 +429,27 @@ function openBabyProductDetail(prodId) {
             <strong>Katalog-Notiz:</strong> ${p.notes}
           </div>
         ` : ''}
+
+        ${(() => {
+          const cAnalysis = typeof analyzeInciComedogenicity === "function" ? analyzeInciComedogenicity(p) : null;
+          if (!cAnalysis) return '';
+          return `
+            <div style="padding:8px 10px;border-radius:8px;margin-top:6px;background:${cAnalysis.badgeColor};border:1px solid ${cAnalysis.borderColor}">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font-weight:700;font-size:0.84rem;color:${cAnalysis.textColor}">
+                  🛡️ Komedogenitäts-Check: Score ${cAnalysis.maxScore}/5
+                </span>
+                <span style="font-size:0.7rem;font-weight:700;padding:1px 6px;border-radius:4px;background:#fff;border:1px solid ${cAnalysis.borderColor};color:${cAnalysis.textColor}">
+                  ${cAnalysis.maxScore <= 1 ? 'Porenfreundlich' : 'Score ' + cAnalysis.maxScore + '/5'}
+                </span>
+              </div>
+              <div style="font-size:0.74rem;color:${cAnalysis.textColor};margin-top:3px;line-height:1.3">
+                ${cAnalysis.summary}
+              </div>
+            </div>
+          `;
+        })()}
+
         ${(p.ff == null || p.nc == null || p.cf == null || p._liveSource || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id))) ? `
           <div style="font-size:0.78rem;color:#78350f;background:#fffbeb;border:1px solid #fde68a;padding:8px 10px;border-radius:8px;margin-top:8px;line-height:1.35">
             <strong>ℹ️ Hinweis zum Online-Katalog:</strong> Zu diesem Produkt liegen keine Labor- oder Zertifikatsdaten vor (Komedogenität, Duftstoffe oder Cruelty-Free offen). Bei unreiner Haut empfiehlt sich ein Blick auf die gedruckte INCI-Liste.
@@ -806,15 +827,38 @@ function openTeenProductDetail(prodId) {
           </div>
         </div>
 
-        <!-- Nicht-Komedogen Check -->
-        <div style="padding:8px 10px;border-radius:8px;margin-bottom:6px;background:${p.nc === true ? '#f0fdf4' : (p.nc === false ? '#fffbeb' : '#f9fafb')};border:1px solid ${p.nc === true ? '#bbf7d0' : (p.nc === false ? '#fde68a' : '#e5e7eb')}">
-          <div style="font-weight:700;font-size:0.84rem;color:${p.nc === true ? '#166534' : (p.nc === false ? '#92400e' : '#4b5563')}">
-            ${p.nc === true ? '🛡️ Nicht komedogen (Claim verifiziert)' : (p.nc === false ? '⚠️ Kein NC-Claim / potenziell komedogen' : 'ℹ️ NC offen (Komedogenität nicht deklariert)')}
-          </div>
-          <div style="font-size:0.76rem;color:${p.nc === true ? '#166534' : (p.nc === false ? '#92400e' : '#6b7280')};margin-top:2px">
-            ${p.nc === true ? 'Herstellerclaim bestätigt: Formulierung ist darauf getestet, Poren nicht zu verstopfen – ideal bei Akne-Neigung.' : (p.nc === false ? 'Kein Nicht-Komedogen-Nachweis; Textur könnte bei Neigung zu Unreinheiten porenverstopfend wirken.' : 'Keine offizielle Hersteller-Auslobung bezüglich Komedogenität hinterlegt.')}
-          </div>
-        </div>
+        <!-- Evidenzbasierte Komedogenitäts-Prüfung (Skala 0-5) -->
+        ${(() => {
+          const cAnalysis = typeof analyzeInciComedogenicity === "function" ? analyzeInciComedogenicity(p) : null;
+          if (!cAnalysis) return '';
+          return `
+            <div style="padding:8px 10px;border-radius:8px;margin-bottom:6px;background:${cAnalysis.badgeColor};border:1px solid ${cAnalysis.borderColor}">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:700;font-size:0.84rem;color:${cAnalysis.textColor}">
+                  🛡️ Komedogenitäts-Score: ${cAnalysis.maxScore}/5
+                </div>
+                <span style="font-size:0.7rem;background:#fff;color:${cAnalysis.textColor};border:1px solid ${cAnalysis.borderColor};padding:1px 6px;border-radius:4px;font-weight:700">
+                  ${cAnalysis.maxScore <= 1 ? '🟢 Porenfreundlich' : (cAnalysis.maxScore === 2 ? '🟡 Gering' : (cAnalysis.maxScore === 3 ? '🟠 Mäßig' : '🔴 Stark'))}
+                </span>
+              </div>
+              <div style="font-size:0.75rem;color:${cAnalysis.textColor};margin-top:3px;line-height:1.35">
+                ${cAnalysis.summary}
+              </div>
+              ${cAnalysis.flagged.length > 0 ? `
+                <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">
+                  ${cAnalysis.flagged.map(f => `
+                    <span style="font-size:0.68rem;padding:1px 5px;border-radius:4px;background:#fff;border:1px solid ${cAnalysis.borderColor};color:${f.score >= 4 ? '#991b1b' : (f.score === 3 ? '#9a3412' : '#166534')};font-weight:600" title="${escapeHtml(f.note)}">
+                      ${escapeHtml(f.name)} (${f.score}/5)
+                    </span>
+                  `).join('')}
+                </div>
+              ` : ''}
+              <div style="font-size:0.7rem;color:var(--muted);margin-top:5px;line-height:1.25">
+                <em>EU-Hinweis:</em> 'Nicht komedogen' ist kein geschützter EU-Begriff. Der Score 0–5 basiert auf dermatologischer INCI-Evidenz (Fulton/Kligman).
+              </div>
+            </div>
+          `;
+        })()}
 
         <!-- Cruelty-Free Check -->
         <div style="padding:8px 10px;border-radius:8px;margin-bottom:6px;background:${p.cf === true ? '#faf5ff' : (p.cf === false ? '#fffbeb' : '#f9fafb')};border:1px solid ${p.cf === true ? '#e9d5ff' : (p.cf === false ? '#fde68a' : '#e5e7eb')}">
@@ -1749,6 +1793,12 @@ function openCustomProductModal(initialQuery = "") {
         <input type="text" id="custEan" class="search-input" value="${defaultEan}" placeholder="z. B. 4010355..." style="margin-top:3px">
       </div>
 
+      <div>
+        <label style="font-size:0.78rem;font-weight:700;color:var(--ink)">Inhaltsstoffliste (INCI) für evidenzbasierte Prüfung (optional)</label>
+        <textarea id="custInci" style="width:100%;min-height:75px;padding:0.6rem;border:1px solid var(--line);border-radius:10px;font-size:0.8rem;font-family:monospace;margin-top:3px;box-sizing:border-box" placeholder="z. B. Aqua, Glycerin, Isopropyl Myristate, Cocos Nucifera Oil, Niacinamide..." oninput="window.onCustInciInput(this.value)"></textarea>
+        <div id="custInciAnalysisBox" style="margin-top:4px"></div>
+      </div>
+
       <!-- 3 EU-Flag Toggles -->
       <div style="background:#fcfbf8;border:1px solid var(--line);border-radius:12px;padding:0.85rem;margin-top:4px">
         <div style="font-size:0.8rem;font-weight:700;color:var(--ink);margin-bottom:6px">EU-Kriterien & Auslobung der Dose:</div>
@@ -1783,6 +1833,38 @@ function openCustomProductModal(initialQuery = "") {
     if (notice) notice.style.display = isCf ? "block" : "none";
     if (cfCheckbox && isCf) cfCheckbox.checked = true;
   };
+
+  window.onCustInciInput = (val) => {
+    const box = document.getElementById("custInciAnalysisBox");
+    const ncCheckbox = document.getElementById("custNc");
+    if (!box) return;
+    if (!val || !val.trim()) {
+      box.innerHTML = "";
+      return;
+    }
+    const cAnalysis = typeof analyzeInciComedogenicity === "function" ? analyzeInciComedogenicity(val) : null;
+    if (!cAnalysis) return;
+
+    if (ncCheckbox) {
+      if (cAnalysis.maxScore <= 1) {
+        ncCheckbox.checked = true;
+      } else if (cAnalysis.maxScore >= 3) {
+        ncCheckbox.checked = false;
+      }
+    }
+
+    box.innerHTML = `
+      <div style="background:${cAnalysis.badgeColor};border:1px solid ${cAnalysis.borderColor};border-radius:8px;padding:6px 10px;font-size:0.78rem">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong style="color:${cAnalysis.textColor}">🛡️ Live-INCI Check: Score ${cAnalysis.maxScore}/5</strong>
+          <span style="font-size:0.68rem;background:#fff;color:${cAnalysis.textColor};padding:1px 5px;border-radius:4px;font-weight:700">
+            ${cAnalysis.maxScore <= 1 ? 'Porenfreundlich' : (cAnalysis.maxScore === 2 ? 'Leicht' : 'Komedogen')}
+          </span>
+        </div>
+        <div style="color:${cAnalysis.textColor};margin-top:2px;font-size:0.74rem">${cAnalysis.summary}</div>
+      </div>
+    `;
+  };
 }
 
 function saveCustomProductAndCheck() {
@@ -1790,9 +1872,13 @@ function saveCustomProductAndCheck() {
   const name = (document.getElementById("custName")?.value || "Gesichtspflege").trim();
   const kat = document.getElementById("custKat")?.value || "creme";
   const ean = (document.getElementById("custEan")?.value || "").trim();
+  const inci = (document.getElementById("custInci")?.value || "").trim();
   const ff = document.getElementById("custFf")?.checked ? true : null;
-  const nc = document.getElementById("custNc")?.checked ? true : null;
+  const rawNc = document.getElementById("custNc")?.checked ? true : null;
   const cf = document.getElementById("custCf")?.checked ? true : null;
+
+  const cAnalysis = inci && typeof analyzeInciComedogenicity === "function" ? analyzeInciComedogenicity(inci) : null;
+  const nc = cAnalysis ? (cAnalysis.maxScore <= 1) : rawNc;
 
   const isCf = (cf === true) || isBrandCrueltyFree(brand);
   const cfBasis = isCf ? (isBrandCrueltyFree(brand) ? "CFI Leaping Bunny (genehmigte Marke)" : "Manuell deklariert") : "";
@@ -1816,6 +1902,8 @@ function saveCustomProductAndCheck() {
     cf_basis: cfBasis,
     ff,
     ean,
+    inci: inci || undefined,
+    comedogenicScore: cAnalysis ? cAnalysis.maxScore : (nc ? 0 : 2),
     store: "Eigene Erfassung · EU-Handel",
     notes: isCf ? "Marke erfüllt CFI / Leaping Bunny Kriterien." : "Individuell über den Scanner erfasst."
   };
@@ -2060,6 +2148,38 @@ function openProductDetail(prodId) {
         </div>
       </div>
     ` : ""}
+
+    ${(() => {
+      const cAnalysis = typeof analyzeInciComedogenicity === "function" ? analyzeInciComedogenicity(p) : null;
+      if (!cAnalysis) return '';
+      return `
+        <div style="background:${cAnalysis.badgeColor};border:1px solid ${cAnalysis.borderColor};border-radius:10px;padding:0.85rem;margin:0.8rem 0">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700;font-size:0.88rem;color:${cAnalysis.textColor};display:flex;align-items:center;gap:6px">
+              <span>🛡️ Komedogenitäts-Score: <strong>${cAnalysis.maxScore}/5</strong></span>
+            </div>
+            <span style="font-size:0.72rem;background:#fff;color:${cAnalysis.textColor};border:1px solid ${cAnalysis.borderColor};padding:2px 7px;border-radius:6px;font-weight:700">
+              ${cAnalysis.maxScore <= 1 ? '🟢 Porenfreundlich' : (cAnalysis.maxScore === 2 ? '🟡 Gering' : (cAnalysis.maxScore === 3 ? '🟠 Mäßig komedogen' : '🔴 Stark komedogen'))}
+            </span>
+          </div>
+          <div style="font-size:0.8rem;color:${cAnalysis.textColor};margin-top:4px;line-height:1.35">
+            ${cAnalysis.summary}
+          </div>
+          ${cAnalysis.flagged.length > 0 ? `
+            <div style="margin-top:8px;padding-top:6px;border-top:1px dashed ${cAnalysis.borderColor};display:flex;flex-wrap:wrap;gap:4px">
+              ${cAnalysis.flagged.map(f => `
+                <span style="font-size:0.7rem;padding:2px 6px;border-radius:4px;background:#fff;border:1px solid ${cAnalysis.borderColor};color:${f.score >= 4 ? '#991b1b' : (f.score === 3 ? '#9a3412' : (f.score === 2 ? '#854d0e' : '#166534'))};font-weight:600" title="${escapeHtml(f.note)}">
+                  ${escapeHtml(f.name)} (${f.score}/5)
+                </span>
+              `).join('')}
+            </div>
+          ` : ''}
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:6px;line-height:1.3">
+            <em>EU-Transparenz-Hinweis (VO 1223/2009):</em> Der Claim „nicht komedogen“ ist in Europa kosmetikrechtlich nicht geschützt. Kosmetikschrank prüft direkt die evidenzbasierte INCI-Zusammensetzung (Skala 0–5 nach Fulton/Kligman).
+          </div>
+        </div>
+      `;
+    })()}
 
     ${p.truth ? `
       <div class="pharma-box">
@@ -2311,7 +2431,46 @@ function openProductComparisonModal(originalId, candidateId) {
         ${diffBHtml}
       </div>
 
-      <!-- 2. Wirkung & Hautnutzen Section -->
+      <!-- 2. Porenverstopfungs- & Komedogenitäts-Vergleich Section -->
+      ${(() => {
+        const ca = comp.comedogenicity ? comp.comedogenicity.analysisA : (typeof analyzeInciComedogenicity === "function" ? analyzeInciComedogenicity(prodA) : null);
+        const cb = comp.comedogenicity ? comp.comedogenicity.analysisB : (typeof analyzeInciComedogenicity === "function" ? analyzeInciComedogenicity(prodB) : null);
+        if (!ca || !cb) return '';
+        const isBetter = cb.maxScore < ca.maxScore;
+        const isWorse = cb.maxScore > ca.maxScore;
+        const bothSafe = ca.maxScore <= 1 && cb.maxScore <= 1;
+
+        return `
+          <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div style="font-weight:700;font-size:0.85rem;color:var(--ink)">
+                🛡️ Porenverstopfung &amp; Komedogenität (Skala 0–5)
+              </div>
+              <span style="font-size:0.72rem;font-weight:700;padding:2px 7px;border-radius:5px;background:${isBetter ? '#dcfce7' : (bothSafe ? '#eff6ff' : (isWorse ? '#fee2e2' : '#fef9c3'))};color:${isBetter ? '#166534' : (bothSafe ? '#1e40af' : (isWorse ? '#991b1b' : '#854d0e'))}">
+                ${isBetter ? '🟢 Alternative ist porenfreundlicher' : (bothSafe ? '🟢 Beide nicht komedogen' : (isWorse ? '⚠️ Alternative ist komedogener' : 'Gleiches Risiko'))}
+              </span>
+            </div>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;font-size:0.78rem">
+              <div style="background:${ca.badgeColor};padding:6px 8px;border-radius:6px;border:1px solid ${ca.borderColor}">
+                <div style="font-weight:700;color:${ca.textColor}">Original: Score ${ca.maxScore}/5</div>
+                <div style="font-size:0.72rem;color:${ca.textColor};margin-top:2px">${ca.maxScore <= 1 ? 'Porenfreundlich' : (ca.maxScore === 2 ? 'Leichtes Risiko' : (ca.maxScore === 3 ? 'Moderat komedogen' : 'Stark verstopfend'))}</div>
+                ${ca.highRisk.concat(ca.moderateRisk).length > 0 ? `<div style="font-size:0.68rem;color:#991b1b;margin-top:3px">⚠️ ${ca.highRisk.concat(ca.moderateRisk).map(i => i.name).join(', ')}</div>` : ''}
+              </div>
+              <div style="background:${cb.badgeColor};padding:6px 8px;border-radius:6px;border:1px solid ${cb.borderColor}">
+                <div style="font-weight:700;color:${cb.textColor}">Dupe: Score ${cb.maxScore}/5</div>
+                <div style="font-size:0.72rem;color:${cb.textColor};margin-top:2px">${cb.maxScore <= 1 ? 'Porenfreundlich' : (cb.maxScore === 2 ? 'Leichtes Risiko' : (cb.maxScore === 3 ? 'Moderat komedogen' : 'Stark verstopfend'))}</div>
+                ${cb.highRisk.concat(cb.moderateRisk).length > 0 ? `<div style="font-size:0.68rem;color:#991b1b;margin-top:3px">⚠️ ${cb.highRisk.concat(cb.moderateRisk).map(i => i.name).join(', ')}</div>` : ''}
+              </div>
+            </div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:6px">
+              <em>EU-Transparenz:</em> Werbebehauptungen zu 'nicht komedogen' sind unreguliert; die Kosmetikschrank-Engine analysiert jeden Inhaltsstoff nach dermatologischer Evidenz.
+            </div>
+          </div>
+        `;
+      })()}
+
+      <!-- 3. Wirkung & Hautnutzen Section -->
       <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem">
         <div style="font-weight:700;font-size:0.85rem;color:var(--ink);margin-bottom:6px">
           🎯 Wirkung &amp; Hautfokus

@@ -125,7 +125,7 @@
     assert(appState.view === "start", "appState.view set to 'start'");
     const appContent = document.getElementById("appContent");
     assert(appContent.querySelector(".welcome-box") !== null, "Start screen welcome box rendered");
-    assert(appContent.querySelectorAll(".start-pill-btn").length === 4, "4 category pills present");
+    assert(appContent.querySelectorAll(".start-pill-btn:not(.country-chip)").length === 4, "4 category pills present");
     assert(appContent.querySelectorAll(".start-action-card").length === 2, "2 clear action cards (Schrank & Quiz) present");
     assert(document.getElementById("navTab_start").classList.contains("active"), "navTab_start is marked active");
 

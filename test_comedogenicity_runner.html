@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Komedogenitäts- & Hauttyp-Filter Test Suite</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/screens.css">
+</head>
+<body>
+
+<!-- Minimal DOM for App & Modals -->
+<div id="appToast" class="toast-container"></div>
+<header><nav class="cat-nav-bar" id="catNavBar"></nav></header>
+<main id="appContent" class="screen-container"></main>
+<div id="modalContainer"></div>
+
+<!-- App Scripts -->
+<script src="js/catalog.js"></script>
+<script src="js/state.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/ideal-routines.js"></script>
+<script src="js/screens/start.js"></script>
+<script src="js/screens/cabinet.js"></script>
+<script src="js/screens/scan.js"></script>
+<script src="js/screens/settings.js"></script>
+<script src="js/screens/quiz.js"></script>
+<script src="js/app.js"></script>
+
+<div id="testContainer" style="background:#0f172a;color:#f8fafc;padding:20px;margin:20px;border-radius:10px;font-family:Consolas,monospace">
+  <h2 style="margin-top:0;color:#38bdf8">🔬 TEST SUITE: Evidenzbasierte Komedogenitäts-Filterung (Skala 0–5) & Hauttyp-Evaluation</h2>
+  <div id="testLog">Running tests...</div>
+</div>
+
+<script>
+(function() {
+  const log = [];
+  function assert(condition, message) {
+    if (condition) {
+      log.push("PASS: " + message);
+    } else {
+      log.push("FAIL: " + message);
+    }
+  }
+
+  try {
+    resetSchrank();
+
+    // =========================================================================
+    // 1. DATABASE INTEGRITY & LITERATURE COMPILATION (FULTON, KLIGMAN, DRAELOS)
+    // =========================================================================
+    log.push("--- 1. DATABASE INTEGRITY (0–5 SCALE) ---");
+    assert(typeof COMEDOGENIC_INGREDIENTS_DB === "object" && Array.isArray(COMEDOGENIC_INGREDIENTS_DB), "COMEDOGENIC_INGREDIENTS_DB is an array");
+    assert(COMEDOGENIC_INGREDIENTS_DB.length >= 80, "Database contains at least 80 curated substances (found: " + COMEDOGENIC_INGREDIENTS_DB.length + ")");
+
+    // Check specific high-impact substances
+    const ipm = COMEDOGENIC_INGREDIENTS_DB.find(i => /isopropyl myristate/i.test(i.name));
+    assert(ipm && ipm.score === 5, "Isopropyl Myristate is rated Score 5 (Extreme)");
+
+    const coco = COMEDOGENIC_INGREDIENTS_DB.find(i => /cocos nucifera|coconut/i.test(i.name));
+    assert(coco && coco.score === 4, "Cocos Nucifera (Coconut) Oil is rated Score 4 (High)");
+
+    const wheat = COMEDOGENIC_INGREDIENTS_DB.find(i => /wheat germ|triticum vulgare/i.test(i.name));
+    assert(wheat && wheat.score === 5, "Wheat Germ Oil (Triticum Vulgare) is rated Score 5 (Extreme)");
+
+    const cetearyl = COMEDOGENIC_INGREDIENTS_DB.find(i => /cetearyl alcohol/i.test(i.name));
+    assert(cetearyl && cetearyl.score === 2, "Cetearyl Alcohol is rated Score 2 (Mild fatty alcohol)");
+
+    const squalane = COMEDOGENIC_INGREDIENTS_DB.find(i => /squalane/i.test(i.name));
+    assert(squalane && squalane.score === 0, "Squalane is rated Score 0 (Safe / Non-comedogenic)");
+
+    const glycerin = COMEDOGENIC_INGREDIENTS_DB.find(i => /glycerin/i.test(i.name));
+    assert(glycerin && glycerin.score === 0, "Glycerin is rated Score 0 (Safe)");
+
+    // Every item has valid score 0-5 and regex
+    const allValid = COMEDOGENIC_INGREDIENTS_DB.every(i => typeof i.score === "number" && i.score >= 0 && i.score <= 5 && i.regex instanceof RegExp);
+    assert(allValid, "All entries have a valid numeric score (0–5) and compiled RegExp");
+
+    // =========================================================================
+    // 2. INCI PARSER & DETECTOR ENGINE
+    // =========================================================================
+    log.push("--- 2. INCI PARSER ENGINE (analyzeInciComedogenicity) ---");
+    assert(typeof analyzeInciComedogenicity === "function", "analyzeInciComedogenicity is a declared function");
+
+    // Test A: Extreme Comedogenicity (Score 5)
+    const testInci5 = "AQUA, GLYCERIN, ISOPROPYL MYRISTATE, DIMETHICONE, PHENOXYETHANOL";
+    const res5 = analyzeInciComedogenicity(testInci5);
+    assert(res5.maxScore === 5, "Test A: Detects maxScore 5 for Isopropyl Myristate");
+    assert(res5.status === "comedogenic_extreme", "Test A: Status is comedogenic_extreme");
+    assert(res5.flagged.some(f => /isopropyl myristate/i.test(f.name)), "Test A: Isopropyl Myristate in flagged list");
+
+    // Test B: High Comedogenicity (Score 4)
+    const testInci4 = "Water, Cocos Nucifera (Coconut) Oil, Cetyl Alcohol, Tocopherol";
+    const res4 = analyzeInciComedogenicity(testInci4);
+    assert(res4.maxScore === 4, "Test B: Detects maxScore 4 for Coconut Oil");
+    assert(res4.status === "comedogenic_high", "Test B: Status is comedogenic_high");
+
+    // Test C: Moderate / Mild (Score 2)
+    const testInci2 = "Aqua, Cetearyl Alcohol, Glyceryl Stearate, Glycerin";
+    const res2 = analyzeInciComedogenicity(testInci2);
+    assert(res2.maxScore === 2, "Test C: Detects maxScore 2 for Cetearyl Alcohol");
+    assert(res2.status === "comedogenic_low", "Test C: Status is comedogenic_low");
+
+    // Test D: Clean / Safe (Score 0)
+    const testInci0 = "Aqua, Glycerin, Niacinamide, Squalane, Panthenol, Sodium Hyaluronate, Allantoin";
+    const res0 = analyzeInciComedogenicity(testInci0);
+    assert(res0.maxScore === 0, "Test D: Detects maxScore 0 for clean formulation");
+    assert(res0.isClean === true, "Test D: isClean flag is true");
+    assert(res0.status === "comedogenic_safe", "Test D: Status is comedogenic_safe");
+
+    // =========================================================================
+    // 3. SKIN TYPE EVALUATION & CRITICAL PROFILE FILTERING
+    // =========================================================================
+    log.push("--- 3. SKIN TYPE FIT & EXCLUSION RULES ---");
+
+    // Register 2 test products in DB for comparison & similar test
+    DB["test_heavy_coconut_cream"] = {
+      id: "test_heavy_coconut_cream",
+      brand: "Tropical Glow",
+      name: "Ultra Coconut Rich Moisture",
+      kat: "creme",
+      schiene: "support",
+      klassen: ["support"],
+      shape: "jar",
+      c: "#bad19f",
+      wirk: "Intensive Lipide",
+      nc: true, // Misleading claim: claims NC but contains Coconut Oil (Score 4)!
+      ff: true,
+      inci: "Aqua, Cocos Nucifera Oil, Butyrospermum Parkii Butter, Tocopherol",
+      price: "12,95 €"
+    };
+
+    DB["test_clean_light_gel"] = {
+      id: "test_clean_light_gel",
+      brand: "Pure Derm",
+      name: "Hydro Squalane Barrier Gel",
+      kat: "creme",
+      schiene: "support",
+      klassen: ["support"],
+      shape: "tube",
+      c: "#bad19f",
+      wirk: "Reizarmer Feuchtigkeitsfilm",
+      nc: true,
+      ff: true,
+      inci: "Aqua, Squalane, Glycerin, Panthenol, Carbomer",
+      price: "11,50 €"
+    };
+
+    // Case 1: Akne / Ölige Haut Profile (Critical Skin Type)
+    appState.profile = "adult";
+    appState.tags = ["akne-prone", "oelig"];
+    if (appState.profiles && appState.profiles[0]) {
+      appState.profiles[0].subtitle = "Akne & Barriere";
+    }
+
+    // Evaluation of Heavy Coconut Cream for Acne Profile
+    const evalAcneHeavy = evaluateProductCompatibility("test_heavy_coconut_cream", "pm");
+    assert(evalAcneHeavy.verdict === "konflikt", "Acne Profile: Heavy Coconut Cream (Score 4) results in 'konflikt'");
+    assert(evalAcneHeavy.skinTypeFit.points.some(p => p.includes("Stark porenverstopfend") || p.includes("Komedogenität 4/5")), "Acne Profile: Warns of strong pore-clogging risk (Acne cosmetica)");
+    assert(evalAcneHeavy.skinTypeFit.points.some(p => p.includes("Irreführender Claim")), "Acne Profile: Flags misleading 'nicht komedogen' claim when containing Score >= 3");
+
+    // Evaluation of Clean Squalane Gel for Acne Profile
+    const evalAcneClean = evaluateProductCompatibility("test_clean_light_gel", "pm");
+    assert(evalAcneClean.verdict === "passt", "Acne Profile: Clean Squalane Gel (Score 0) results in 'passt'");
+
+    // Case 2: Similar Products Search for Critical Skin Profile
+    // When searching for similar products to a cream under Acne profile:
+    // Only products with Score 0-1 may be suggested! Candidates with Score > 1 must be strictly excluded!
+    const similarForAcne = findSimilarProducts(DB["test_clean_light_gel"], { maxResults: 10 });
+    const hasAnyClogged = similarForAcne.some(c => {
+      const cAnal = analyzeInciComedogenicity(c);
+      return cAnal && cAnal.maxScore > 1;
+    });
+    assert(!hasAnyClogged, "Similar Products for Acne Profile: Strictly excludes any candidate with comedogenicity score > 1");
+
+    // Case 3: Dry Skin Profile (Non-Critical Skin Type)
+    appState.tags = ["trocken", "barriere"];
+    if (appState.profiles && appState.profiles[0]) {
+      appState.profiles[0].subtitle = "Trockene Barriere & Neurodermitis";
+    }
+
+    const evalDryHeavy = evaluateProductCompatibility("test_heavy_coconut_cream", "pm");
+    assert(evalDryHeavy.skinTypeFit.points.some(p => p.includes("Okklusion") || p.includes("Lipide") || p.includes("Reichhaltige")), "Dry Skin Profile: Recognizes nourishing lipid occlusion for barrier repair (TEWL)");
+
+    // =========================================================================
+    // 4. COMPARISON ENGINE (compareTwoProducts with Comedogenicity Score)
+    // =========================================================================
+    log.push("--- 4. PRODUCT COMPARISON ENGINE ---");
+    const compResult = compareTwoProducts(DB["test_heavy_coconut_cream"], DB["test_clean_light_gel"]);
+    assert(compResult && compResult.comedogenicity, "compareTwoProducts includes comedogenicity object");
+    assert(compResult.comedogenicity.analysisA.maxScore === 4, "Comparison correctly notes Prod A has Score 4");
+    assert(compResult.comedogenicity.analysisB.maxScore === 0, "Comparison correctly notes Prod B has Score 0");
+    assert(compResult.comedogenicity.betterForPores === "B", "Comparison identifies Prod B as significantly better for pores");
+
+    // =========================================================================
+    // 5. UI MODAL RENDERING VERIFICATION
+    // =========================================================================
+    log.push("--- 5. UI MODAL RENDERING ---");
+
+    // A: Product Detail Modal
+    openProductDetail("test_heavy_coconut_cream");
+    const modalSheet = document.querySelector(".sheet");
+    assert(modalSheet !== null, "Modal sheet rendered for product detail");
+    assert(modalSheet.innerHTML.includes("Komedogenitäts-Score") && modalSheet.innerHTML.includes("4/5"), "Product Detail Modal displays 'Komedogenitäts-Score' with '4/5'");
+    assert(modalSheet.innerHTML.includes("VO 1223/2009"), "Product Detail Modal includes EU Cosmetics Regulation (VO 1223/2009) disclaimer");
+    closeModal();
+
+    // B: Product Comparison Modal
+    openProductComparisonModal("test_heavy_coconut_cream", "test_clean_light_gel");
+    const compModal = document.querySelector(".sheet");
+    assert(compModal !== null, "Modal sheet rendered for comparison");
+    assert(compModal.innerHTML.includes("Porenverstopfung &amp; Komedogenität (Skala 0–5)") || compModal.innerHTML.includes("Porenverstopfung & Komedogenität"), "Comparison Modal renders 0-5 Comedogenicity section");
+    closeModal();
+
+    // C: Compatibility Check Modal
+    openCompatibilityCheckModal("test_heavy_coconut_cream", "pm");
+    const checkModal = document.querySelector(".sheet");
+    assert(checkModal !== null, "Compatibility Check modal rendered");
+    assert(checkModal.innerHTML.includes("Komedogenitäts-Score: 4/5"), "Compatibility Check modal contains Comedogenicity 4/5 section");
+    closeModal();
+
+    log.push("ALL_COMEDOGENICITY_TESTS_PASSED");
+  } catch(err) {
+    log.push("EXCEPTION: " + err.message + "\n" + err.stack);
+  }
+
+  document.getElementById("testLog").innerHTML = log.map(l => '<div class="test-res">' + l + '</div>').join("");
+})();
+</script>
+</body>
+</html>

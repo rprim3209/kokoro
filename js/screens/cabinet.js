@@ -730,7 +730,13 @@ function renderTeenCabinet(container) {
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">
               ${conflictBadgeHtml(flag)}
               ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Parfümiert</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ Duftstoffe offen</span>')}
-              ${p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px">🛡️ NC</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ NC offen</span>')}
+              ${(function(){
+                const ca = (typeof analyzeInciComedogenicity === 'function') ? analyzeInciComedogenicity(p) : null;
+                if (ca && (ca.flagged.length > 0 || p.inci)) {
+                  return `<span class="tag" style="font-size:0.65rem;padding:1px 5px;background:${ca.badgeColor};color:${ca.textColor};border:1px solid ${ca.borderColor}" title="${ca.summary}">🛡️ Score ${ca.maxScore}/5</span>`;
+                }
+                return p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px">🛡️ NC</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ NC offen</span>');
+              })()}
               ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ CF offen</span>')}
               ${p.notForMinors ? '<span class="tag" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;font-size:0.66rem;padding:1px 5px">🛑 Kein Teen-Vorschlag</span>' : ''}
               ${(p._liveSource || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id))) ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.65rem;padding:1px 5px;font-weight:700">⚠️ Live-Katalog</span>' : ''}
@@ -1247,7 +1253,13 @@ function renderMain(autoSave = true) {
               ${flagBadge}
               ${classChips}
               ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px" title="Frei von Duftstoffen">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Enthält Parfüm/Duftstoffe">⚠️ Parfümiert</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px" title="Keine verifizierten Angaben zur Parfümierung im Online-Katalog hinterlegt">ℹ️ Duftstoffe offen</span>')}
-              ${p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px" title="Nicht-komedogen ausgelobt">🛡️ NC</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Nicht als komedogenarm ausgewiesen">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px" title="Keine offizielle Herstellerangabe zur Komedogenität im Online-Katalog hinterlegt">ℹ️ NC offen</span>')}
+              ${(function(){
+                const ca = (typeof analyzeInciComedogenicity === 'function') ? analyzeInciComedogenicity(p) : null;
+                if (ca && (ca.flagged.length > 0 || p.inci)) {
+                  return `<span class="tag" style="font-size:0.65rem;padding:1px 5px;background:${ca.badgeColor};color:${ca.textColor};border:1px solid ${ca.borderColor}" title="${ca.summary}">🛡️ Score ${ca.maxScore}/5</span>`;
+                }
+                return p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px" title="Nicht-komedogen ausgelobt">🛡️ NC</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Nicht als komedogenarm ausgewiesen">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px" title="Keine offizielle Herstellerangabe zur Komedogenität im Online-Katalog hinterlegt">ℹ️ NC offen</span>');
+              })()}
               ${p.cf === true ? '<span class="tag cf" style="font-size:0.66rem;padding:1px 5px" title="Zertifiziert tierversuchsfrei (CFI/Leaping Bunny)">🐰 Cruelty-Free</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Keine Verbandszertifizierung hinterlegt">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px" title="Kein Verbandssiegel (CFI/Leaping Bunny) im Online-Katalog hinterlegt">ℹ️ CF offen</span>')}
               ${p.no_white_cast === true ? '<span class="tag soc-nwc" style="font-size:0.66rem;padding:1px 5px" title="Hinterlässt keinen weißen Kreideschleier">✨ Zero White-Cast</span>' : ''}
               ${p.iron_ox === true ? '<span class="tag soc-iron" style="font-size:0.66rem;padding:1px 5px" title="Enthält Eisenoxide zum Schutz vor sichtbarem Licht/HEV">🛡️ Eisenoxide</span>' : ''}
@@ -1971,6 +1983,38 @@ function openCompatibilityCheckModal(prodId, tab) {
     `;
   }
 
+  const cAnalysis = evalRes.comedogenicity || ((typeof analyzeInciComedogenicity === "function") ? analyzeInciComedogenicity(p) : null);
+  let comedoSectionHtml = "";
+  if (cAnalysis) {
+    const flaggedItemsHtml = (cAnalysis.flagged && cAnalysis.flagged.length > 0)
+      ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">
+          ${cAnalysis.flagged.map(f => `
+            <span style="font-size:0.72rem;background:#fff;border:1px solid ${f.score >= 4 ? '#fca5a5' : (f.score === 3 ? '#fcd34d' : '#cbd5e1')};color:${f.score >= 4 ? '#991b1b' : (f.score === 3 ? '#92400e' : '#334155')};padding:2px 6px;border-radius:4px">
+              <strong>${escapeHtml(f.name)}</strong> (Score ${f.score}/5)
+            </span>
+          `).join('')}
+        </div>`
+      : `<div style="font-size:0.78rem;color:#166534;margin-top:4px">✓ Keine porenverstopfenden Problemstoffe (Score 2–5) in der Rezeptur detektiert.</div>`;
+
+    comedoSectionHtml = `
+      <div style="background:${cAnalysis.badgeColor};border:1px solid ${cAnalysis.borderColor};border-radius:10px;padding:0.8rem 0.95rem;margin-bottom:0.75rem">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong style="color:${cAnalysis.textColor};font-size:0.86rem">🛡️ Komedogenitäts-Score: ${cAnalysis.maxScore}/5 (${cAnalysis.label})</strong>
+          <span style="font-size:0.72rem;background:#fff;color:${cAnalysis.textColor};padding:2px 6px;border-radius:4px;font-weight:700">
+            ${cAnalysis.maxScore <= 1 ? 'Porenfreundlich' : (cAnalysis.maxScore === 2 ? 'Leicht komedogen' : 'Porenverstopfend')}
+          </span>
+        </div>
+        <div style="font-size:0.8rem;color:${cAnalysis.textColor};margin-top:4px;line-height:1.4">
+          ${cAnalysis.summary}
+        </div>
+        ${flaggedItemsHtml}
+        <div style="font-size:0.68rem;color:#64748b;margin-top:6px;line-height:1.3">
+          <em>Hinweis (EU-Kosmetikverordnung VO 1223/2009):</em> Der Begriff „nicht komedogen“ ist in Europa gesetzlich nicht standardisiert. Kosmetikschrank gleicht die Rezeptur daher mit einer evidenzbasierten Substanzdatenbank (0–5 Skala) ab.
+        </div>
+      </div>
+    `;
+  }
+
   showModalSheet(`
     <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:0.6rem">
       ${p.img ? `<img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name || '')}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;background:#fff;flex-shrink:0" onerror="this.style.display='none'">` : ''}
@@ -2012,7 +2056,10 @@ function openCompatibilityCheckModal(prodId, tab) {
       </div>
     </div>
 
-    <!-- 3. Datenqualitäts-Hinweis -->
+    <!-- 3. Evidenzbasierte Komedogenitätsprüfung -->
+    ${comedoSectionHtml}
+
+    <!-- 4. Datenqualitäts-Hinweis -->
     ${missingDataBoxHtml}
 
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:1.1rem">

@@ -2140,6 +2140,7 @@ function evaluateProductCompatibility(productOrId, tab) {
   // --- 2. HAUTTYP-FIT ---
   var skinOutcomes = [];
   var skinPoints = [];
+  var inciAnalysis = typeof analyzeInciComedogenicity === "function" ? analyzeInciComedogenicity(p) : null;
 
   var isAkneProfile = cat === "teen" || /akne/i.test(profileSub) || hasTag("akne-prone") || hasTag("pref_nc");
   var isSensitiveProfile = cat === "baby" || /sensibel|barriere|rötung|rosazea|parfümfrei/i.test(profileSub) || hasTag("sensibel") || hasTag("duftstofffrei") || hasTag("begleitpflege");
@@ -2187,8 +2188,44 @@ function evaluateProductCompatibility(productOrId, tab) {
     }
   } else {
     // Adult & Teen
-    // a) Komedogenität
-    if (isAkneProfile) {
+    // a) Evidenzbasierte Komedogenitätsprüfung (Skala 0–5 nach Fulton/Kligman/Draelos)
+    if (inciAnalysis) {
+      if (isAkneProfile) {
+        if (inciAnalysis.maxScore >= 4) {
+          skinOutcomes.push("konflikt");
+          var badList = inciAnalysis.highRisk.map(function(h) { return h.name + " (" + h.score + "/5)"; }).join(", ");
+          skinPoints.push("🔴 Stark porenverstopfend (Komedogenität " + inciAnalysis.maxScore + "/5): Enthält " + badList + ". Bei Akne/öliger Haut kontraindiziert (triggert Acne cosmetica & Mikrokomedonen)!");
+        } else if (inciAnalysis.maxScore === 3) {
+          skinOutcomes.push("eher_nicht");
+          var modList = inciAnalysis.moderateRisk.map(function(m) { return m.name + " (" + m.score + "/5)"; }).join(", ");
+          skinPoints.push("🟡 Mäßig komedogen (Score 3/5): Enthält " + modList + ". Bei Neigung zu Unreinheiten und Seborrhoe ungeeignet.");
+        } else if (inciAnalysis.maxScore === 2) {
+          skinPoints.push("🟡 Leichtes Risiko (Score 2/5): Enthält milde Lipide/Fettalkohole (" + (inciAnalysis.lowRisk.map(function(l) { return l.name; }).join(", ") || "Fettphase") + "). Bei schwerer Akne beobachten.");
+        } else {
+          skinPoints.push("🟢 Porenfreundlich (Score " + inciAnalysis.maxScore + "/5): Keine porenverstopfenden Inhaltsstoffe in der INCI nachgewiesen.");
+        }
+
+        // Transparenz-Hinweis: Unregulierter EU-Claim vs. INCI-Wahrheit
+        if (p.nc === true && inciAnalysis.maxScore >= 3) {
+          skinPoints.push("⚠️ Irreführender Claim: Packung wirbt mit 'nicht komedogen', enthält laut INCI jedoch porenverstopfende Stoffe (" + inciAnalysis.flagged.filter(function(f){ return f.score >= 3; }).map(function(f){ return f.name; }).join(", ") + "). Der Begriff ist in der EU nicht geschützt!");
+        }
+      } else if (hasTag("trocken") || /trocken|barriere/i.test(profileSub)) {
+        if (inciAnalysis.maxScore >= 2 && inciAnalysis.maxScore <= 3) {
+          skinPoints.push("🟢 Reichhaltige Barriere-Lipide (Score " + inciAnalysis.maxScore + "/5): Für trockene Haut physiologisch wertvoll zur Reparatur des transepidermalen Wasserverlusts (TEWL).");
+        } else if (inciAnalysis.maxScore >= 4) {
+          skinPoints.push("ℹ️ Sehr reichhaltige Okklusion (Score " + inciAnalysis.maxScore + "/5 durch " + (inciAnalysis.highRisk.map(function(h){ return h.name; }).join(", ") || "Lipide") + "). Gut für trockene Barriere, bei verstopften Poren sparsam dosieren.");
+        } else {
+          skinPoints.push("🟢 Nicht komedogen (Score " + inciAnalysis.maxScore + "/5): Reizarme Feuchtigkeitspflege.");
+        }
+      } else {
+        // Normale / ausgeglichene Haut
+        if (inciAnalysis.maxScore >= 4) {
+          skinPoints.push("🟡 Reichhaltige Okklusion (Score " + inciAnalysis.maxScore + "/5): Enthält schwere Lipide/Ester.");
+        } else {
+          skinPoints.push(inciAnalysis.label + ": " + inciAnalysis.suitability);
+        }
+      }
+    } else if (isAkneProfile) {
       if (p.nc === true) {
         skinPoints.push("🟢 Nicht-komedogen bestätigt: Offizieller Hersteller-Claim gegen porenverstopfende Stoffe.");
       } else if (p.nc === false) {
@@ -2307,6 +2344,7 @@ function evaluateProductCompatibility(productOrId, tab) {
       isLive: isLive,
       list: missingList
     },
+    comedogenicity: inciAnalysis,
     product: p
   };
 }

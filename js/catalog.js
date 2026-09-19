@@ -1917,9 +1917,252 @@ function enrichAllDbProducts() {
 
 
 // ==========================================
-// SIMILAR PRODUCTS & DUPE COMPARISON ENGINE
-// Vergleicht Produkte nach Inhaltsstoffen, Wirkung, Galenik & Preis
+// Evidenzbasierte Komedogenitäts-Datenbank (Skala 0–5)
+// Quellen: Fulton (1984/1989), Kligman, Morris & Kwan (1983), Draelos (2006), CIR & dermatologische Leitlinien
+// 0 = Nicht komedogen | 1 = Sehr gering | 2 = Gering/mäßig | 3 = Mittelschwer | 4 = Schwer (hoch) | 5 = Extrem
 // ==========================================
+
+const COMEDOGENIC_INGREDIENTS_DB = [
+  // --- SCORE 5: Extrem porenverstopfend (Absolut kontraindiziert bei Akne & öliger Haut) ---
+  { id: "isopropyl_myristate", name: "Isopropyl Myristate", score: 5, category: "Synthetischer Ester", regex: /\bisopropyl\s+myristate\b/i, note: "Stark penetrierender Ester, klassischer Referenzstoff für Follikelhyperkeratose (Kligman/Fulton)." },
+  { id: "isopropyl_isostearate", name: "Isopropyl Isostearate", score: 5, category: "Synthetischer Ester", regex: /\bisopropyl\s+isostearate\b/i, note: "Sehr stark komedogener Ester mit hohem Follikelpfropf-Risiko." },
+  { id: "isocetyl_stearate", name: "Isocetyl Stearate", score: 5, category: "Synthetischer Ester", regex: /\bisocetyl\s+stearate\b/i, note: "Schwerer Okklusiv-Ester, verstopft Porenausgänge nachweislich." },
+  { id: "myristyl_myristate", name: "Myristyl Myristate", score: 5, category: "Wachsester", regex: /\bmyristyl\s+myristate\b/i, note: "Wachsester mit starker Neigung zur Follikelokklusion." },
+  { id: "wheat_germ_oil", name: "Wheat Germ Oil (Weizenkeimöl)", score: 5, category: "Schweres Pflanzenöl", regex: /\b(triticum\s+vulgare\s*(?:germ\s*oil)?|wheat\s*germ\s*oil|weizenkeim\w*)\b/i, note: "Sehr reich an schwer abbaubaren Triglyceriden; extrem porenverstopfend." },
+  { id: "laureth_4", name: "Laureth-4", score: 5, category: "Nichtionischer Emulgator", regex: /\blaureth\s*-\s*4\b/i, note: "Nichtionisches Tensid/Emulgator, dringt tief in Follikel ein und induziert Hyperkeratose." },
+  { id: "oleth_3", name: "Oleth-3", score: 5, category: "Emulgator / Tensid", regex: /\boleth\s*-\s*3\b/i, note: "Oleylalkohol-Derivat mit maximalem Follikel-Reizwert." },
+  { id: "sodium_lauryl_sulfate", name: "Sodium Lauryl Sulfate (SLS)", score: 5, category: "Anionisches Tensid", regex: /\b(sodium\s+lauryl\s+sulfat\w*|natriumlaurylsulfat|\bsls\b)\b/i, note: "Stark irritierendes Tensid, zerstört Barriere und triggert reaktive Follikelverstopfung." },
+  { id: "potassium_chloride", name: "Potassium Chloride (Kaliumchlorid)", score: 5, category: "Anorganisches Salz", regex: /\b(potassium\s+chloride|kaliumchlorid)\b/i, note: "Kann in Emulsionen starke follikuläre Schwellungen hervorrufen." },
+  { id: "octyl_stearate", name: "Octyl Stearate", score: 5, category: "Synthetischer Ester", regex: /\boctyl\s+stearate\b/i, note: "Schweres Emolliens, hoch komedogen." },
+
+  // --- SCORE 4: Stark komedogen (Hohes Risiko für offene & geschlossene Komedonen) ---
+  { id: "coconut_oil", name: "Coconut Oil (Cocos Nucifera / Kokosöl)", score: 4, category: "Pflanzliches Fett/Öl", regex: /\b(cocos\s+nucifera\s*(?:oil|butter)?|coconut\s*oil|kokos\w*(?:öl|butter)?)\b/i, note: "Enthält hohe Anteile an Laurin- und Myristinsäure, sehr oft Ursache für Akne cosmetica." },
+  { id: "cocoa_butter", name: "Cocoa Butter (Theobroma Cacao / Kakaobutter)", score: 4, category: "Pflanzliche Butter", regex: /\b(theobroma\s+cacao\s*(?:seed\s*butter)?|cocoa\s*(?:seed\s*)?butter|kakaobutter)\b/i, note: "Schwere gesättigte Triglyceride, bildet dichte Follikelverschlüsse." },
+  { id: "isopropyl_palmitate", name: "Isopropyl Palmitate", score: 4, category: "Synthetischer Ester", regex: /\bisopropyl\s+palmitate\b/i, note: "Häufiger Texturverbesserer in Körperlotionen, auf Akne-Gesichtshaut stark komedogen." },
+  { id: "ethylhexyl_palmitate", name: "Ethylhexyl Palmitate (Octyl Palmitate)", score: 4, category: "Synthetischer Ester", regex: /\b(ethylhexyl\s+palmitate|octyl\s+palmitate)\b/i, note: "Sehr weit verbreiteter Silikon-Ersatz in der Drogerie, stark porenverstopfend!" },
+  { id: "butyl_stearate", name: "Butyl Stearate", score: 4, category: "Synthetischer Ester", regex: /\bbutyl\s+stearate\b/i, note: "Fettester mit hoher Follikel-Affinität." },
+  { id: "decyl_oleate", name: "Decyl Oleate", score: 4, category: "Synthetischer Ester", regex: /\bdecyl\s+oleate\b/i, note: "Dringt in Talgdrüsengänge ein und verhärtet Sebum." },
+  { id: "ceteareth_20", name: "Ceteareth-20", score: 4, category: "Emulgator", regex: /\bceteareth\s*-\s*20\b/i, note: "Besonders in Kombination mit Fettalkoholen (Cetearyl Alcohol) stark komedogen." },
+  { id: "soybean_oil", name: "Soybean Oil (Glycine Soja / Sojaöl)", score: 4, category: "Pflanzenöl", regex: /\b(glycine\s+soja\s*(?:oil)?|soybean\s*oil|soja\w*öl)\b/i, note: "Reich an ungesättigten Fettsäuren, die im Talg oxidieren und Komedonen begünstigen." },
+  { id: "palm_oil", name: "Palm Oil (Elaeis Guineensis / Palmöl)", score: 4, category: "Pflanzenfett", regex: /\b(elaeis\s+guineensis\s*(?:oil)?|palm\s*oil|palmöl)\b/i, note: "Hoher Gehalt an Palmitinsäure, okkludiert Poren." },
+  { id: "flaxseed_oil", name: "Flaxseed / Linseed Oil (Linum Usitatissimum / Leinöl)", score: 4, category: "Pflanzenöl", regex: /\b(linum\s+usitatissimum\s*(?:seed\s*oil)?|flaxseed\s*oil|linseed\s*oil|leinöl)\b/i, note: "Schnell oxidierendes Pflanzenöl mit hohem Komedogenitätswert." },
+  { id: "myristyl_lactate", name: "Myristyl Lactate", score: 4, category: "Ester", regex: /\bmyristyl\s+lactate\b/i, note: "Schweres Emolliens, triggert Follikelverstopfung." },
+  { id: "acetylated_lanolin", name: "Acetylated Lanolin / Alcohol", score: 4, category: "Wachsester", regex: /\bacetylated\s+lanolin(?:\s+alcohol)?\b/i, note: "Modifiziertes Wollwachs, deutlich komedogener als reines Lanolin USP." },
+  { id: "isostearyl_neopentanoate", name: "Isostearyl Neopentanoate", score: 4, category: "Ester", regex: /\bisostearyl\s+neopentanoate\b/i, note: "Verzweigter Ester mit hoher Komedogenität." },
+  { id: "algin", name: "Algin / Alginic Acid", score: 4, category: "Verdickungsmittel", regex: /\b(algin|alginic\s+acid)\b/i, note: "Polysaccharid aus Algen, kann bei Neigung zu Follikulitis Poren verkleben." },
+  { id: "peg_16_lanolin", name: "PEG-16 Lanolin", score: 4, category: "Wachs-Derivat", regex: /\bpeg\s*-\s*16\s+lanolin\b/i, note: "Stark komedogenes Lanolin-Derivat." },
+  { id: "steareth_10", name: "Steareth-10", score: 4, category: "Emulgator", regex: /\bsteareth\s*-\s*10\b/i, note: "Fettalkoholether mit hohem Komedogenitätsscore." },
+  { id: "polyglyceryl_3_diisostearate", name: "Polyglyceryl-3 Diisostearate", score: 4, category: "Emulgator", regex: /\bpolyglyceryl\s*-\s*3\s+diisostearat\w*\b/i, note: "Schwerer W/O-Emulgator, bei Akne oft problematisch." },
+
+  // --- SCORE 3: Mittelschwer / Moderat (Bedenklich bei Akne & Seborrhoe) ---
+  { id: "avocado_oil", name: "Avocado Oil (Persea Gratissima / Avocadoöl)", score: 3, category: "Pflanzenöl", regex: /\b(persea\s+gratissima\s*(?:oil)?|avocado\s*oil|avocadoöl)\b/i, note: "Reichhaltiges Pflegeöl, exzellent für trockene Haut, aber komedogen bei Akne." },
+  { id: "sesame_oil", name: "Sesame Oil (Sesamum Indicum / Sesamöl)", score: 3, category: "Pflanzenöl", regex: /\b(sesamum\s+indicum\s*(?:seed\s*oil)?|sesame\s*oil|sesamöl)\b/i, note: "Moderat komedogen, meiden bei fettiger Haut." },
+  { id: "corn_oil", name: "Corn Oil (Zea Mays / Maiskeimöl)", score: 3, category: "Pflanzenöl", regex: /\b(zea\s+mays\s*(?:germ\s*oil)?|corn\s*oil|maiskeimöl)\b/i, note: "Klassisches Pflanzenöl mit mittlerem Verstopfungs-Potenzial." },
+  { id: "cottonseed_oil", name: "Cottonseed Oil (Gossypium Herbaceum)", score: 3, category: "Pflanzenöl", regex: /\b(gossypium\s+herbaceum\s*(?:seed\s*oil)?|cottonseed\s*oil|baumwollsaatöl)\b/i, note: "Kann Follikel verkleben, mäßig komedogen." },
+  { id: "marula_oil", name: "Marula Oil (Sclerocarya Birrea)", score: 3, category: "Pflanzenöl", regex: /\b(sclerocarya\s+birrea\s*(?:seed\s*oil)?|marula\s*oil|marulaöl)\b/i, note: "Reich an Ölsäure (Oleic Acid), bei Akne oft komedogen." },
+  { id: "glyceryl_stearate_se", name: "Glyceryl Stearate SE (Self-Emulsifying)", score: 3, category: "Emulgator", regex: /\bglyceryl\s+stearate\s+se\b/i, note: "SE-Variante enthält Seifenanteile, die den Follikel irritieren können." },
+  { id: "myristic_acid", name: "Myristic Acid (Myristinsäure)", score: 3, category: "Gesättigte Fettsäure", regex: /\b(myristic\s+acid|myristinsäure)\b/i, note: "14-Kohlenstoff-Fettsäure mit ausgeprägter Follikelaffinität." },
+  { id: "laureth_23", name: "Laureth-23", score: 3, category: "Emulgator", regex: /\blaureth\s*-\s*23\b/i, note: "Nichtionischer Emulgator mit moderater Komedogenität." },
+  { id: "bismuth_oxychloride", name: "Bismuth Oxychloride (CI 77163)", score: 3, category: "Mineralpigment", regex: /\b(bismuth\s+oxychloride|ci\s*77163)\b/i, note: "Schuppenartiges Schimmer-Pigment, bekannt dafür, Follikelgänge mechanisch zu blockieren." },
+  { id: "hydrogenated_vegetable_oil", name: "Hydrogenated Vegetable Oil", score: 3, category: "Gehärtetes Fett", regex: /\bhydrogenated\s+vegetable\s+oil\b/i, note: "Feste gehärtete Triglyceride, bilden Schutzfilm aber verstopfen Poren." },
+  { id: "sorbitan_oleate", name: "Sorbitan Oleate", score: 3, category: "Emulgator", regex: /\bsorbitan\s+oleate\b/i, note: "Ölsäureester mit mäßigem Verstopfungswert." },
+  { id: "oleyl_alcohol", name: "Oleyl Alcohol", score: 3, category: "Fettalkohol (ungesättigt)", regex: /\boleyl\s+alcohol\b/i, note: "Ungesättigter Fettalkohol, neigt zur Sebum-Kristallisation." },
+  { id: "mink_oil", name: "Mink Oil", score: 3, category: "Tierisches Fett", regex: /\bmink\s+oil\b/i, note: "Sehr reichhaltig, mäßig bis stark komedogen." },
+  { id: "isostearic_acid", name: "Isostearic Acid", score: 3, category: "Fettsäure", regex: /\bisostearic\s+acid\b/i, note: "Verzweigte Fettsäure, erhöht Viskosität im Follikel." },
+  { id: "octyldodecanol", name: "Octyldodecanol", score: 3, category: "Fettalkohol", regex: /\boctyldodecanol\b/i, note: "Häufiges Emolliens, bei sehr empfindlicher Aknehaut komedogen." },
+
+  // --- SCORE 2: Geringes bis mäßiges Risiko (Meist unproblematisch für normale/trockene Haut, bei Akne beobachten) ---
+  { id: "jojoba_oil", name: "Jojoba Oil (Simmondsia Chinensis / Jojobaöl)", score: 2, category: "Flüssiges Wachs", regex: /\b(simmondsia\s+chinensis\s*(?:seed\s*oil)?|jojoba\s*oil|jojobaöl)\b/i, note: "Wachsester, ähnelt hauteigenem Sebum; meist gut toleriert, bei Akne Score 2." },
+  { id: "sweet_almond_oil", name: "Sweet Almond Oil (Prunus Amygdalus Dulcis / Mandelöl)", score: 2, category: "Pflanzenöl", regex: /\b(prunus\s+amygdalus\s+dulcis\s*(?:oil)?|sweet\s*almond\s*oil|mandelöl)\b/i, note: "Milder Klassiker, nährt trockene Haut, bei Akne mäßiges Risiko." },
+  { id: "olive_oil", name: "Olive Oil (Olea Europaea / Olivenöl)", score: 2, category: "Pflanzenöl", regex: /\b(olea\s+europaea\s*(?:fruit\s*oil)?|olive\s*oil|olivenöl)\b/i, note: "Sehr reich an Ölsäure, kann Barriere lockern und bei Akne zu Verstopfung führen." },
+  { id: "evening_primrose_oil", name: "Evening Primrose Oil (Oenothera Biennis / Nachtkerzenöl)", score: 2, category: "Pflanzenöl", regex: /\b(oenothera\s+biennis\s*(?:oil)?|evening\s*primrose\s*oil|nachtkerzenöl)\b/i, note: "Reich an Gamma-Linolensäure (GLA), antientzündlich, Komedogenität 2." },
+  { id: "apricot_kernel_oil", name: "Apricot Kernel Oil (Prunus Armeniaca)", score: 2, category: "Pflanzenöl", regex: /\b(prunus\s+armeniaca\s*(?:kernel\s*oil)?|apricot\s*kernel\s*oil|aprikosenkernöl)\b/i, note: "Milde Pflege für trockene Haut." },
+  { id: "stearic_acid", name: "Stearic Acid (Stearinsäure)", score: 2, category: "Fettsäure", regex: /\b(stearic\s+acid|stearinsäure)\b/i, note: "Häufige Basisfettsäure in Cremes, geringes bis mäßiges Risiko." },
+  { id: "palmitic_acid", name: "Palmitic Acid (Palmitinsäure)", score: 2, category: "Fettsäure", regex: /\b(palmitic\s+acid|palmitinsäure)\b/i, note: "Hautidentische Fettsäure, in hohen Dosen leicht komedogen." },
+  { id: "cetearyl_glucoside", name: "Cetearyl Glucoside", score: 2, category: "Emulgator", regex: /\bcetearyl\s+glucoside\b/i, note: "Milder pflanzlicher Emulgator, Score 2." },
+  { id: "glyceryl_stearate", name: "Glyceryl Stearate (reines Monoglycerid)", score: 2, category: "Emulgator", regex: /\bglyceryl\s+stearate(?!\s+se)\b/i, note: "Hautfreundlicher Standard-Emulgator, Score 2." },
+  { id: "beeswax", name: "Beeswax (Cera Alba / Bienenwachs)", score: 2, category: "Wachs", regex: /\b(cera\s+alba|beeswax|bienenwachs)\b/i, note: "Okklusives Naturwachs, hervorragend für Lippen/Wundschutz, im Gesicht Score 2." },
+  { id: "cetyl_alcohol", name: "Cetyl Alcohol", score: 2, category: "Fettalkohol", regex: /\bcetyl\s+alcohol\b/i, note: "Konsistenzgeber, alleine meist unkritisch, bei Akne Score 2." },
+  { id: "stearyl_alcohol", name: "Stearyl Alcohol", score: 2, category: "Fettalkohol", regex: /\bstearyl\s+alcohol\b/i, note: "Fettalkohol, geringes Risiko (Score 2)." },
+  { id: "cetearyl_alcohol", name: "Cetearyl Alcohol", score: 2, category: "Fettalkohol", regex: /\bcetearyl\s+alcohol\b/i, note: "Mischung aus Cetyl- und Stearylalkohol. Alleine Score 2 (nur mit Ceteareth-20 Score 4)." },
+  { id: "lanolin_usp", name: "Lanolin (Lanolin Cera / Wollwachs USP)", score: 2, category: "Wachs", regex: /\b(lanolin\s*cera|lanolin(?!\s+alcohol))\b/i, note: "Reines gereinigtes Wollfett, intensiv regenerierend bei Barriere-Schaden." },
+  { id: "macadamia_oil", name: "Macadamia Oil (Macadamia Ternifolia)", score: 2, category: "Pflanzenöl", regex: /\b(macadamia\s+ternifolia\s*(?:seed\s*oil)?|macadamia\s*oil|macadamianussöl)\b/i, note: "Reich an Palmitoleinsäure, nährend bei trockener Haut." },
+  { id: "peanut_oil", name: "Peanut Oil (Arachis Hypogaea / Erdnussöl)", score: 2, category: "Pflanzenöl", regex: /\b(arachis\s+hypogaea\s*(?:oil)?|peanut\s*oil|erdnussöl)\b/i, note: "Pflegeöl für sehr trockene Haut." },
+  { id: "borage_oil", name: "Borage Oil (Borago Officinalis / Borretschöl)", score: 2, category: "Pflanzenöl", regex: /\b(borago\s+officinalis\s*(?:seed\s*oil)?|borage\s*oil|borretschöl)\b/i, note: "Sehr hoher GLA-Gehalt, entzündungshemmend." },
+
+  // --- SCORE 1: Sehr geringes Risiko (Sicher für fast alle Hauttypen inkl. Akne) ---
+  { id: "rosehip_oil", name: "Rosehip Oil (Rosa Canina / Hagebuttenkernöl)", score: 1, category: "Leichtes Pflanzenöl", regex: /\b(rosa\s+canina\s*(?:fruit\s*oil|seed\s*oil)?|rosehip\s*oil|hagebutten\w*öl)\b/i, note: "Sehr reich an Linolsäure und Tretinoin-Vorstufen, sehr gering komedogen." },
+  { id: "castor_oil", name: "Castor Oil (Ricinus Communis / Rizinusöl)", score: 1, category: "Pflanzenöl", regex: /\b(ricinus\s+communis\s*(?:seed\s*oil)?|castor\s*oil|rizinusöl)\b/i, note: "Enthält Rizinolsäure mit antibakterieller Wirkung, Score 1." },
+  { id: "grapeseed_oil", name: "Grapeseed Oil (Vitis Vinifera / Traubenkernöl)", score: 1, category: "Leichtes Pflanzenöl", regex: /\b(vitis\s+vinifera\s*(?:seed\s*oil)?|grapeseed\s*oil|traubenkernöl)\b/i, note: "Sehr leichtes Öl mit hohem Linolsäureanteil, porenfreundlich." },
+  { id: "babassu_oil", name: "Babassu Oil (Orbignya Oleifera)", score: 1, category: "Pflanzenöl", regex: /\b(orbignya\s+oleifera\s*(?:seed\s*oil)?|babassu\s*oil|babassuöl)\b/i, note: "Leichte Alternative zu Kokosöl mit minimalem Porenrisiko." },
+  { id: "calendula_oil", name: "Calendula Oil / Extract (Ringelblume)", score: 1, category: "Pflanzenextrakt / Öl", regex: /\b(calendula\s+officinalis\s*(?:flower\s*extract|oil)?|calendula\s*oil|ringelblume)\b/i, note: "Beruhigend, reizmindernd, Score 1." },
+  { id: "butylene_glycol", name: "Butylene Glycol", score: 1, category: "Feuchthaltemittel", regex: /\bbutylene\s+glycol\b/i, note: "Häufiges Lösungsmittel und Feuchthaltemittel, minimales Risiko." },
+  { id: "hexylene_glycol", name: "Hexylene Glycol", score: 1, category: "Lösungsmittel", regex: /\bhexylene\s+glycol\b/i, note: "Geringes Porenrisiko (Score 1)." },
+  { id: "dimethicone", name: "Dimethicone", score: 1, category: "Silikon", regex: /\bdimethicone\b/i, note: "Atmungsaktives Silikonöl, verstopft Poren physiologisch nicht (Score 1)." },
+  { id: "cyclomethicone", name: "Cyclomethicone", score: 1, category: "Flüchtiges Silikon", regex: /\bcyclomethicone\b/i, note: "Verdampft nach dem Auftragen rückstandslos." },
+  { id: "tocopherol", name: "Tocopherol (Vitamin E)", score: 1, category: "Antioxidans", regex: /\btocopherol(?!\s+acetate)?\b/i, note: "Antioxidans, in Reinform Score 1, in Fertigprodukten meist < 1%." },
+  { id: "ceteareth_12", name: "Ceteareth-12", score: 1, category: "Emulgator", regex: /\bceteareth\s*-\s*12\b/i, note: "Milder Emulgator mit geringem Score (1)." },
+  { id: "black_cumin_oil", name: "Black Cumin Seed Oil (Nigella Sativa / Schwarzkümmelöl)", score: 1, category: "Pflanzenöl", regex: /\b(nigella\s+sativa\s*(?:seed\s*oil)?|black\s*cumin\s*oil|schwarzkümmelöl)\b/i, note: "Stark antibakteriell und entzündungshemmend bei Akne, Score 1." },
+  { id: "sea_buckthorn_oil", name: "Seabuckthorn Oil (Hippophae Rhamnoides / Sanddorn)", score: 1, category: "Pflanzenöl", regex: /\b(hippophae\s+rhamnoides\s*(?:oil|extract)?|sea\s*buckthorn\s*oil|sanddorn\w*öl)\b/i, note: "Regenerierend, Score 1." },
+
+  // --- SCORE 0: Strikt nicht komedogen (Goldstandard für Akne, ölige Haut & verstopfungsanfällige Poren) ---
+  { id: "squalane", name: "Squalane (Pflanzliches Squalan)", score: 0, category: "Hydriertes Lipid", regex: /\bsqualane\b/i, note: "Vollständig gesättigtes, biomimetisches Lipid. Oxidiert nicht, verstopft keine Poren (Score 0)." },
+  { id: "glycerin", name: "Glycerin", score: 0, category: "Feuchthaltemittel", regex: /\bglycerin\b/i, note: "Hauteigener Feuchthaltefaktor (NMF), 100% nicht komedogen." },
+  { id: "hyaluronic_acid", name: "Hyaluronsäure (Sodium Hyaluronate)", score: 0, category: "Feuchthaltemittel", regex: /\b(hyaluronic\s+acid|sodium\s+hyaluronate|hyaluron\w*)\b/i, note: "Reiner Wassermagnet ohne Fettphase; absolut porenneutral." },
+  { id: "niacinamide", name: "Niacinamide (Vitamin B3)", score: 0, category: "Wirkstoff", regex: /\bniacinamid\w*\b/i, note: "Reguliert Talgproduktion, verfeinert Poren und hemmt Entzündungen (Score 0)." },
+  { id: "panthenol", name: "Panthenol (Dexpanthenol / Provitamin B5)", score: 0, category: "Wirkstoff", regex: /\b(panthenol|dexpanthenol)\b/i, note: "Barriere-stärkend und beruhigend, 100% nicht komedogen." },
+  { id: "argan_oil", name: "Argan Oil (Argania Spinosa / Arganöl)", score: 0, category: "Pflanzenöl", regex: /\b(argania\s+spinosa\s*(?:kernel\s*oil)?|argan\s*oil|arganöl)\b/i, note: "Ausgewogenes Verhältnis von Öl- und Linolsäure; in Studien Score 0 nachgewiesen." },
+  { id: "mineral_oil", name: "Mineral Oil (Paraffinum Liquidum DAB/USP)", score: 0, category: "Gereinigtes Kohlenwasserstoff-Öl", regex: /\b(paraffinum\s+liquidum|mineral\s*oil|liquid\s*paraffin)\b/i, note: "Kosmetisch hochgereinigtes Mineralöl kann Follikel chemisch nicht penetrieren (Score 0 nach Kligman)." },
+  { id: "petrolatum", name: "Petrolatum (Vaseline USP)", score: 0, category: "Okklusivum", regex: /\b(petrolatum|vaseline)\b/i, note: "Goldstandard-Okklusivum, Molekülgröße zu groß für Follikel; Score 0." },
+  { id: "allantoin", name: "Allantoin", score: 0, category: "Wirkstoff", regex: /\ballantoin\b/i, note: "Keratoplastisch und reizmildernd, Score 0." },
+  { id: "ceramides", name: "Ceramides (NP, AP, EOP, Phytosphingosine)", score: 0, category: "Barriere-Lipid", regex: /\b(ceramide\s*(?:np|ap|eop|ns|eos|1|2|3|6)?|phytosphingosine)\b/i, note: "Hauteigene Kittsubstanzen, stellen Lipidbarriere her ohne Poren zu belasten." },
+  { id: "zinc_oxide", name: "Zinc Oxide (Zinkoxid)", score: 0, category: "Mineralischer Filter / Wirkstoff", regex: /\b(zinc\s+oxide|zinkoxid)\b/i, note: "Adstringierend, antimikrobiell und antientzündlich bei Akne; Score 0." },
+  { id: "titanium_dioxide", name: "Titanium Dioxide (Titandioxid)", score: 0, category: "Mineralischer UV-Filter", regex: /\b(titanium\s+dioxide|titandioxid)\b/i, note: "Inert und nicht komedogen (Score 0)." },
+  { id: "centella_asiatica", name: "Centella Asiatica / Madecassoside (Cica)", score: 0, category: "Wirkstoff", regex: /\b(centella\s+asiatica|madecassoside|asiaticoside|cica)\b/i, note: "Beruhigt Entzündungen bei Akne und Rosazea, Score 0." },
+  { id: "beta_glucan", name: "Beta-Glucan", score: 0, category: "Wirkstoff / Polysaccharid", regex: /\bbeta\s*-\s*glucan\b/i, note: "Tiefenwirksame Feuchtigkeit und Rötungsminderung, Score 0." },
+  { id: "aloe_barbadensis", name: "Aloe Barbadensis Leaf Juice (Aloe Vera)", score: 0, category: "Pflanzenextrakt", regex: /\b(aloe\s+barbadensis|aloe\s+vera)\b/i, note: "Reines Pflanzenwasser/Gel, kühlt und spendet Feuchte (Score 0)." },
+  { id: "salicylic_acid", name: "Salicylic Acid (BHA)", score: 0, category: "Komedolytischer Wirkstoff", regex: /\b(salicylic\s+acid|salizylsäure|salicylsäure|\bbha\b)\b/i, note: "Fettlösliche Säure, löst bestehende Komedonen aktiv auf (Anti-Komedogen!)." },
+  { id: "azelaic_acid", name: "Azelaic Acid (Azelainsäure)", score: 0, category: "Komedolytischer Wirkstoff", regex: /\b(azelaic\s+acid|azelainsäure|\bpad\b|potassium\s+azeloyl\s+diglycinate)\b/i, note: "Normalisiert die Verhornung im Follikel und tötet C. acnes ab (Anti-Komedogen!)." },
+  { id: "shea_butter", name: "Shea Butter (Butyrospermum Parkii)", score: 0, category: "Pflanzliche Butter", regex: /\b(butyrospermum\s+parkii\s*(?:butter)?|shea\s*butter)\b/i, note: "Trotz fester Konsistenz in Humanstudien Score 0–1; exzellente Barrierepflege." },
+  { id: "silica", name: "Silica (Kieselsäure)", score: 0, category: "Mineralischer Absorber", regex: /\bsilica\b/i, note: "Mattiert Glanz und saugt überschüssigen Talg auf (Score 0)." },
+  { id: "propylene_glycol", name: "Propylene Glycol", score: 0, category: "Feuchthaltemittel", regex: /\bpropylene\s+glycol\b/i, note: "Feuchthaltemittel mit Score 0." },
+  { id: "propanediol", name: "Propanediol", score: 0, category: "Feuchthaltemittel", regex: /\bpropanediol\b/i, note: "Pflanzliches Feuchthaltemittel, Score 0." },
+  { id: "water_aqua", name: "Aqua (Wasser)", score: 0, category: "Basis / Lösungsmittel", regex: /\b(aqua|water|wasser)\b/i, note: "100% neutral." }
+];
+
+function analyzeInciComedogenicity(textOrProduct) {
+  let textToScan = "";
+  let explicitNcClaim = null;
+
+  if (typeof textOrProduct === "object" && textOrProduct !== null) {
+    const p = textOrProduct;
+    explicitNcClaim = p.nc;
+    const parts = [
+      p.inci || "",
+      p.ingredients || "",
+      p.wirk || "",
+      p.notes || "",
+      p.truth || "",
+      p.name || "",
+      p.title || ""
+    ];
+    textToScan = parts.filter(Boolean).join(" ");
+  } else if (typeof textOrProduct === "string") {
+    textToScan = textOrProduct;
+  }
+
+  if (!textToScan || !textToScan.trim()) {
+    return {
+      maxScore: explicitNcClaim === true ? 0 : (explicitNcClaim === false ? 3 : 1),
+      status: explicitNcClaim === true ? "non_comedogenic" : (explicitNcClaim === false ? "comedogenic_moderate" : "unknown"),
+      label: explicitNcClaim === true ? "🟢 Nicht komedogen (Hersteller-Claim)" : (explicitNcClaim === false ? "⚠️ Nicht als komedogenarm deklariert" : "ℹ️ Komedogenität offen (keine INCI hinterlegt)"),
+      badgeColor: explicitNcClaim === true ? "#dcfce7" : (explicitNcClaim === false ? "#ffedd5" : "#f1f5f9"),
+      textColor: explicitNcClaim === true ? "#166534" : (explicitNcClaim === false ? "#9a3412" : "#475569"),
+      borderColor: explicitNcClaim === true ? "#86efac" : (explicitNcClaim === false ? "#fdba74" : "#cbd5e1"),
+      flagged: [],
+      highRisk: [],
+      moderateRisk: [],
+      lowRisk: [],
+      safe: [],
+      isClean: explicitNcClaim === true,
+      hasInci: false,
+      summary: explicitNcClaim === true 
+        ? "Hersteller deklariert 'nicht komedogen'. In der EU ist dieser Begriff rechtlich nicht standardisiert – prüfe bei starker Akne-Neigung stets die genaue INCI-Liste."
+        : "Keine detaillierte INCI-Liste hinterlegt. Bei akne-anfälliger Haut vorab Packungsaufdruck prüfen."
+    };
+  }
+
+  const normalized = textToScan.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const matched = [];
+
+  for (const item of COMEDOGENIC_INGREDIENTS_DB) {
+    if (item.regex.test(normalized) || item.regex.test(textToScan)) {
+      matched.push(item);
+    }
+  }
+
+  // Sort matched ingredients by score descending
+  matched.sort((a, b) => b.score - a.score);
+
+  const highRisk = matched.filter(m => m.score >= 4);
+  const moderateRisk = matched.filter(m => m.score === 3);
+  const lowRisk = matched.filter(m => m.score === 2);
+  const safe = matched.filter(m => m.score <= 1);
+
+  let maxScore = matched.length > 0 ? matched[0].score : (explicitNcClaim === true ? 0 : 1);
+
+  let status = "comedogenic_safe";
+  let label = `🟢 Porenfreundlich (Score ${maxScore}/5)`;
+  let badgeColor = "#dcfce7";
+  let textColor = "#166534";
+  let borderColor = "#86efac";
+  let suitability = "Optimal für Akne, ölige Haut, Teenager und verstopfte Poren.";
+
+  if (maxScore === 5) {
+    status = "comedogenic_extreme";
+    label = `🔴 Extrem porenverstopfend (Score 5/5)`;
+    badgeColor = "#fee2e2";
+    textColor = "#991b1b";
+    borderColor = "#fca5a5";
+    suitability = "Höchstgradig komedogen! Triggert Acne cosmetica & Mikrokomedonen. Bei Akne/öliger Haut strikt kontraindiziert.";
+  } else if (maxScore === 4) {
+    status = "comedogenic_high";
+    label = `🔴 Stark porenverstopfend (Score 4/5)`;
+    badgeColor = "#fee2e2";
+    textColor = "#991b1b";
+    borderColor = "#fca5a5";
+    suitability = "Kontraindiziert bei Akne, öliger Haut & Mitessern! Hohes Risiko für Follikelverstopfung.";
+  } else if (maxScore === 3) {
+    status = "comedogenic_moderate";
+    label = `🟠 Mäßig komedogen (Score 3/5)`;
+    badgeColor = "#ffedd5";
+    textColor = "#9a3412";
+    borderColor = "#fdba74";
+    suitability = "Für Akne & ölige Haut ungeeignet. Gut verträglich für trockene & barriere-geschädigte Haut.";
+  } else if (maxScore === 2) {
+    status = "comedogenic_low";
+    label = `🟡 Geringes Risiko (Score 2/5)`;
+    badgeColor = "#fef9c3";
+    textColor = "#854d0e";
+    borderColor = "#fde047";
+    suitability = "Meist unbedenklich. Bei extremer Akne-Neigung beobachten; für normale & trockene Haut ideal.";
+  }
+
+  const isClean = maxScore <= 1;
+
+  let summary = "";
+  if (highRisk.length > 0) {
+    const names = highRisk.map(h => `${h.name} (${h.score}/5)`).join(", ");
+    summary = `Enthält stark porenverstopfende Stoffe: ${names}. Bei Akne oder Seborrhoe oleosa nicht empfohlen!`;
+  } else if (moderateRisk.length > 0) {
+    const names = moderateRisk.map(m => `${m.name} (${m.score}/5)`).join(", ");
+    summary = `Enthält mäßig komedogene Stoffe (${names}). Bei trockener Haut zur Barrierepflege geeignet, bei Akne mit Vorsicht verwenden.`;
+  } else if (lowRisk.length > 0) {
+    const names = lowRisk.map(l => `${l.name} (${l.score}/5)`).join(", ");
+    summary = `Enthält milde Lipide/Fettalkohole (${names}, Score 2/5). Für normale bis trockene Haut hervorragend geeignet.`;
+  } else {
+    summary = `Keine porenverstopfenden Inhaltsstoffe erkannt (Score 0–1). Sicher für Akne-prone, ölige und sensible Haut.`;
+  }
+
+  return {
+    maxScore: maxScore,
+    status: status,
+    label: label,
+    badgeColor: badgeColor,
+    textColor: textColor,
+    borderColor: borderColor,
+    suitability: suitability,
+    flagged: matched,
+    highRisk: highRisk,
+    moderateRisk: moderateRisk,
+    lowRisk: lowRisk,
+    safe: safe,
+    isClean: isClean,
+    hasInci: true,
+    explicitNcClaim: explicitNcClaim,
+    summary: summary
+  };
+}
 
 const KEY_ACTIVES_DEFINITIONS = [
   { id: "panthenol", label: "Panthenol (Provitamin B5)", rx: /\b(panthenol|d-panthenol|provitamin\s*b5)\b/i, category: "barriere" },
@@ -2160,7 +2403,17 @@ function compareTwoProducts(prodA, prodB) {
       ff: { a: prodA.ff, b: prodB.ff, bothFF: prodA.ff === true && prodB.ff === true },
       nc: { a: prodA.nc, b: prodB.nc, bothNC: prodA.nc === true && prodB.nc === true },
       cf: { a: prodA.cf, b: prodB.cf, bothCF: prodA.cf === true && prodB.cf === true }
-    }
+    },
+    comedogenicity: (function() {
+      const cA = typeof analyzeInciComedogenicity === "function" ? analyzeInciComedogenicity(prodA) : null;
+      const cB = typeof analyzeInciComedogenicity === "function" ? analyzeInciComedogenicity(prodB) : null;
+      const better = (cA && cB) ? (cA.maxScore < cB.maxScore ? "A" : (cB.maxScore < cA.maxScore ? "B" : "equal")) : null;
+      return {
+        analysisA: cA,
+        analysisB: cB,
+        betterForPores: better
+      };
+    })()
   };
 }
 
@@ -2224,11 +2477,35 @@ function findSimilarProducts(targetProdOrId, options = {}) {
   const category = options.category || (typeof getActiveProfile === "function" ? getActiveProfile().category : "adult") || "adult";
   const pool = options.pool || getCatalogCandidatesPool(category);
 
+  // Determine if active user profile has a comedogenic-critical skin type (Akne, ölig, Mischhaut, Teenager)
+  let isCriticalSkin = category === "teen";
+  if (!isCriticalSkin && typeof hasTag === "function") {
+    isCriticalSkin = hasTag("akne-prone", "oelig", "misch", "pref_nc");
+  }
+  if (!isCriticalSkin && typeof getActiveProfile === "function") {
+    const actP = getActiveProfile();
+    const actSub = String(actP && (actP.subtitle || actP.name) || "").toLowerCase();
+    if (/akne|ölig|oelig|unrein|misch/i.test(actSub)) isCriticalSkin = true;
+  }
+  if (options.filterComedogenic != null) {
+    isCriticalSkin = !!options.filterComedogenic;
+  }
+
   const candidates = Object.values(pool).filter(c => {
     if (!c || typeof c !== "object") return false;
     if (c.id === target.id) return false;
     if (c.ean && target.ean && c.ean === target.ean) return false;
     if (c._deeplinkOnly || c.source === "deeplink") return false;
+
+    // Evidenzbasierte Filterung: Für kritische Hauttypen (Akne/Ölig/Teen) dürfen
+    // NUR Produkte vorgeschlagen werden, deren Inhaltsstoffe auf der Skala 0-1 liegen!
+    if (isCriticalSkin && typeof analyzeInciComedogenicity === "function") {
+      const cAnalysis = analyzeInciComedogenicity(c);
+      if (cAnalysis.maxScore > 1) {
+        return false;
+      }
+    }
+
     return true;
   });
 
@@ -2249,6 +2526,8 @@ function findSimilarProducts(targetProdOrId, options = {}) {
 }
 
 // Exports
+window.COMEDOGENIC_INGREDIENTS_DB = COMEDOGENIC_INGREDIENTS_DB;
+window.analyzeInciComedogenicity = analyzeInciComedogenicity;
 window.KEY_ACTIVES_DEFINITIONS = KEY_ACTIVES_DEFINITIONS;
 window.EFFECT_DEFINITIONS = EFFECT_DEFINITIONS;
 window.extractProductActiveProfile = extractProductActiveProfile;
