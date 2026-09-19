@@ -1924,22 +1924,25 @@ function enrichAllDbProducts() {
 
 const COMEDOGENIC_INGREDIENTS_DB = [
   // --- SCORE 5: Extrem porenverstopfend (Absolut kontraindiziert bei Akne & öliger Haut) ---
-  { id: "isopropyl_myristate", name: "Isopropyl Myristate", score: 5, category: "Synthetischer Ester", regex: /\bisopropyl\s+myristate\b/i, note: "Stark penetrierender Ester, klassischer Referenzstoff für Follikelhyperkeratose (Kligman/Fulton)." },
-  { id: "isopropyl_isostearate", name: "Isopropyl Isostearate", score: 5, category: "Synthetischer Ester", regex: /\bisopropyl\s+isostearate\b/i, note: "Sehr stark komedogener Ester mit hohem Follikelpfropf-Risiko." },
-  { id: "isocetyl_stearate", name: "Isocetyl Stearate", score: 5, category: "Synthetischer Ester", regex: /\bisocetyl\s+stearate\b/i, note: "Schwerer Okklusiv-Ester, verstopft Porenausgänge nachweislich." },
-  { id: "myristyl_myristate", name: "Myristyl Myristate", score: 5, category: "Wachsester", regex: /\bmyristyl\s+myristate\b/i, note: "Wachsester mit starker Neigung zur Follikelokklusion." },
-  { id: "wheat_germ_oil", name: "Wheat Germ Oil (Weizenkeimöl)", score: 5, category: "Schweres Pflanzenöl", regex: /\b(triticum\s+vulgare\s*(?:germ\s*oil)?|wheat\s*germ\s*oil|weizenkeim\w*)\b/i, note: "Sehr reich an schwer abbaubaren Triglyceriden; extrem porenverstopfend." },
-  { id: "laureth_4", name: "Laureth-4", score: 5, category: "Nichtionischer Emulgator", regex: /\blaureth\s*-\s*4\b/i, note: "Nichtionisches Tensid/Emulgator, dringt tief in Follikel ein und induziert Hyperkeratose." },
-  { id: "oleth_3", name: "Oleth-3", score: 5, category: "Emulgator / Tensid", regex: /\boleth\s*-\s*3\b/i, note: "Oleylalkohol-Derivat mit maximalem Follikel-Reizwert." },
+  { id: "carrageenan", name: "Carrageenan (Chondrus Crispus)", score: 5, category: "Rotalgen-Polysaccharid", regex: /\b(carrageenan|chondrus\s+crispus|carrageen)\b/i, cysticRisk: true, poreCongestion: true, note: "Rotalgenextrakt; extrem potenter Induktor von Follikelhyperkeratose und zystischen Entzündungsschüben (Fulton 1989)." },
+  { id: "laminaria_algae", name: "Algae Extract / Laminaria (Braunalge / Kelp)", score: 5, category: "Algenextrakt", regex: /\b(laminaria\s+(?:digitata|saccharina|cloustoni)|algae\s+extract|kelp\s+extract|ascophyllum\s+nodosum|fucus\s+vesiculosus)\b/i, cysticRisk: true, poreCongestion: true, note: "Stark jod- und alginathaltige Meeresalgen; irritieren das Talgdrüsen-Infundibulum massiv (häufiger Trigger für zystische Akne)." },
+  { id: "isopropyl_myristate", name: "Isopropyl Myristate", score: 5, category: "Synthetischer Ester", regex: /\bisopropyl\s+myristate\b/i, cysticRisk: true, poreCongestion: true, note: "Stark penetrierender Ester, klassischer Referenzstoff für Follikelhyperkeratose (Kligman/Fulton)." },
+  { id: "isopropyl_isostearate", name: "Isopropyl Isostearate", score: 5, category: "Synthetischer Ester", regex: /\bisopropyl\s+isostearate\b/i, cysticRisk: true, poreCongestion: true, note: "Sehr stark komedogener Ester mit hohem Follikelpfropf-Risiko." },
+  { id: "isocetyl_stearate", name: "Isocetyl Stearate", score: 5, category: "Synthetischer Ester", regex: /\bisocetyl\s+stearate\b/i, cysticRisk: true, poreCongestion: true, note: "Schwerer Okklusiv-Ester, verstopft Porenausgänge nachweislich." },
+  { id: "myristyl_myristate", name: "Myristyl Myristate", score: 5, category: "Wachsester", regex: /\bmyristyl\s+myristate\b/i, cysticRisk: true, poreCongestion: true, note: "Wachsester mit starker Neigung zur Follikelokklusion." },
+  { id: "wheat_germ_oil", name: "Wheat Germ Oil (Weizenkeimöl)", score: 5, category: "Schweres Pflanzenöl", regex: /\b(triticum\s+vulgare\s*(?:germ\s*oil)?|wheat\s*germ\s*oil|weizenkeim\w*)\b/i, cysticRisk: true, poreCongestion: true, note: "Sehr reich an schwer abbaubaren Triglyceriden; extrem porenverstopfend." },
+  { id: "laureth_4", name: "Laureth-4", score: 5, category: "Nichtionischer Emulgator", regex: /\blaureth\s*-\s*4\b/i, poreCongestion: true, note: "Nichtionisches Tensid/Emulgator, dringt tief in Follikel ein und induziert Hyperkeratose." },
+  { id: "oleth_3", name: "Oleth-3", score: 5, category: "Emulgator / Tensid", regex: /\boleth\s*-\s*3\b/i, poreCongestion: true, note: "Oleylalkohol-Derivat mit maximalem Follikel-Reizwert." },
   { id: "sodium_lauryl_sulfate", name: "Sodium Lauryl Sulfate (SLS)", score: 5, category: "Anionisches Tensid", regex: /\b(sodium\s+lauryl\s+sulfat\w*|natriumlaurylsulfat|\bsls\b)\b/i, note: "Stark irritierendes Tensid, zerstört Barriere und triggert reaktive Follikelverstopfung." },
   { id: "potassium_chloride", name: "Potassium Chloride (Kaliumchlorid)", score: 5, category: "Anorganisches Salz", regex: /\b(potassium\s+chloride|kaliumchlorid)\b/i, note: "Kann in Emulsionen starke follikuläre Schwellungen hervorrufen." },
-  { id: "octyl_stearate", name: "Octyl Stearate", score: 5, category: "Synthetischer Ester", regex: /\boctyl\s+stearate\b/i, note: "Schweres Emolliens, hoch komedogen." },
+  { id: "octyl_stearate", name: "Octyl Stearate", score: 5, category: "Synthetischer Ester", regex: /\boctyl\s+stearate\b/i, poreCongestion: true, note: "Schweres Emolliens, hoch komedogen." },
 
   // --- SCORE 4: Stark komedogen (Hohes Risiko für offene & geschlossene Komedonen) ---
-  { id: "coconut_oil", name: "Coconut Oil (Cocos Nucifera / Kokosöl)", score: 4, category: "Pflanzliches Fett/Öl", regex: /\b(cocos\s+nucifera\s*(?:oil|butter)?|coconut\s*oil|kokos\w*(?:öl|butter)?)\b/i, note: "Enthält hohe Anteile an Laurin- und Myristinsäure, sehr oft Ursache für Akne cosmetica." },
-  { id: "cocoa_butter", name: "Cocoa Butter (Theobroma Cacao / Kakaobutter)", score: 4, category: "Pflanzliche Butter", regex: /\b(theobroma\s+cacao\s*(?:seed\s*butter)?|cocoa\s*(?:seed\s*)?butter|kakaobutter)\b/i, note: "Schwere gesättigte Triglyceride, bildet dichte Follikelverschlüsse." },
-  { id: "isopropyl_palmitate", name: "Isopropyl Palmitate", score: 4, category: "Synthetischer Ester", regex: /\bisopropyl\s+palmitate\b/i, note: "Häufiger Texturverbesserer in Körperlotionen, auf Akne-Gesichtshaut stark komedogen." },
-  { id: "ethylhexyl_palmitate", name: "Ethylhexyl Palmitate (Octyl Palmitate)", score: 4, category: "Synthetischer Ester", regex: /\b(ethylhexyl\s+palmitate|octyl\s+palmitate)\b/i, note: "Sehr weit verbreiteter Silikon-Ersatz in der Drogerie, stark porenverstopfend!" },
+  { id: "squalene", name: "Squalene (Ungesättigtes Squalen)", score: 4, category: "Ungesättigtes Sebum-Lipid", regex: /\b(squalene|squalen)\b/i, cysticRisk: true, sebumOxidation: true, note: "Nicht hydriertes Squalen oxidiert unter Sauerstoff/UV zu hochgradig komedogenem Squalen-Monohydroperoxid (triggert zystische Akne). Nicht verwechseln mit Squalan/Squalane (Score 0)!" },
+  { id: "coconut_oil", name: "Coconut Oil (Cocos Nucifera / Kokosöl)", score: 4, category: "Pflanzliches Fett/Öl", regex: /\b(cocos\s+nucifera\s*(?:oil|butter)?|coconut\s*oil|kokos\w*(?:öl|butter)?)\b/i, cysticRisk: true, poreCongestion: true, note: "Enthält hohe Anteile an Laurin- und Myristinsäure, sehr oft Ursache für Akne cosmetica." },
+  { id: "cocoa_butter", name: "Cocoa Butter (Theobroma Cacao / Kakaobutter)", score: 4, category: "Pflanzliche Butter", regex: /\b(theobroma\s+cacao\s*(?:seed\s*butter)?|cocoa\s*(?:seed\s*)?butter|kakaobutter)\b/i, cysticRisk: true, poreCongestion: true, note: "Schwere gesättigte Triglyceride, bildet dichte Follikelverschlüsse." },
+  { id: "isopropyl_palmitate", name: "Isopropyl Palmitate", score: 4, category: "Synthetischer Ester", regex: /\bisopropyl\s+palmitate\b/i, cysticRisk: true, poreCongestion: true, note: "Häufiger Texturverbesserer in Körperlotionen, auf Akne-Gesichtshaut stark komedogen." },
+  { id: "ethylhexyl_palmitate", name: "Ethylhexyl Palmitate (Octyl Palmitate)", score: 4, category: "Synthetischer Ester", regex: /\b(ethylhexyl\s+palmitate|octyl\s+palmitate)\b/i, cysticRisk: true, poreCongestion: true, note: "Sehr weit verbreiteter Silikon-Ersatz in der Drogerie, stark porenverstopfend!" },
   { id: "butyl_stearate", name: "Butyl Stearate", score: 4, category: "Synthetischer Ester", regex: /\bbutyl\s+stearate\b/i, note: "Fettester mit hoher Follikel-Affinität." },
   { id: "decyl_oleate", name: "Decyl Oleate", score: 4, category: "Synthetischer Ester", regex: /\bdecyl\s+oleate\b/i, note: "Dringt in Talgdrüsengänge ein und verhärtet Sebum." },
   { id: "ceteareth_20", name: "Ceteareth-20", score: 4, category: "Emulgator", regex: /\bceteareth\s*-\s*20\b/i, note: "Besonders in Kombination mit Fettalkoholen (Cetearyl Alcohol) stark komedogen." },
@@ -1949,10 +1952,18 @@ const COMEDOGENIC_INGREDIENTS_DB = [
   { id: "myristyl_lactate", name: "Myristyl Lactate", score: 4, category: "Ester", regex: /\bmyristyl\s+lactate\b/i, note: "Schweres Emolliens, triggert Follikelverstopfung." },
   { id: "acetylated_lanolin", name: "Acetylated Lanolin / Alcohol", score: 4, category: "Wachsester", regex: /\bacetylated\s+lanolin(?:\s+alcohol)?\b/i, note: "Modifiziertes Wollwachs, deutlich komedogener als reines Lanolin USP." },
   { id: "isostearyl_neopentanoate", name: "Isostearyl Neopentanoate", score: 4, category: "Ester", regex: /\bisostearyl\s+neopentanoate\b/i, note: "Verzweigter Ester mit hoher Komedogenität." },
-  { id: "algin", name: "Algin / Alginic Acid", score: 4, category: "Verdickungsmittel", regex: /\b(algin|alginic\s+acid)\b/i, note: "Polysaccharid aus Algen, kann bei Neigung zu Follikulitis Poren verkleben." },
+  { id: "isostearyl_isostearate", name: "Isostearyl Isostearate", score: 4, category: "Ester", regex: /\bisostearyl\s+isostearate\b/i, note: "Schwerer Okklusiv-Ester mit starker Porenverstopfungsneigung." },
+  { id: "algin", name: "Algin / Alginic Acid", score: 4, category: "Verdickungsmittel", regex: /\b(algin|alginic\s+acid)\b/i, cysticRisk: true, poreCongestion: true, note: "Polysaccharid aus Algen, kann bei Neigung zu Follikulitis Poren verkleben." },
   { id: "peg_16_lanolin", name: "PEG-16 Lanolin", score: 4, category: "Wachs-Derivat", regex: /\bpeg\s*-\s*16\s+lanolin\b/i, note: "Stark komedogenes Lanolin-Derivat." },
   { id: "steareth_10", name: "Steareth-10", score: 4, category: "Emulgator", regex: /\bsteareth\s*-\s*10\b/i, note: "Fettalkoholether mit hohem Komedogenitätsscore." },
   { id: "polyglyceryl_3_diisostearate", name: "Polyglyceryl-3 Diisostearate", score: 4, category: "Emulgator", regex: /\bpolyglyceryl\s*-\s*3\s+diisostearat\w*\b/i, note: "Schwerer W/O-Emulgator, bei Akne oft problematisch." },
+  { id: "polyglyceryl_4_isostearate", name: "Polyglyceryl-4 Isostearate", score: 4, category: "W/O-Emulgator", regex: /\bpolyglyceryl\s*-\s*4\s+isostearat\w*\b/i, note: "Schwerer Emulgator, bildet dichte Filme über Talgdrüsen." },
+  { id: "hexadecyl_alcohol", name: "Hexadecyl Alcohol / Isocetyl Alcohol", score: 4, category: "Verzweigter Fettalkohol", regex: /\b(hexadecyl\s+alcohol|isocetyl\s+alcohol)\b/i, note: "Verzweigter Fettalkohol mit hoher Follikelkomedogenität." },
+  { id: "lauric_acid", name: "Lauric Acid (Laurinsäure)", score: 4, category: "Gesättigte Fettsäure", regex: /\b(lauric\s+acid|laurinsäure)\b/i, poreCongestion: true, note: "C12-Fettsäure (Hauptbestandteil von Kokosfett), pur stark komedogen." },
+  { id: "ethylhexyl_stearate", name: "Ethylhexyl Stearate (Octyl Stearate)", score: 4, category: "Synthetischer Ester", regex: /\b(ethylhexyl\s+stearate|octyl\s+stearate)\b/i, note: "Schwerer kosmetischer Ester, begünstigt Mikrokomedonen." },
+  { id: "d_c_red_30", name: "D&C Red #30 (CI 73360)", score: 4, category: "Azo-Farbstoff / Pigment", regex: /\b(ci\s*73360|d&c\s*red\s*(?:no\.?\s*)?30|vat\s*red\s*1)\b/i, acneCosmetica: true, note: "Klassischer Auslöser von Acne cosmetica durch Rouge/Blush (Kligman & Mills)." },
+  { id: "d_c_red_36", name: "D&C Red #36 (CI 12085)", score: 4, category: "Azo-Farbstoff / Pigment", regex: /\b(ci\s*12085|d&c\s*red\s*(?:no\.?\s*)?36)\b/i, acneCosmetica: true, note: "Stark komedogenes Pigment in dekorativer Kosmetik." },
+  { id: "d_c_red_27", name: "D&C Red #27 / #28 (CI 45410)", score: 4, category: "Farbstoff", regex: /\b(ci\s*45410|d&c\s*red\s*(?:no\.?\s*)?2[78])\b/i, acneCosmetica: true, note: "Xanthen-Farbstoff, induziert Follikelpfropfen." },
 
   // --- SCORE 3: Mittelschwer / Moderat (Bedenklich bei Akne & Seborrhoe) ---
   { id: "avocado_oil", name: "Avocado Oil (Persea Gratissima / Avocadoöl)", score: 3, category: "Pflanzenöl", regex: /\b(persea\s+gratissima\s*(?:oil)?|avocado\s*oil|avocadoöl)\b/i, note: "Reichhaltiges Pflegeöl, exzellent für trockene Haut, aber komedogen bei Akne." },
@@ -2006,7 +2017,7 @@ const COMEDOGENIC_INGREDIENTS_DB = [
   { id: "sea_buckthorn_oil", name: "Seabuckthorn Oil (Hippophae Rhamnoides / Sanddorn)", score: 1, category: "Pflanzenöl", regex: /\b(hippophae\s+rhamnoides\s*(?:oil|extract)?|sea\s*buckthorn\s*oil|sanddorn\w*öl)\b/i, note: "Regenerierend, Score 1." },
 
   // --- SCORE 0: Strikt nicht komedogen (Goldstandard für Akne, ölige Haut & verstopfungsanfällige Poren) ---
-  { id: "squalane", name: "Squalane (Pflanzliches Squalan)", score: 0, category: "Hydriertes Lipid", regex: /\bsqualane\b/i, note: "Vollständig gesättigtes, biomimetisches Lipid. Oxidiert nicht, verstopft keine Poren (Score 0)." },
+  { id: "squalane", name: "Squalane (Pflanzliches Squalan)", score: 0, category: "Hydriertes Lipid", regex: /\b(squalane|squalan)\b/i, note: "Vollständig gesättigtes, biomimetisches Lipid. Oxidiert nicht, verstopft keine Poren (Score 0)." },
   { id: "glycerin", name: "Glycerin", score: 0, category: "Feuchthaltemittel", regex: /\bglycerin\b/i, note: "Hauteigener Feuchthaltefaktor (NMF), 100% nicht komedogen." },
   { id: "hyaluronic_acid", name: "Hyaluronsäure (Sodium Hyaluronate)", score: 0, category: "Feuchthaltemittel", regex: /\b(hyaluronic\s+acid|sodium\s+hyaluronate|hyaluron\w*)\b/i, note: "Reiner Wassermagnet ohne Fettphase; absolut porenneutral." },
   { id: "niacinamide", name: "Niacinamide (Vitamin B3)", score: 0, category: "Wirkstoff", regex: /\bniacinamid\w*\b/i, note: "Reguliert Talgproduktion, verfeinert Poren und hemmt Entzündungen (Score 0)." },
@@ -2030,6 +2041,209 @@ const COMEDOGENIC_INGREDIENTS_DB = [
   { id: "water_aqua", name: "Aqua (Wasser)", score: 0, category: "Basis / Lösungsmittel", regex: /\b(aqua|water|wasser)\b/i, note: "100% neutral." }
 ];
 
+// ==========================================
+// Galenik & Textur-Klassifikator
+// Evaluierung optimaler vs. kontraindizierter Texturen
+// (Hydrogele/Gel-Cremes vs. Schwere Balsame/Salben & Slugging-Risiko)
+// ==========================================
+
+function classifyProductTexture(productOrBlob) {
+  let blob = "";
+  let shape = "";
+  let kat = "";
+  if (typeof productOrBlob === "object" && productOrBlob !== null) {
+    const p = productOrBlob;
+    shape = p.shape || "";
+    kat = p.kat || p.slot || "";
+    blob = [
+      p.name || "",
+      p.wirk || "",
+      p.textur || "",
+      p.texture || "",
+      p.inci || "",
+      p.notes || "",
+      p.truth || "",
+      p.brand || "",
+      Array.isArray(p.klassen) ? p.klassen.join(" ") : ""
+    ].join(" ").toLowerCase();
+  } else if (typeof productOrBlob === "string") {
+    blob = productOrBlob.toLowerCase();
+  }
+
+  // 1. Hydrogel / Ölfreies Wasser-Gel (Water-Gel / Aqua Gel / Hydro-Gel)
+  if (/\b(hydro-?gel|wasser-?gel|water-?gel|aqua-?gel|oil-?free\s+gel|ölfreies\s+gel|feuchtigkeitsgel|aloe\s+vera\s+gel|hydrating\s+gel)\b/i.test(blob) ||
+      (/\bgel\b/i.test(blob) && !/\b(balsam|balm|creme|cream|öl|oil|reinigung|wasch|cleanser|dusche)\b/i.test(blob) && kat !== "reiniger")) {
+    return {
+      type: "hydrogel",
+      label: "💧 Leichtes Hydrogel / Wasser-Gel (Ölfrei)",
+      shortLabel: "Hydrogel (Ölfrei)",
+      badgeClass: "badge-hydrogel",
+      color: "#0284c7",
+      bg: "#e0f2fe",
+      border: "#7dd3fc",
+      isOptimalForAcne: true,
+      isContraindicatedForAcne: false,
+      acneRating: "⭐⭐⭐⭐⭐ Goldstandard für zystische Akne & ölige Haut",
+      explanation: "0% Fettphase. Zieht rückstandslos ein, kühlt akute Entzündungen und bildet keine anaerobe Okklusions-Kammer für Bakterien."
+    };
+  }
+
+  // 2. Leichte Gel-Creme / Hydro-Fluid (Gel-Cream / Fluid)
+  if (/\b(gel-?creme|gel-?cream|hydro-?fluid|fluid|fluide|lotion|mattifying\s+fluid|mattierendes\s+fluid|sebum\s+control\s+fluid|emulsion|hydro-?lotion)\b/i.test(blob)) {
+    return {
+      type: "gel_creme",
+      label: "✨ Leichte Gel-Creme / Hydro-Fluid",
+      shortLabel: "Gel-Creme / Fluid",
+      badgeClass: "badge-gelcreme",
+      color: "#0d9488",
+      bg: "#ccfbf1",
+      border: "#5eead4",
+      isOptimalForAcne: true,
+      isContraindicatedForAcne: false,
+      acneRating: "⭐⭐⭐⭐ Hervorragend geeignet",
+      explanation: "Sehr leichte O/W-Formulierung mit hohem Wasser- & NMF-Anteil und minimaler Lipidphase (< 10%). Schützt die Barriere ohne Talgdrüsen zu überlasten."
+    };
+  }
+
+  // 3. Schwerer Balsam / Cica-Balm (Balm / Baume / Cica-Balsam)
+  if (/\b(balsam|balm|baume|cica-?balm|cica-?balsam|cold-?cream|intensiv-?balsam|barrier\s*balm)\b/i.test(blob) ||
+      (shape === "jar" && /\breichhaltig|intensive|lipid|butter\b/i.test(blob))) {
+    return {
+      type: "balm",
+      label: "⚠️ Schwerer Balsam / Cica-Baume",
+      shortLabel: "Balsam (Sehr reichhaltig)",
+      badgeClass: "badge-balm",
+      color: "#b45309",
+      bg: "#fef3c7",
+      border: "#fcd34d",
+      isOptimalForAcne: false,
+      isContraindicatedForAcne: true,
+      acneRating: "⚠️ Kontraindiziert bei zystischer Akne & öliger Haut (Slugging-Falle)",
+      warning: "Schwere Balsame erzeugen eine dichte, luftdichte Schicht (Slugging). Bei zystischer Akne staut sich Talg, und anaerobe C. acnes Bakterien vermehren sich explosionsartig, was tiefe Follikelrupturen (Zysten) triggert.",
+      explanation: "Exzellent für extrem trockene, atopische Haut oder rissige Lippen, aber bei zystischer Akne und Seborrhoe kontraindiziert."
+    };
+  }
+
+  // 4. Salbe / Fettsalbe / Paste (Ointment)
+  if (/\b(salbe|ointment|fettsalbe|wundsalbe|zinksalbe|heilsalbe|paste)\b/i.test(blob) && kat !== "windel") {
+    return {
+      type: "ointment",
+      label: "🔴 Okklusive Fettsalbe / Salbe",
+      shortLabel: "Salbe (Okklusiv)",
+      badgeClass: "badge-ointment",
+      color: "#b91c1c",
+      bg: "#fee2e2",
+      border: "#fca5a5",
+      isOptimalForAcne: false,
+      isContraindicatedForAcne: true,
+      acneRating: "🔴 Ungeeignet für das akne-neigende Gesicht",
+      warning: "Sehr stark okklusiv. Blockiert Talgdrüsenausgänge mechanisch und provoziert schwere Follikulitis / Acne cosmetica.",
+      explanation: "Nur für punktuelle Akut-Wundversorgung oder Körperbereiche geeignet, niemals großflächig im akne-anfälligen Gesicht anwenden."
+    };
+  }
+
+  // 5. Reine Gesichtsöle / Öl-Seren (Facial Oil)
+  if (/\b(gesichts-?öl|facial\s*oil|beauty\s*oil|pflege-?öl|oil\s*serum)\b/i.test(blob) && kat !== "reiniger") {
+    return {
+      type: "oil",
+      label: "⚠️ Gesichtsöl (100% Lipide)",
+      shortLabel: "Gesichtsöl",
+      badgeClass: "badge-oil",
+      color: "#c2410c",
+      bg: "#ffedd5",
+      border: "#fdba74",
+      isOptimalForAcne: false,
+      isContraindicatedForAcne: true,
+      acneRating: "⚠️ Nicht empfohlen bei Seborrhoe & öliger Aknehaut",
+      warning: "Reines Öl überlastet ölige Haut zusätzlich mit exogenen Lipiden und kann Sebum-Peroxidation begünstigen.",
+      explanation: "Ölige Haut produziert bereits ausreichend Talg; benötigt wird Feuchtigkeit (Hydratation), nicht zusätzliches Öl."
+    };
+  }
+
+  // 6. Reichhaltige Creme (Creme Rich / W/O)
+  if (/\b(reichhaltig|rich|ultra-?rich|nutritive|trockene\s+haut|intensivcreme|nachtcreme|cold\s*cream)\b/i.test(blob) && /\b(creme|cream)\b/i.test(blob)) {
+    return {
+      type: "creme_rich",
+      label: "🧴 Reichhaltige Barriere-Creme",
+      shortLabel: "Creme (Reichhaltig)",
+      badgeClass: "badge-creme-rich",
+      color: "#475569",
+      bg: "#f1f5f9",
+      border: "#cbd5e1",
+      isOptimalForAcne: false,
+      isContraindicatedForAcne: true,
+      acneRating: "🟡 Bei öliger Akne oft zu schwer (Filmgefühl / Glanz)",
+      warning: "Hoher Fettphasen-Anteil kann Poren bei öliger Seborrhoe belasten.",
+      explanation: "Ideal für trockene, barriere-geschädigte Haut, bei Akne/öliger Haut besser auf leichte Gel-Cremes ausweichen."
+    };
+  }
+
+  // 7. Standard Feuchtigkeitscreme (Light/Medium O/W-Creme)
+  if (/\b(creme|cream|feuchtigkeitscreme|moisturizer|tagescreme)\b/i.test(blob)) {
+    return {
+      type: "creme_light",
+      label: "🧴 Leichte Feuchtigkeitscreme (O/W)",
+      shortLabel: "Creme (Leicht)",
+      badgeClass: "badge-creme",
+      color: "#334155",
+      bg: "#f8fafc",
+      border: "#e2e8f0",
+      isOptimalForAcne: false,
+      isContraindicatedForAcne: false,
+      acneRating: "🟢 Gut geeignet (sofern INCI porenneutral)",
+      explanation: "Klassische Feuchtigkeitscreme. Für Akne-Haut geeignet, wenn keine komedogenen Ester oder Wachse enthalten sind."
+    };
+  }
+
+  // 8. Sonstige (Serum / Cleanser / SPF / Toner)
+  if (kat === "serum" || /\b(serum|konzentrat|booster)\b/i.test(blob)) {
+    return {
+      type: "serum",
+      label: "💧 Wässriges Serum / Konzentrat",
+      shortLabel: "Serum",
+      badgeClass: "badge-serum",
+      color: "#0369a1",
+      bg: "#f0f9ff",
+      border: "#bae6fd",
+      isOptimalForAcne: true,
+      isContraindicatedForAcne: false,
+      acneRating: "⭐⭐⭐⭐ Porenneutral",
+      explanation: "Wässrige Konsistenz, dringt schnell ein ohne Porenverschluss."
+    };
+  }
+
+  if (kat === "reiniger" || /\b(reiniger|wasch|cleanser|foam|schaum|gel\s+reiniger)\b/i.test(blob)) {
+    return {
+      type: "cleanser",
+      label: "🫧 Reinigung / Waschlotion",
+      shortLabel: "Reinigung",
+      badgeClass: "badge-cleanse",
+      color: "#0f766e",
+      bg: "#f0fdfa",
+      border: "#99f6e4",
+      isOptimalForAcne: true,
+      isContraindicatedForAcne: false,
+      acneRating: "🟢 Abwaschbar",
+      explanation: "Rinse-off Formulierung."
+    };
+  }
+
+  // Fallback
+  return {
+    type: "fluid",
+    label: "🧴 Pflege-Textur",
+    shortLabel: "Pflege",
+    badgeClass: "badge-generic",
+    color: "#475569",
+    bg: "#f8fafc",
+    border: "#e2e8f0",
+    isOptimalForAcne: false,
+    isContraindicatedForAcne: false,
+    acneRating: "ℹ️ Standard",
+    explanation: "Leichte Formulierung."
+  };
+}
+
 function analyzeInciComedogenicity(textOrProduct) {
   let textToScan = "";
   let explicitNcClaim = null;
@@ -2051,6 +2265,8 @@ function analyzeInciComedogenicity(textOrProduct) {
     textToScan = textOrProduct;
   }
 
+  const textureEval = classifyProductTexture(textOrProduct);
+
   if (!textToScan || !textToScan.trim()) {
     return {
       maxScore: explicitNcClaim === true ? 0 : (explicitNcClaim === false ? 3 : 1),
@@ -2068,7 +2284,10 @@ function analyzeInciComedogenicity(textOrProduct) {
       hasInci: false,
       summary: explicitNcClaim === true 
         ? "Hersteller deklariert 'nicht komedogen'. In der EU ist dieser Begriff rechtlich nicht standardisiert – prüfe bei starker Akne-Neigung stets die genaue INCI-Liste."
-        : "Keine detaillierte INCI-Liste hinterlegt. Bei akne-anfälliger Haut vorab Packungsaufdruck prüfen."
+        : "Keine detaillierte INCI-Liste hinterlegt. Bei akne-anfälliger Haut vorab Packungsaufdruck prüfen.",
+      cysticTriggers: [],
+      hasCysticTrigger: false,
+      textureEval: textureEval
     };
   }
 
@@ -2088,6 +2307,7 @@ function analyzeInciComedogenicity(textOrProduct) {
   const moderateRisk = matched.filter(m => m.score === 3);
   const lowRisk = matched.filter(m => m.score === 2);
   const safe = matched.filter(m => m.score <= 1);
+  const cysticTriggers = matched.filter(m => m.cysticRisk === true || m.score === 5 || /carrageenan|chondrus|laminaria|algae|squalene|isopropyl myristate|isopropyl isostearate|ethylhexyl palmitate|wheat germ/i.test(m.name));
 
   let maxScore = matched.length > 0 ? matched[0].score : (explicitNcClaim === true ? 0 : 1);
 
@@ -2144,6 +2364,10 @@ function analyzeInciComedogenicity(textOrProduct) {
     summary = `Keine porenverstopfenden Inhaltsstoffe erkannt (Score 0–1). Sicher für Akne-prone, ölige und sensible Haut.`;
   }
 
+  if (cysticTriggers.length > 0) {
+    summary += ` ⚠️ Zysten-Trigger: Enthält ${cysticTriggers.map(c => c.name).join(", ")} (Follikelschwellungs-Risiko).`;
+  }
+
   return {
     maxScore: maxScore,
     status: status,
@@ -2160,7 +2384,10 @@ function analyzeInciComedogenicity(textOrProduct) {
     isClean: isClean,
     hasInci: true,
     explicitNcClaim: explicitNcClaim,
-    summary: summary
+    summary: summary,
+    cysticTriggers: cysticTriggers,
+    hasCysticTrigger: cysticTriggers.length > 0,
+    textureEval: textureEval
   };
 }
 
@@ -2498,10 +2725,14 @@ function findSimilarProducts(targetProdOrId, options = {}) {
     if (c._deeplinkOnly || c.source === "deeplink") return false;
 
     // Evidenzbasierte Filterung: Für kritische Hauttypen (Akne/Ölig/Teen) dürfen
-    // NUR Produkte vorgeschlagen werden, deren Inhaltsstoffe auf der Skala 0-1 liegen!
+    // NUR Produkte vorgeschlagen werden, deren Inhaltsstoffe auf der Skala 0-1 liegen
+    // und keine porenokklusiven Balsam-/Salben-Texturen aufweisen (Slugging-Risiko)!
     if (isCriticalSkin && typeof analyzeInciComedogenicity === "function") {
       const cAnalysis = analyzeInciComedogenicity(c);
       if (cAnalysis.maxScore > 1) {
+        return false;
+      }
+      if (cAnalysis.textureEval && cAnalysis.textureEval.isContraindicatedForAcne) {
         return false;
       }
     }
@@ -2527,6 +2758,7 @@ function findSimilarProducts(targetProdOrId, options = {}) {
 
 // Exports
 window.COMEDOGENIC_INGREDIENTS_DB = COMEDOGENIC_INGREDIENTS_DB;
+window.classifyProductTexture = classifyProductTexture;
 window.analyzeInciComedogenicity = analyzeInciComedogenicity;
 window.KEY_ACTIVES_DEFINITIONS = KEY_ACTIVES_DEFINITIONS;
 window.EFFECT_DEFINITIONS = EFFECT_DEFINITIONS;

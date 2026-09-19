@@ -2051,6 +2051,21 @@ function openCompatibilityCheckModal(prodId, tab) {
           ${cAnalysis.summary}
         </div>
         ${flaggedItemsHtml}
+        ${cAnalysis.textureEval ? `
+          <div style="margin-top:8px;padding:6px 9px;border-radius:7px;background:${cAnalysis.textureEval.bg};border:1px solid ${cAnalysis.textureEval.border};font-size:0.78rem;color:${cAnalysis.textureEval.color}">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong>${escapeHtml(cAnalysis.textureEval.label)}</strong>
+              <span style="font-weight:700;font-size:0.72rem">${escapeHtml(cAnalysis.textureEval.shortLabel)}</span>
+            </div>
+            <div style="font-size:0.74rem;margin-top:2px;line-height:1.35">${escapeHtml(cAnalysis.textureEval.acneRating)}</div>
+            ${cAnalysis.textureEval.warning ? `<div style="font-size:0.73rem;color:#991b1b;font-weight:700;margin-top:3px">${escapeHtml(cAnalysis.textureEval.warning)}</div>` : `<div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${escapeHtml(cAnalysis.textureEval.explanation)}</div>`}
+          </div>
+        ` : ''}
+        ${cAnalysis.hasCysticTrigger ? `
+          <div style="margin-top:6px;padding:5px 8px;border-radius:6px;background:#fef2f2;border:1px solid #fecaca;font-size:0.76rem;color:#991b1b;line-height:1.35">
+            <strong>🔴 Zystische Akne-Warnung:</strong> Enthält Inhaltsstoffe mit hohem Risiko für zystische Follikelschwellungen &amp; Mikrokomedonen (${escapeHtml(cAnalysis.cysticTriggers.map(c => c.name).join(', '))}).
+          </div>
+        ` : ''}
         <div style="font-size:0.68rem;color:#64748b;margin-top:6px;line-height:1.3">
           <em>Hinweis (EU-Kosmetikverordnung VO 1223/2009):</em> Der Begriff „nicht komedogen“ ist in Europa gesetzlich nicht standardisiert. Kosmetikschrank gleicht die Rezeptur daher mit einer evidenzbasierten Substanzdatenbank (0–5 Skala) ab.
         </div>

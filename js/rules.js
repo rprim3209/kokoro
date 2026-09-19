@@ -1400,18 +1400,69 @@ function assessCabinetProfileConstraints(products, opts) {
       );
     }
 
-    // Soft NC preference (akne-prone / pref_nc): known comedogenic only
-    if ((hasTag("pref_nc") || hasTag("akne-prone") || cat === "teen") && p.nc === false) {
-      pushHit(
-        {
-          code: "pref_nc_miss",
-          outcome: "eher_nicht",
-          reason: "Als komedogen bekannt — bei Unreinheiten eher ungeeignet.",
-          prio: 60,
-          edu: null
-        },
-        p
-      );
+    // Akne & Ölige Haut Profil-Prüfung im Schrank (Komedogenität & Textur/Slugging)
+    var isAkneCabinet = (cat === "teen" || hasTag("akne-prone") || hasTag("oelig") || hasTag("misch") || hasTag("pref_nc") ||
+      /akne|unrein|zystisch|seborrhoe|oelig|glanz|mitesser/i.test(String((appState && appState.profileSubtitles && appState.profileSubtitles[cat]) || "")));
+    if (isAkneCabinet) {
+      var inciCheck = typeof analyzeInciComedogenicity === "function" ? analyzeInciComedogenicity(p) : null;
+      if (inciCheck) {
+        if (inciCheck.maxScore >= 4) {
+          pushHit(
+            {
+              code: "akne_comedogenic_high",
+              outcome: "konflikt",
+              reason: "Komedogenität " + inciCheck.maxScore + "/5 (" + (inciCheck.highRisk.map(function(h){ return h.name; }).join(", ") || "Stark porenverstopfend") + ") — bei Akne & öliger Haut kontraindiziert.",
+              prio: 25,
+              edu: "Porenverstopfende Stoffe (wie Isopropyl Myristate, Carrageenan, Algenextrakte, Squalen-Oxidation oder Kokosöl) triggern Follikelverstopfungen und zystische Entzündungen (Acne cosmetica)."
+            },
+            p
+          );
+        } else if (inciCheck.hasCysticTrigger) {
+          pushHit(
+            {
+              code: "akne_cystic_trigger",
+              outcome: "konflikt",
+              reason: "Zystischer Akne-Trigger (" + inciCheck.cysticTriggers.map(function(c){ return c.name; }).join(", ") + ") — Follikelschwellungs-Risiko.",
+              prio: 26,
+              edu: "Algenextrakte (Laminaria, Carrageenan) und oxidierendes Squalen stimulieren Entzündungsmediatoren und Follikelschwellungen, was zystische Knoten begünstigt."
+            },
+            p
+          );
+        } else if (inciCheck.textureEval && inciCheck.textureEval.isContraindicatedForAcne && (p.kat === "creme" || !p.kat)) {
+          pushHit(
+            {
+              code: "akne_slugging_balm",
+              outcome: "eher_nicht",
+              reason: "Schwere Textur (" + inciCheck.textureEval.shortLabel + ") — bei zystischer Akne/öliger Haut besteht Slugging-Gefahr (anaerobe C. acnes Vermehrung).",
+              prio: 48,
+              edu: "Bei zystischer Akne und öliger Haut sind leichte Hydrogele oder ölfreie Gel-Cremes deutlich besser als dicke Balsame, um Talg- und Bakterienstau zu vermeiden."
+            },
+            p
+          );
+        } else if (p.nc === false) {
+          pushHit(
+            {
+              code: "pref_nc_miss",
+              outcome: "eher_nicht",
+              reason: "Als komedogen bekannt — bei Unreinheiten eher ungeeignet.",
+              prio: 60,
+              edu: null
+            },
+            p
+          );
+        }
+      } else if (p.nc === false) {
+        pushHit(
+          {
+            code: "pref_nc_miss",
+            outcome: "eher_nicht",
+            reason: "Als komedogen bekannt — bei Unreinheiten eher ungeeignet.",
+            prio: 60,
+            edu: null
+          },
+          p
+        );
+      }
     }
 
     // Teen: anti-aging / not for minors
@@ -1599,6 +1650,7 @@ function calculateCategoryCabinetPrognosis(products, category) {
       whyNotes.push("Kinderhaut profitiert von sanfter, duftstoffarmer Pflege und zuverlässigem Breitband-Sonnenschutz (LSF 50+) ohne aggressive Peelings.");
     } else if (category === "teen") {
       whyNotes.push("Die Teenie-Routine setzt auf evidenzbasierte Klärung und milde Tenside, ohne die Barriere mit schweren Anti-Aging-Stoffen zu überfordern.");
+      whyNotes.push("Optimale Textur bei Akne & Seborrhoe: Leichte, ölfreie Hydrogele und Gel-Cremes versorgen die Haut mit Feuchtigkeit, ohne anaerobe Bakterienherde (C. acnes) unter schweren Balsamschichten einzuschließen.");
     } else {
       whyNotes.push("Deine Produkte passen gut zusammen und schonen die natürliche Hautbarriere.");
     }
@@ -2142,7 +2194,7 @@ function evaluateProductCompatibility(productOrId, tab) {
   var skinPoints = [];
   var inciAnalysis = typeof analyzeInciComedogenicity === "function" ? analyzeInciComedogenicity(p) : null;
 
-  var isAkneProfile = cat === "teen" || /akne/i.test(profileSub) || hasTag("akne-prone") || hasTag("pref_nc");
+  var isAkneProfile = cat === "teen" || /akne|unrein|zystisch|seborrhoe|oelig|glanz|mitesser/i.test(profileSub) || hasTag("akne-prone") || hasTag("oelig") || hasTag("misch") || hasTag("pref_nc");
   var isSensitiveProfile = cat === "baby" || /sensibel|barriere|rötung|rosazea|parfümfrei/i.test(profileSub) || hasTag("sensibel") || hasTag("duftstofffrei") || hasTag("begleitpflege");
 
   if (cat === "baby") {
@@ -2205,6 +2257,24 @@ function evaluateProductCompatibility(productOrId, tab) {
           skinPoints.push("🟢 Porenfreundlich (Score " + inciAnalysis.maxScore + "/5): Keine porenverstopfenden Inhaltsstoffe in der INCI nachgewiesen.");
         }
 
+        // Spezifische Warnung für zystische Akne (Algenextrakte, Carrageenan, Squalen-Oxidation, schwere Ester)
+        if (inciAnalysis.hasCysticTrigger) {
+          skinOutcomes.push("konflikt");
+          var cNames = inciAnalysis.cysticTriggers.map(function(c) { return c.name; }).join(", ");
+          skinPoints.push("🔴 Zystische Akne-Warnung: Enthält Inhaltsstoffe mit hohem Risiko für zystische Follikelschwellungen & Gewebsrupturen (" + cNames + "). Bei Neigung zu entzündlichen Unterlagerungen und Zysten strikt kontraindiziert!");
+        }
+
+        // Galenik- & Texturbewertung für Akne / Ölige Haut (Hydrogele/Gel-Cremes vs. Slugging-Balsame)
+        var tex = inciAnalysis.textureEval;
+        if (tex) {
+          if (tex.isContraindicatedForAcne) {
+            skinOutcomes.push("eher_nicht");
+            skinPoints.push("⚠️ Textur-Warnung (Slugging- & Okklusions-Risiko): " + (tex.warning || "Schwere Balsame/Salben erzeugen ein anaerobes Milieu, in dem sich C. acnes vermehrt und Follikelrupturen (Zysten) begünstigt werden.") + " Empfehlung: Wechsle zu einem leichten Hydrogel oder einer ölfreien Gel-Creme.");
+          } else if (tex.isOptimalForAcne) {
+            skinPoints.push("💧 Ideale Textur für Akne & ölige Haut: " + tex.label + " – " + tex.explanation);
+          }
+        }
+
         // Transparenz-Hinweis: Unregulierter EU-Claim vs. INCI-Wahrheit
         if (p.nc === true && inciAnalysis.maxScore >= 3) {
           skinPoints.push("⚠️ Irreführender Claim: Packung wirbt mit 'nicht komedogen', enthält laut INCI jedoch porenverstopfende Stoffe (" + inciAnalysis.flagged.filter(function(f){ return f.score >= 3; }).map(function(f){ return f.name; }).join(", ") + "). Der Begriff ist in der EU nicht geschützt!");
@@ -2216,6 +2286,9 @@ function evaluateProductCompatibility(productOrId, tab) {
           skinPoints.push("ℹ️ Sehr reichhaltige Okklusion (Score " + inciAnalysis.maxScore + "/5 durch " + (inciAnalysis.highRisk.map(function(h){ return h.name; }).join(", ") || "Lipide") + "). Gut für trockene Barriere, bei verstopften Poren sparsam dosieren.");
         } else {
           skinPoints.push("🟢 Nicht komedogen (Score " + inciAnalysis.maxScore + "/5): Reizarme Feuchtigkeitspflege.");
+        }
+        if (inciAnalysis.textureEval && (inciAnalysis.textureEval.type === "balm" || inciAnalysis.textureEval.type === "creme_rich")) {
+          skinPoints.push("🟢 Reichhaltige Balsam-/Creme-Textur: Bietet intensive Lipidschutz-Okklusion gegen Feuchtigkeitsverlust.");
         }
       } else {
         // Normale / ausgeglichene Haut

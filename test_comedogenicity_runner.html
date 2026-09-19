@@ -51,11 +51,20 @@
     // =========================================================================
     log.push("--- 1. DATABASE INTEGRITY (0–5 SCALE) ---");
     assert(typeof COMEDOGENIC_INGREDIENTS_DB === "object" && Array.isArray(COMEDOGENIC_INGREDIENTS_DB), "COMEDOGENIC_INGREDIENTS_DB is an array");
-    assert(COMEDOGENIC_INGREDIENTS_DB.length >= 80, "Database contains at least 80 curated substances (found: " + COMEDOGENIC_INGREDIENTS_DB.length + ")");
+    assert(COMEDOGENIC_INGREDIENTS_DB.length >= 95, "Database contains at least 95 curated substances (found: " + COMEDOGENIC_INGREDIENTS_DB.length + ")");
 
     // Check specific high-impact substances
     const ipm = COMEDOGENIC_INGREDIENTS_DB.find(i => /isopropyl myristate/i.test(i.name));
-    assert(ipm && ipm.score === 5, "Isopropyl Myristate is rated Score 5 (Extreme)");
+    assert(ipm && ipm.score === 5 && ipm.cysticRisk === true, "Isopropyl Myristate is rated Score 5 (Extreme) with cystic risk");
+
+    const carrageenan = COMEDOGENIC_INGREDIENTS_DB.find(i => /carrageenan/i.test(i.name));
+    assert(carrageenan && carrageenan.score === 5 && carrageenan.cysticRisk === true, "Carrageenan (Chondrus Crispus) is rated Score 5 and marked as cystic risk");
+
+    const algae = COMEDOGENIC_INGREDIENTS_DB.find(i => /laminaria/i.test(i.name));
+    assert(algae && algae.score === 5 && algae.cysticRisk === true, "Laminaria / Algae Extract is rated Score 5 and marked as cystic risk");
+
+    const squalene = COMEDOGENIC_INGREDIENTS_DB.find(i => i.id === "squalene");
+    assert(squalene && squalene.score === 4 && squalene.sebumOxidation === true, "Squalene (unhydrogenated) is rated Score 4 with sebum oxidation flag");
 
     const coco = COMEDOGENIC_INGREDIENTS_DB.find(i => /cocos nucifera|coconut/i.test(i.name));
     assert(coco && coco.score === 4, "Cocos Nucifera (Coconut) Oil is rated Score 4 (High)");
@@ -66,8 +75,11 @@
     const cetearyl = COMEDOGENIC_INGREDIENTS_DB.find(i => /cetearyl alcohol/i.test(i.name));
     assert(cetearyl && cetearyl.score === 2, "Cetearyl Alcohol is rated Score 2 (Mild fatty alcohol)");
 
-    const squalane = COMEDOGENIC_INGREDIENTS_DB.find(i => /squalane/i.test(i.name));
+    const squalane = COMEDOGENIC_INGREDIENTS_DB.find(i => i.id === "squalane");
     assert(squalane && squalane.score === 0, "Squalane is rated Score 0 (Safe / Non-comedogenic)");
+
+    const dcRed = COMEDOGENIC_INGREDIENTS_DB.find(i => /ci\s*73360|d&c\s*red/i.test(i.name));
+    assert(dcRed && dcRed.score === 4 && dcRed.acneCosmetica === true, "D&C Red Colorants (CI 73360) are rated Score 4 with acne cosmetica flag");
 
     const glycerin = COMEDOGENIC_INGREDIENTS_DB.find(i => /glycerin/i.test(i.name));
     assert(glycerin && glycerin.score === 0, "Glycerin is rated Score 0 (Safe)");
@@ -109,11 +121,32 @@
     assert(res0.status === "comedogenic_safe", "Test D: Status is comedogenic_safe");
 
     // =========================================================================
+    // 2b. GALENIC TEXTURE ENGINE (classifyProductTexture)
+    // =========================================================================
+    log.push("--- 2b. GALENIC TEXTURE ENGINE (classifyProductTexture) ---");
+    assert(typeof classifyProductTexture === "function", "classifyProductTexture is a declared function");
+
+    const texHydro = classifyProductTexture("Balea Aqua Feuchtigkeitsgel (Ölfrei)");
+    assert(texHydro.type === "hydrogel" && texHydro.isOptimalForAcne === true, "Detects oil-free Hydrogel as optimal for acne");
+
+    const texFluid = classifyProductTexture("La Roche-Posay Effaclar Mattierendes Fluid");
+    assert(texFluid.type === "gel_creme" && texFluid.isOptimalForAcne === true, "Detects Mattifying Fluid / Gel-Cream as optimal for acne");
+
+    const texBalm = classifyProductTexture("Mixa Cica-Multi-Use Reparierender Balm Reichhaltig");
+    assert(texBalm.type === "balm" && texBalm.isContraindicatedForAcne === true, "Detects heavy Cica Balm as contraindicated for acne (slugging hazard)");
+
+    const texOint = classifyProductTexture("Zinksalbe Wundschutz Okklusiv Paste");
+    assert(texOint.type === "ointment" && texOint.isContraindicatedForAcne === true, "Detects occlusive ointment as contraindicated for acne face");
+
+    const texOil = classifyProductTexture("Bio Gesichtsöl Reines Pflegeöl");
+    assert(texOil.type === "oil" && texOil.isContraindicatedForAcne === true, "Detects pure facial oil as contraindicated for oily seborrheic skin");
+
+    // =========================================================================
     // 3. SKIN TYPE EVALUATION & CRITICAL PROFILE FILTERING
     // =========================================================================
     log.push("--- 3. SKIN TYPE FIT & EXCLUSION RULES ---");
 
-    // Register 2 test products in DB for comparison & similar test
+    // Register test products in DB for comparison & similar test
     DB["test_heavy_coconut_cream"] = {
       id: "test_heavy_coconut_cream",
       brand: "Tropical Glow",
@@ -146,6 +179,38 @@
       price: "11,50 €"
     };
 
+    DB["test_cica_balm"] = {
+      id: "test_cica_balm",
+      brand: "Repair Lab",
+      name: "Cica Multi-Use Intensive Balm",
+      kat: "creme",
+      schiene: "support",
+      klassen: ["support"],
+      shape: "tube",
+      c: "#bad19f",
+      wirk: "Intensive Barriere-Rettung",
+      nc: true,
+      ff: true,
+      inci: "Aqua, Hydrogenated Polyisobutene, Dimethicone, Glycerin, Butyrospermum Parkii Butter, Panthenol, Madecassoside",
+      price: "9,95 €"
+    };
+
+    DB["test_algae_cystic_serum"] = {
+      id: "test_algae_cystic_serum",
+      brand: "Ocean Glow",
+      name: "Marine Algae Moisture Infusion",
+      kat: "creme",
+      schiene: "support",
+      klassen: ["support"],
+      shape: "bottle",
+      c: "#bad19f",
+      wirk: "Algenextrakte & Feuchtigkeit",
+      nc: false,
+      ff: true,
+      inci: "Aqua, Chondrus Crispus (Carrageenan) Extract, Laminaria Digitata Extract, Glycerin",
+      price: "18,50 €"
+    };
+
     // Case 1: Akne / Ölige Haut Profile (Critical Skin Type)
     appState.profile = "adult";
     appState.tags = ["akne-prone", "oelig"];
@@ -159,9 +224,19 @@
     assert(evalAcneHeavy.skinTypeFit.points.some(p => p.includes("Stark porenverstopfend") || p.includes("Komedogenität 4/5")), "Acne Profile: Warns of strong pore-clogging risk (Acne cosmetica)");
     assert(evalAcneHeavy.skinTypeFit.points.some(p => p.includes("Irreführender Claim")), "Acne Profile: Flags misleading 'nicht komedogen' claim when containing Score >= 3");
 
+    // Evaluation of Algae Cystic Serum for Acne Profile
+    const evalAcneAlgae = evaluateProductCompatibility("test_algae_cystic_serum", "pm");
+    assert(evalAcneAlgae.verdict === "konflikt", "Acne Profile: Algae Cystic Serum results in 'konflikt'");
+    assert(evalAcneAlgae.skinTypeFit.points.some(p => p.includes("Zystische Akne-Warnung") || p.includes("Carrageenan") || p.includes("Laminaria")), "Acne Profile: Explicitly warns of cystic acne trigger (Carrageenan / Algae)");
+
+    // Evaluation of Cica Balm for Acne Profile (Slugging warning)
+    const evalAcneBalm = evaluateProductCompatibility("test_cica_balm", "pm");
+    assert(evalAcneBalm.skinTypeFit.points.some(p => p.includes("Textur-Warnung") || p.includes("Slugging")), "Acne Profile: Warns of heavy balm texture and slugging / anaerobic occlusion risk");
+
     // Evaluation of Clean Squalane Gel for Acne Profile
     const evalAcneClean = evaluateProductCompatibility("test_clean_light_gel", "pm");
     assert(evalAcneClean.verdict === "passt", "Acne Profile: Clean Squalane Gel (Score 0) results in 'passt'");
+    assert(evalAcneClean.skinTypeFit.points.some(p => p.includes("Ideale Textur") || p.includes("Hydrogel") || p.includes("Gel-Creme")), "Acne Profile: Confirms ideal light gel/hydrogel texture");
 
     // Case 2: Similar Products Search for Critical Skin Profile
     // When searching for similar products to a cream under Acne profile:

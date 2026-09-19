@@ -2174,6 +2174,21 @@ function openProductDetail(prodId) {
               `).join('')}
             </div>
           ` : ''}
+          ${cAnalysis.textureEval ? `
+            <div style="margin-top:8px;padding:6px 9px;border-radius:7px;background:${cAnalysis.textureEval.bg};border:1px solid ${cAnalysis.textureEval.border};font-size:0.78rem;color:${cAnalysis.textureEval.color}">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <strong>${escapeHtml(cAnalysis.textureEval.label)}</strong>
+                <span style="font-weight:700;font-size:0.72rem">${escapeHtml(cAnalysis.textureEval.shortLabel)}</span>
+              </div>
+              <div style="font-size:0.74rem;margin-top:2px;line-height:1.35">${escapeHtml(cAnalysis.textureEval.acneRating)}</div>
+              ${cAnalysis.textureEval.warning ? `<div style="font-size:0.73rem;color:#991b1b;font-weight:700;margin-top:3px">${escapeHtml(cAnalysis.textureEval.warning)}</div>` : `<div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${escapeHtml(cAnalysis.textureEval.explanation)}</div>`}
+            </div>
+          ` : ''}
+          ${cAnalysis.hasCysticTrigger ? `
+            <div style="margin-top:6px;padding:6px 8px;border-radius:6px;background:#fef2f2;border:1px solid #fecaca;font-size:0.76rem;color:#991b1b;line-height:1.35">
+              <strong>🔴 Zystische Akne-Warnung:</strong> Enthält Inhaltsstoffe mit hohem Risiko für zystische Follikelschwellungen &amp; Mikrokomedonen (${escapeHtml(cAnalysis.cysticTriggers.map(c => c.name).join(', '))}).
+            </div>
+          ` : ''}
           <div style="font-size:0.72rem;color:var(--muted);margin-top:6px;line-height:1.3">
             <em>EU-Transparenz-Hinweis (VO 1223/2009):</em> Der Claim „nicht komedogen“ ist in Europa kosmetikrechtlich nicht geschützt. Kosmetikschrank prüft direkt die evidenzbasierte INCI-Zusammensetzung (Skala 0–5 nach Fulton/Kligman).
           </div>
@@ -2455,11 +2470,13 @@ function openProductComparisonModal(originalId, candidateId) {
               <div style="background:${ca.badgeColor};padding:6px 8px;border-radius:6px;border:1px solid ${ca.borderColor}">
                 <div style="font-weight:700;color:${ca.textColor}">Original: Score ${ca.maxScore}/5</div>
                 <div style="font-size:0.72rem;color:${ca.textColor};margin-top:2px">${ca.maxScore <= 1 ? 'Porenfreundlich' : (ca.maxScore === 2 ? 'Leichtes Risiko' : (ca.maxScore === 3 ? 'Moderat komedogen' : 'Stark verstopfend'))}</div>
+                ${ca.textureEval ? `<div style="font-size:0.7rem;font-weight:600;margin-top:2px;color:${ca.textureEval.color}">💧 ${ca.textureEval.shortLabel}</div>` : ''}
                 ${ca.highRisk.concat(ca.moderateRisk).length > 0 ? `<div style="font-size:0.68rem;color:#991b1b;margin-top:3px">⚠️ ${ca.highRisk.concat(ca.moderateRisk).map(i => i.name).join(', ')}</div>` : ''}
               </div>
               <div style="background:${cb.badgeColor};padding:6px 8px;border-radius:6px;border:1px solid ${cb.borderColor}">
                 <div style="font-weight:700;color:${cb.textColor}">Dupe: Score ${cb.maxScore}/5</div>
                 <div style="font-size:0.72rem;color:${cb.textColor};margin-top:2px">${cb.maxScore <= 1 ? 'Porenfreundlich' : (cb.maxScore === 2 ? 'Leichtes Risiko' : (cb.maxScore === 3 ? 'Moderat komedogen' : 'Stark verstopfend'))}</div>
+                ${cb.textureEval ? `<div style="font-size:0.7rem;font-weight:600;margin-top:2px;color:${cb.textureEval.color}">💧 ${cb.textureEval.shortLabel}</div>` : ''}
                 ${cb.highRisk.concat(cb.moderateRisk).length > 0 ? `<div style="font-size:0.68rem;color:#991b1b;margin-top:3px">⚠️ ${cb.highRisk.concat(cb.moderateRisk).map(i => i.name).join(', ')}</div>` : ''}
               </div>
             </div>
