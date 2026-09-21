@@ -1468,13 +1468,28 @@ function startZxingDetector(video, onHit) {
       ZXing.BarcodeFormat.CODE_128
     ]);
   }
-  const reader = new ZXing.BrowserMultiFormatReader(hints, 180);
+  const reader = new ZXing.BrowserMultiFormatReader(hints, 160);
   currentZxingReader = reader;
-  reader.decodeFromVideoElementContinuously(video, function (result) {
-    if (!result) return;
-    const raw = result.getText ? result.getText() : result.text;
-    onHit(raw);
-  });
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  currentScannerTimer = setInterval(function () {
+    if (scannerAcceptLocked || currentZxingReader !== reader) return;
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (!w || !h) return;
+    // Mittleres Band: dort liegt der Strichcode im Rahmen, und das Bild bleibt klein genug fürs Handy.
+    const bandH = Math.max(80, Math.floor(h * 0.42));
+    const sy = Math.floor((h - bandH) / 2);
+    if (canvas.width !== w) canvas.width = w;
+    if (canvas.height !== bandH) canvas.height = bandH;
+    canvas.naturalWidth = w;
+    canvas.naturalHeight = bandH;
+    try {
+      ctx.drawImage(video, 0, sy, w, bandH, 0, 0, w, bandH);
+      const result = reader.decode(canvas);
+      if (result) onHit(result.getText ? result.getText() : result.text);
+    } catch (e) { /* kein Code in diesem Bild */ }
+  }, 160);
   return true;
 }
 
