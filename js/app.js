@@ -3,6 +3,7 @@
 // ==========================================
 
 function switchScreen(screenName) {
+  if (typeof stopBarcodeScanner === "function") stopBarcodeScanner();
   if (screenName === "welcome") screenName = "start";
   const allowed = ["start", "cabinet", "scan", "settings"];
   if (!allowed.includes(screenName)) screenName = "start";

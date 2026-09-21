@@ -728,6 +728,8 @@ function renderTypRegal(tab, currentList) {
         </div>
       </div>
 
+      ${typeof renderIronOxideGapHtml === "function" ? renderIronOxideGapHtml(tab, currentList) : ""}
+
       <!-- Vergleichs-Karten (Was habe ich vs. Was wäre sinnvoll) -->
       <div class="typ-compare-list">
         ${steps.map((st, idx) => {

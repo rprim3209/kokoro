@@ -1309,67 +1309,233 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
 
 
 
-async function startBarcodeScanner(onCode) {
-  const status = document.getElementById("scanStatus");
-  const video = document.getElementById("scanVideo");
-  const startBtn = document.getElementById("btnStartScan");
-  const stopBtn = document.getElementById("btnStopScan");
+var currentScannerStream = null;
+var currentScannerTimer = null;
+var currentZxingReader = null;
+var activeScanRoot = null;
+var scannerAcceptLocked = false;
+var scanGeneration = 0;
 
+function scanRootFrom(node) {
+  if (node && node.closest) {
+    const scoped = node.closest(".scan-camera");
+    if (scoped) return scoped;
+  }
+  const inModal = document.querySelector("#modalContainer .scan-camera");
+  if (inModal) return inModal;
+  return document.querySelector(".scan-camera") || document;
+}
+
+function normalizeScannedCode(raw) {
+  const digits = String(raw || "").replace(/\D/g, "");
+  if (digits.length >= 8 && digits.length <= 14) return digits;
+  return String(raw || "").trim();
+}
+
+function setScanChrome(root, running) {
+  if (!root) return;
+  const startBtn = root.querySelector(".js-scan-start");
+  const stopBtn = root.querySelector(".js-scan-stop");
+  const video = root.querySelector(".js-scan-video");
+  if (startBtn) startBtn.style.display = running ? "none" : "";
+  if (stopBtn) stopBtn.style.display = running ? "" : "none";
+  if (video) video.classList.toggle("is-live", !!running);
+}
+
+function stopBarcodeScanner() {
+  scanGeneration += 1;
+  scannerAcceptLocked = true;
+  if (currentScannerTimer) {
+    clearInterval(currentScannerTimer);
+    currentScannerTimer = null;
+  }
+  if (currentZxingReader) {
+    try { currentZxingReader.reset(); } catch (e) { /* bereits gestoppt */ }
+    currentZxingReader = null;
+  }
+  if (currentScannerStream) {
+    currentScannerStream.getTracks().forEach(function (t) { t.stop(); });
+    currentScannerStream = null;
+  }
+  document.querySelectorAll(".js-scan-video").forEach(function (video) {
+    video.srcObject = null;
+    video.classList.remove("is-live");
+  });
+  document.querySelectorAll(".scan-camera").forEach(function (root) {
+    setScanChrome(root, false);
+  });
+  activeScanRoot = null;
+}
+
+function scannerErrorText(err) {
+  const name = err && err.name ? err.name : "";
+  if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+    return "Kamera blockiert. Am iPhone: Einstellungen → Safari → Kamera → Erlauben, dann Seite neu laden.";
+  }
+  if (name === "NotFoundError" || name === "OverconstrainedError") {
+    return "Keine Kamera gefunden. EAN unten eintippen.";
+  }
+  if (!window.isSecureContext) {
+    return "Die Kamera braucht HTTPS. Öffne die Seite über die GitHub-Adresse, nicht als Datei.";
+  }
+  return "Kamera gerade nicht verfügbar. EAN unten eintippen.";
+}
+
+async function openRearCamera(video) {
+  const attempts = [
+    { video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
+    { video: { facingMode: { ideal: "environment" } }, audio: false },
+    { video: true, audio: false }
+  ];
+  let lastErr = null;
+  for (let i = 0; i < attempts.length; i++) {
+    try {
+      return await navigator.mediaDevices.getUserMedia(attempts[i]);
+    } catch (err) {
+      lastErr = err;
+      if (err && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError")) throw err;
+    }
+  }
+  throw lastErr || new Error("getUserMedia");
+}
+
+function attachScanStream(video, stream) {
+  video.setAttribute("playsinline", "true");
+  video.setAttribute("webkit-playsinline", "true");
+  video.muted = true;
+  video.autoplay = true;
+  video.srcObject = stream;
+  video.classList.add("is-live");
+  return video.play();
+}
+
+async function enableContinuousFocus(stream) {
+  try {
+    const track = stream.getVideoTracks()[0];
+    if (!track || !track.getCapabilities) return;
+    const caps = track.getCapabilities();
+    if (caps.focusMode && caps.focusMode.indexOf("continuous") >= 0) {
+      await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+    }
+  } catch (e) { /* Fokus ist optional */ }
+}
+
+function watchForRepeat(onAccept) {
+  let last = "";
+  let hits = 0;
+  return function (raw) {
+    if (scannerAcceptLocked) return;
+    const code = normalizeScannedCode(raw);
+    if (!code) return;
+    if (code === last) hits += 1;
+    else { last = code; hits = 1; }
+    if (hits >= 2) onAccept(code);
+  };
+}
+
+async function startNativeDetector(video, onHit) {
+  if (!("BarcodeDetector" in window)) return false;
+  let formats = ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"];
+  try {
+    if (typeof BarcodeDetector.getSupportedFormats === "function") {
+      const supported = await BarcodeDetector.getSupportedFormats();
+      formats = formats.filter(function (f) { return supported.indexOf(f) >= 0; });
+    }
+    if (!formats.length) return false;
+    const detector = new BarcodeDetector({ formats: formats });
+    currentScannerTimer = setInterval(async function () {
+      if (scannerAcceptLocked || !video.videoWidth) return;
+      try {
+        const codes = await detector.detect(video);
+        if (codes && codes.length) onHit(codes[0].rawValue);
+      } catch (e) { /* Frame überspringen */ }
+    }, 280);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function startZxingDetector(video, onHit) {
+  if (typeof ZXing === "undefined" || !ZXing.BrowserMultiFormatReader) return false;
+  const hints = new Map();
+  if (ZXing.DecodeHintType && ZXing.BarcodeFormat) {
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+      ZXing.BarcodeFormat.EAN_13,
+      ZXing.BarcodeFormat.EAN_8,
+      ZXing.BarcodeFormat.UPC_A,
+      ZXing.BarcodeFormat.UPC_E,
+      ZXing.BarcodeFormat.CODE_128
+    ]);
+  }
+  const reader = new ZXing.BrowserMultiFormatReader(hints, 180);
+  currentZxingReader = reader;
+  reader.decodeFromVideoElementContinuously(video, function (result) {
+    if (!result) return;
+    const raw = result.getText ? result.getText() : result.text;
+    onHit(raw);
+  });
+  return true;
+}
+
+async function startBarcodeScanner(onCode, rootNode) {
+  const root = scanRootFrom(rootNode);
+  const status = root.querySelector(".js-scan-status") || document.getElementById("scanStatus");
+  const video = root.querySelector(".js-scan-video") || document.getElementById("scanVideo");
   if (!status || !video) return;
 
-  if (!window.isSecureContext) {
-    status.textContent = "Kamera braucht localhost oder HTTPS.";
+  stopBarcodeScanner();
+  const myGen = scanGeneration;
+  activeScanRoot = root;
+  scannerAcceptLocked = false;
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    status.textContent = "Dieser Browser hat keine Kamera-Schnittstelle. EAN eintippen.";
     return;
   }
-  if (!("BarcodeDetector" in window)) {
-    status.textContent = "Scanner in diesem Browser nicht verfügbar — EAN tippen.";
+  if (!window.isSecureContext) {
+    status.textContent = "Die Kamera braucht HTTPS. Auf dem iPhone die GitHub-Adresse öffnen, nicht die Datei.";
     return;
   }
 
   try {
     status.textContent = "Kamera wird initialisiert…";
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
-      audio: false
-    });
+    const stream = await openRearCamera(video);
+    if (scannerAcceptLocked) {
+      stream.getTracks().forEach(function (t) { t.stop(); });
+      return;
+    }
+    if (myGen !== scanGeneration) {
+      stream.getTracks().forEach(function (t) { t.stop(); });
+      return;
+    }
     currentScannerStream = stream;
-    video.srcObject = stream;
-    video.style.display = "block";
-    if (startBtn) startBtn.style.display = "none";
-    if (stopBtn) stopBtn.style.display = "inline-block";
+    setScanChrome(root, true);
+    await attachScanStream(video, stream);
+    await enableContinuousFocus(stream);
+    if (myGen !== scanGeneration || scannerAcceptLocked) return;
 
-    await video.play();
+    const accept = function (raw) {
+      const code = normalizeScannedCode(raw);
+      if (!code || scannerAcceptLocked) return;
+      stopBarcodeScanner();
+      status.textContent = "Gefunden: " + code;
+      if (typeof onCode === "function") onCode(code);
+    };
+    const onHit = watchForRepeat(accept);
+    status.textContent = "Strichcode quer in den Rahmen halten…";
 
-    const detector = new BarcodeDetector({
-      formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"]
-    });
-    status.textContent = "Barcode vor die Kamera halten…";
-
-    currentScannerTimer = setInterval(async () => {
-      try {
-        if (!video.videoWidth) return;
-        const codes = await detector.detect(video);
-        if (!codes.length) return;
-        const raw = codes[0].rawValue;
-        clearInterval(currentScannerTimer);
-        currentScannerTimer = null;
-        if (currentScannerStream) {
-          currentScannerStream.getTracks().forEach(t => t.stop());
-          currentScannerStream = null;
-        }
-        video.srcObject = null;
-        video.style.display = "none";
-        status.textContent = "Gefunden: " + raw;
-        if (typeof onCode === "function") {
-          onCode(raw);
-        }
-      } catch (e) {
-        /* Frame überspringen */
+    const nativeOk = await startNativeDetector(video, onHit);
+    if (!nativeOk) {
+      const zxingOk = startZxingDetector(video, onHit);
+      if (!zxingOk) {
+        status.textContent = "Scanner konnte nicht starten. EAN unten eintippen.";
+        stopBarcodeScanner();
       }
-    }, 400);
+    }
   } catch (err) {
-    status.textContent = "Kamera-Zugriff verweigert oder nicht verfügbar.";
     console.warn("Scanner-Fehler:", err);
+    status.textContent = scannerErrorText(err);
     stopBarcodeScanner();
   }
 }
@@ -1497,17 +1663,20 @@ function openScanModal() {
     <p style="color:var(--muted);font-size:0.88rem;margin:-0.2rem 0 0.8rem">EAN-Barcode vor die Kamera halten oder Nummer eingeben:</p>
     
     <!-- Kamera Live-Scanner -->
-    <div style="background:#1e293b;border-radius:14px;padding:12px;text-align:center;margin-bottom:0.9rem;color:#fff">
-      <video id="scanVideo" playsinline style="width:100%;max-width:360px;height:200px;border-radius:12px;background:#000;display:none;object-fit:cover;margin:0 auto 8px"></video>
-      <div style="display:flex;gap:8px;justify-content:center;align-items:center">
-        <button type="button" id="btnStartScan" class="btn-scan" style="background:#2563eb;font-size:0.86rem;padding:7px 14px;border-radius:8px">
+    <div class="scan-camera scan-camera-modal">
+      <div class="scan-viewfinder">
+        <video id="scanVideo" class="js-scan-video scan-video" playsinline muted autoplay webkit-playsinline></video>
+        <div class="scan-reticle" aria-hidden="true"></div>
+      </div>
+      <div class="scan-camera-actions">
+        <button type="button" id="btnStartScan" class="js-scan-start btn-scan">
           📷 Scanner starten
         </button>
-        <button type="button" id="btnStopScan" class="btn-text" style="display:none;background:#475569;color:#fff;font-size:0.82rem;padding:7px 12px;border-radius:8px" onclick="stopBarcodeScanner()">
+        <button type="button" id="btnStopScan" class="js-scan-stop btn-text" onclick="stopBarcodeScanner()">
           Stoppen
         </button>
       </div>
-      <p id="scanStatus" style="color:#cbd5e1;font-size:0.84rem;margin:6px 0 0">Kamera auf EAN-Strichcode der Dose richten</p>
+      <p id="scanStatus" class="js-scan-status">Strichcode quer in den Rahmen halten, etwa eine Handbreit Abstand.</p>
       ${window.location.protocol === "file:" ? `
         <div style="margin-top:8px;font-size:0.75rem;color:#fcd34d;background:rgba(245,158,11,0.15);padding:6px 10px;border-radius:6px;line-height:1.35">
           💡 Hinweis: Live-Kamera braucht HTTPS oder <strong>localhost</strong>. Starte <code>start-server.bat</code> für die Kamera oder tippe die EAN unten ein.
@@ -1594,7 +1763,7 @@ function openScanModal() {
     btnStartScan.onclick = () => {
       startBarcodeScanner((ean) => {
         handleScannedBarcode(ean);
-      });
+      }, btnStartScan);
     };
   }
 
@@ -2550,11 +2719,22 @@ function renderScanScreen(container) {
         Prüfe Produkte vor dem Kauf oder aus dem Bad auf Reizstoffe, Duftstoffe und Leitlinien-Eignung für <strong>${escapeHtml(activeP.name)}</strong>.
       </p>
 
+      <div class="scan-camera" id="scanScreenCamera">
+        <div class="scan-viewfinder">
+          <video class="js-scan-video scan-video" playsinline muted autoplay webkit-playsinline></video>
+          <div class="scan-reticle" aria-hidden="true"></div>
+        </div>
+        <div class="scan-camera-actions">
+          <button type="button" class="js-scan-start primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+            Kamera starten
+          </button>
+          <button type="button" class="js-scan-stop ghost-btn" onclick="stopBarcodeScanner()">Stoppen</button>
+        </div>
+        <p class="js-scan-status">Strichcode quer in den Rahmen halten. Am iPhone die Rückkamera nehmen.</p>
+      </div>
+
       <div class="scan-cta-row">
-        <button type="button" class="primary" onclick="openScanModal()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
-          Kamera-Scanner starten
-        </button>
         <button type="button" class="ghost-btn" onclick="openActiveProfileAddModal()">
           🔎 Katalog &amp; dm Suche
         </button>
@@ -2575,6 +2755,15 @@ function renderScanScreen(container) {
       </div>
     </div>
   `;
+
+  const screenStart = container.querySelector("#scanScreenCamera .js-scan-start");
+  if (screenStart) {
+    screenStart.onclick = function () {
+      startBarcodeScanner(function (ean) {
+        handleScannedBarcode(ean);
+      }, screenStart);
+    };
+  }
 }
 
 function handleScanScreenEan() {

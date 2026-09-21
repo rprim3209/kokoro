@@ -1,0 +1,3 @@
+@zxing/library 0.19.3 (Apache-2.0)
+Browser-Build für die Strichcode-Erkennung in Safari, das die BarcodeDetector-API nicht hat.
+Quelle: https://github.com/zxing-js/library

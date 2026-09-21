@@ -570,6 +570,15 @@ function findLocalProductMatch(query) {
   return null;
 }
 
+function canUseLocalLiveApi() {
+  const loc = window.location;
+  if (!loc || loc.protocol === "file:") return false;
+  const h = String(loc.hostname || "").toLowerCase();
+  if (h === "localhost" || h === "127.0.0.1" || h === "::1") return true;
+  if (/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(h)) return true;
+  return false;
+}
+
 async function searchLiveProducts(query, country) {
   const q = String(query || "").trim();
   if (q.length < 2) return [];
@@ -586,8 +595,8 @@ async function searchLiveProducts(query, country) {
     products.push(localHit);
   }
 
-  // B: Try API when running on web / local server (http/https or local server under file://)
-  if (products.length === 0) {
+  // B: Lokaler Python-Proxy. Auf GitHub Pages gibt es den nicht — dann Katalog und Open Beauty Facts.
+  if (products.length === 0 && canUseLocalLiveApi()) {
     try {
       const apiBase = (window.location.protocol === "file:") ? "http://127.0.0.1:8787" : "";
       const timeoutMs = (window.location.protocol === "file:") ? 1500 : 8000;

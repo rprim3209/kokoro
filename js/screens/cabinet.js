@@ -1148,6 +1148,8 @@ function renderMain(autoSave = true) {
       countLabel: "Flaschen"
     })}
 
+    ${typeof renderReizBudgetCardHtml === "function" ? renderReizBudgetCardHtml() : ""}
+
     <!-- Scan & Search Bar -->
     <div class="scan-hero">
       <h2>

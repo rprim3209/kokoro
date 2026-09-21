@@ -2422,7 +2422,171 @@ function evaluateProductCompatibility(productOrId, tab) {
   };
 }
 
+
+// --- Spec quiz-tags-soc-pih: Schnell-Concerns + sichtbares Reiz-Budget ---
+
+var CONCERN_QUICK_TAGS = [
+  { id: "skin-of-color", label: "Skin-of-Color", hint: "Mehr Melanin / Phototyp IV-VI (Einkaufsfilter)" },
+  { id: "pih-prone", label: "PIH-prone", hint: "Neigung zu dunklen Pickelmalen" },
+  { id: "akne-prone", label: "Akne-prone", hint: "Unreinheiten — ohne Arzt-Therapie" },
+  { id: "barrier", label: "Barriere-fragil", hint: "Leicht gereizt / spannt" },
+  { id: "arzt-thema", label: "Arzt-Thema", hint: "Rx / dermatologische Behandlung" }
+];
+
+function concernLabelForId(id) {
+  for (var i = 0; i < CONCERN_QUICK_TAGS.length; i++) {
+    if (CONCERN_QUICK_TAGS[i].id === id) return CONCERN_QUICK_TAGS[i].label;
+  }
+  return id;
+}
+
+function toggleConcernTag(id) {
+  if (typeof appState === "undefined" || !appState) return;
+  if (!Array.isArray(appState.tags)) appState.tags = [];
+  var label = concernLabelForId(id);
+  var on = hasTag(id);
+  if (on) {
+    appState.tags = appState.tags.filter(function (t) {
+      var n = normalizeTagKey(t);
+      var aliases = (TAG_ALIASES[id] || [id]).map(normalizeTagKey);
+      aliases.push(normalizeTagKey(label));
+      if (id === "arzt-thema") aliases.push(normalizeTagKey("Rx-Begleitpflege"));
+      return !aliases.some(function (a) {
+        return n === a || n.indexOf(a) !== -1;
+      });
+    });
+  } else {
+    if (appState.tags.indexOf(label) === -1) appState.tags.push(label);
+    if (id === "arzt-thema" && appState.tags.indexOf("Rx-Begleitpflege") === -1) {
+      appState.tags.push("Rx-Begleitpflege");
+    }
+  }
+  if (typeof applySoftPrefsToTagList === "function") {
+    appState.tags = applySoftPrefsToTagList(appState.tags);
+  }
+  if (typeof syncActiveProfileFromWorkingState === "function") syncActiveProfileFromWorkingState();
+  if (typeof saveState === "function") saveState();
+  if (typeof renderCurrentScreen === "function") renderCurrentScreen();
+  else if (typeof renderStartScreen === "function" && appState.view === "start") renderStartScreen();
+  else if (typeof renderMain === "function") renderMain(false);
+}
+
+function renderConcernQuickHtml() {
+  var chips = CONCERN_QUICK_TAGS.map(function (c) {
+    var on = hasTag(c.id);
+    return '<button type="button" class="start-pill-btn concern-chip ' + (on ? "active" : "") +
+      '" title="' + c.hint + '" onclick="toggleConcernTag(\'' + c.id + '\')" style="font-size:0.78rem">' +
+      (on ? "✓ " : "") + c.label + "</button>";
+  }).join("");
+  return '<div class="start-profile-card" style="margin-bottom:0.75rem">' +
+    '<div class="start-profile-head"><span class="start-profile-label">3. Concerns (Einkauf — keine Diagnose)</span></div>' +
+    '<p style="font-size:0.76rem;color:var(--muted);margin:0 0 0.45rem;line-height:1.4">Tipp zum An/Aus. Steuert Scan &amp; Schrank-Hinweise. ' +
+    (typeof VERDICT_DISCLAIMER !== "undefined" ? VERDICT_DISCLAIMER : "Keine Therapie.") + "</p>" +
+    '<div class="start-pills-row" style="gap:6px;flex-wrap:wrap">' + chips + "</div></div>";
+}
+
+function getReizBudgetSummary() {
+  var am = (typeof appState !== "undefined" && appState && appState.am) ? appState.am.slice() : [];
+  var pm = (typeof getActivePMList === "function") ? getActivePMList().slice() : [];
+  var nightW = 0;
+  var dayW = 0;
+  function addW(ids, bucket) {
+    (ids || []).forEach(function (id) {
+      var p = (typeof resolveCabinetProduct === "function" ? resolveCabinetProduct(id) : null)
+        || (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(id) : null)
+        || (typeof DB !== "undefined" && DB ? DB[id] : null);
+      var w = typeof reizWeightForProduct === "function" ? reizWeightForProduct(p) : 0;
+      if (bucket === "pm") nightW += w;
+      dayW += w;
+    });
+  }
+  addW(am, "am");
+  addW(pm, "pm");
+  var night = typeof assessNightReiz === "function" ? assessNightReiz(pm, null) : { outcome: "passt", reason: "" };
+  var day = typeof assessDayReiz === "function" ? assessDayReiz(am, pm, null, null) : { outcome: "passt", reason: "" };
+  var level = "ok";
+  if ((night && night.outcome === "konflikt") || (day && day.outcome === "konflikt")) level = "hot";
+  else if ((night && night.outcome === "eher_nicht") || (day && day.outcome === "eher_nicht") || nightW >= 3 || dayW >= 4) level = "warn";
+  var label = level === "hot" ? "Reiz-Budget: kritisch" : (level === "warn" ? "Reiz-Budget: angespannt" : "Reiz-Budget: entspannt");
+  var tip = "Heuristik fuer Einkauf & Layering — keine Therapie.";
+  if (level === "hot") tip = (night && night.reason) || (day && day.reason) || "Starke Actives besser trennen oder wechseln.";
+  else if (level === "warn") tip = (day && day.reason) || (night && night.reason) || "Viel Active heute — Support & Abstand helfen.";
+  else if (nightW === 0 && dayW === 0) tip = "Noch keine starken Actives im Schrank — Budget frei.";
+  return {
+    level: level,
+    label: label,
+    tip: tip,
+    nightWeight: nightW,
+    dayWeight: dayW,
+    night: night,
+    day: day
+  };
+}
+
+function renderReizBudgetCardHtml() {
+  var s = getReizBudgetSummary();
+  var bg = s.level === "hot" ? "#fef2f2" : (s.level === "warn" ? "#fff7ed" : "#ecfdf5");
+  var bd = s.level === "hot" ? "#fecaca" : (s.level === "warn" ? "#fed7aa" : "#a7f3d0");
+  var fg = s.level === "hot" ? "#991b1b" : (s.level === "warn" ? "#9a3412" : "#065f46");
+  return '<div class="reiz-budget-card" style="margin:0.65rem 0 0.85rem;padding:10px 12px;border-radius:10px;border:1px solid ' + bd +
+    ";background:" + bg + ";color:" + fg + '">' +
+    '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center">' +
+    '<strong style="font-size:0.88rem">' + s.label + "</strong>" +
+    '<span style="font-size:0.72rem;opacity:0.9">Nacht ' + s.nightWeight + " · Tag " + s.dayWeight + " (Heuristik)</span></div>" +
+    '<div style="font-size:0.78rem;margin-top:4px;line-height:1.35;color:var(--ink)">' + s.tip + "</div>" +
+    '<div style="font-size:0.7rem;color:var(--muted);margin-top:4px">Keine Therapie — nur Layering-Hinweis.</div></div>';
+}
+
+function cabinetHasIronOxideSpf(listIds) {
+  var ids = listIds || [];
+  if (!ids.length && typeof getCabinetProductIds === "function") ids = getCabinetProductIds();
+  for (var i = 0; i < ids.length; i++) {
+    var p = (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(ids[i]) : null)
+      || (typeof resolveCabinetProduct === "function" ? resolveCabinetProduct(ids[i]) : null)
+      || (typeof DB !== "undefined" && DB ? DB[ids[i]] : null);
+    if (!p) continue;
+    var isSpf = p.kat === "spf" || (typeof checkProductMatchesSlot === "function" && checkProductMatchesSlot(p, "spf"));
+    if (isSpf && p.iron_ox === true) return true;
+  }
+  return false;
+}
+
+function renderIronOxideGapHtml(tab, currentList) {
+  if (!(hasTag("pih-prone") || hasTag("skin-of-color") || hasTag("iron-oxide-prio"))) return "";
+  var list = currentList || [];
+  var amAll = (typeof appState !== "undefined" && appState && appState.am) ? appState.am : [];
+  var allIds = [].concat(list, amAll);
+  var hasIron = cabinetHasIronOxideSpf(allIds);
+  var hasSpf = typeof checkSlotCovered === "function" ? !!checkSlotCovered("spf", tab || "am", list) : false;
+  if (hasIron) {
+    return '<div style="margin:8px 12px 12px;padding:8px 10px;border-radius:8px;background:#ecfdf5;border:1px solid #a7f3d0;font-size:0.78rem;color:#065f46">' +
+      "✓ Eisenoxid-/getönter LSF im Schrank — gut für PIH/sichtbares Licht (Einkaufshinweis).</div>";
+  }
+  var adoptId = (typeof DB !== "undefined" && DB && DB.antheliosTinted) ? "antheliosTinted" : "";
+  var btn = adoptId
+    ? '<button type="button" class="btn-adopt" style="font-size:0.74rem;padding:5px 9px;margin-top:6px" onclick="adoptIdealProduct(\'' + adoptId + "', '" + (tab || "am") + '\')">+ Getönten LSF vorschlagen</button>'
+    : "";
+  return '<div style="margin:8px 12px 12px;padding:10px 12px;border-radius:8px;background:#fff7ed;border:1px solid #fed7aa">' +
+    '<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#9a3412;letter-spacing:0.04em">Lücke · optional</div>' +
+    '<div style="font-size:0.88rem;font-weight:700;color:var(--ink);margin-top:2px">Eisenoxid-LSF / getönter Schutz</div>' +
+    '<div style="font-size:0.78rem;color:var(--muted);line-height:1.35;margin-top:3px">' +
+    (hasSpf
+      ? "Du hast schon LSF — für PIH/SOC oft zusätzlich Eisenoxide gegen sichtbares Licht sinnvoll."
+      : "Für PIH/SOC: Breitband-LSF priorisieren; Eisenoxid/getönt als Plus.") +
+    " Keine Therapie — Einkaufshinweis.</div>" + btn + "</div>";
+}
+
+
 if (typeof window !== "undefined") {
   window.evaluateProductCompatibility = evaluateProductCompatibility;
+  window.CONCERN_QUICK_TAGS = CONCERN_QUICK_TAGS;
+  window.toggleConcernTag = toggleConcernTag;
+  window.renderConcernQuickHtml = renderConcernQuickHtml;
+  window.getReizBudgetSummary = getReizBudgetSummary;
+  window.renderReizBudgetCardHtml = renderReizBudgetCardHtml;
+  window.cabinetHasIronOxideSpf = cabinetHasIronOxideSpf;
+  window.renderIronOxideGapHtml = renderIronOxideGapHtml;
+  window.hasTag = hasTag;
 }
+
 

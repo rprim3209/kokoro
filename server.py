@@ -65,6 +65,7 @@ MIME = {
     ".webp": "image/webp",
     ".txt": "text/plain; charset=utf-8",
     ".ico": "image/x-icon",
+    ".webmanifest": "application/manifest+json",
 }
 
 TOON_HEADER_RE = re.compile(r"products\[(\d+)\]\{([^}]+)\}:")

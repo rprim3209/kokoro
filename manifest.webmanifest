@@ -1,0 +1,25 @@
+{
+  "name": "Kosmetikschrank",
+  "short_name": "Kosmetikschrank",
+  "description": "Routine prüfen, Strichcodes scannen, Reiz-Stacking sehen.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F7F4D5",
+  "theme_color": "#0A3323",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -207,6 +207,8 @@ function renderStartScreen(container) {
         </div>
       </div>
 
+      ${typeof renderConcernQuickHtml === "function" ? renderConcernQuickHtml() : ""}
+
       <div class="start-actions">
         <button type="button" class="start-action-card primary" onclick="typeof openCabinet==='function'?openCabinet():switchScreen('cabinet')">
           <div class="start-action-icon">🧴</div>
@@ -254,4 +256,5 @@ if (typeof window !== "undefined") {
   window.renderCountryPickerHtml = renderCountryPickerHtml;
   window.filterCountryPicker = filterCountryPicker;
   window.getProfileCountryOptionsList = getProfileCountryOptionsList;
+  window.toggleConcernTag = typeof toggleConcernTag === "function" ? toggleConcernTag : window.toggleConcernTag;
 }
