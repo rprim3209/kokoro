@@ -1659,6 +1659,31 @@ function adoptDmProductToSlot(prodOrIdOrIdx, target = "am") {
 }
 window.adoptDmProductToSlot = adoptDmProductToSlot;
 
+function placeScannedProductInCabinet(prodId) {
+  const stored = window._compatProduct;
+  let prod = null;
+  if (stored && typeof stored === "object" && (!prodId || stored.id === prodId)) prod = stored;
+  if (!prod && prodId && window.dmResultsMap) prod = window.dmResultsMap[prodId];
+  if (!prod && prodId && typeof resolveCabinetProduct === "function") prod = resolveCabinetProduct(prodId);
+  if (!prod && prodId && typeof DB === "object") prod = DB[prodId];
+  if (!prod || prod._deeplinkOnly || prod.source === "deeplink") {
+    if (typeof showToast === "function") showToast("Dieses Ergebnis ist nur ein Shop-Link und kann nicht in den Schrank.");
+    return;
+  }
+  const cat = typeof getActiveProfileCategory === "function"
+    ? getActiveProfileCategory()
+    : ((appState && appState.profile) || "adult");
+  let target = "am";
+  if (cat === "adult") {
+    const blob = [prod.kat, prod.slot, prod.name, prod.wirk, Array.isArray(prod.klassen) ? prod.klassen.join(" ") : ""].join(" ").toLowerCase();
+    if (/retinol|retinoid|adapalen|tretinoin|\bbha\b|\baha\b|säure|saeure|peeling/.test(blob)) target = "pm";
+    else if (/spf|sonnenschutz|\blsf\b/.test(blob)) target = "am";
+    else if (appState && appState.tab === "pm") target = "pm";
+  }
+  adoptDmProductToSlot(prod, target);
+}
+window.placeScannedProductInCabinet = placeScannedProductInCabinet;
+
 // 3-Second Verdict Logic against Cabinet
 
 function openGuardModal() {
@@ -2075,6 +2100,8 @@ function openCompatibilityCheckModal(prodId, tab) {
     `;
   }
 
+  window._compatProduct = p;
+
   showModalSheet(`
     <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:0.6rem">
       ${p.img ? `<img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name || '')}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;background:#fff;flex-shrink:0" onerror="this.style.display='none'">` : ''}
@@ -2123,6 +2150,7 @@ function openCompatibilityCheckModal(prodId, tab) {
     ${missingDataBoxHtml}
 
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:1.1rem">
+      <button type="button" class="primary" onclick="placeScannedProductInCabinet('${String(p.id).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}')">🧴 In den Schrank stellen</button>
       <button type="button" class="primary" onclick="closeModal()">Verstanden</button>
       <button type="button" class="ghost-btn" style="color:#0284c7;border-color:#bae6fd;background:#f0f9ff;font-weight:600" onclick="openProductComparisonModal('${p.id}')">✨ Ähnliche Produkte &amp; Alternativen vergleichen</button>
       <button type="button" class="ghost-btn" onclick="${evalRes.skinTypeFit.category === 'teen' ? `openTeenProductDetail('${p.id}')` : (evalRes.skinTypeFit.category === 'baby' || evalRes.skinTypeFit.category === 'child' ? `openBabyProductDetail('${p.id}')` : `openProductDetail('${p.id}')`)}">Vollständige Produkt-Details ansehen ➔</button>

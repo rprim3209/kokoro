@@ -6,10 +6,14 @@ from __future__ import annotations
 
 import argparse
 import csv
+import datetime
 import io
+import ipaddress
 import json
 import os
 import re
+import socket
+import ssl
 import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -73,6 +77,8 @@ TOON_HEADER_RE = re.compile(r"products\[(\d+)\]\{([^}]+)\}:")
 _mcp_lock = threading.Lock()
 _mcp_session: str | None = None
 _mcp_rpc_id = 1
+PHONE_INFO = {"https": "", "http": "", "ip": "", "cert": ""}
+CERT_CER: Path | None = None
 
 
 def next_rpc_id() -> int:
@@ -1772,6 +1778,23 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/dm-search":
             self._handle_dm_search(parsed.query)
             return
+        if path == "/api/phone":
+            payload = json.dumps(PHONE_INFO).encode("utf-8")
+            self._send_bytes(200, "application/json; charset=utf-8", payload)
+            return
+        if path == "/kosmetikschrank-ca.cer":
+            if CERT_CER is None or not CERT_CER.is_file():
+                self._send_bytes(404, "text/plain; charset=utf-8", b"Kein Zertifikat\n")
+                return
+            data = CERT_CER.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/x-x509-ca-cert")
+            self.send_header("Content-Disposition", "attachment; filename=kosmetikschrank-ca.cer")
+            self._cors()
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         if path == "/":
             demo = BASE_DIR / "demo.html"
             if demo.is_file():
@@ -1850,16 +1873,122 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def lan_ipv4() -> str:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        sock.connect(("8.8.8.8", 80))
+        return sock.getsockname()[0]
+    except OSError:
+        return ""
+    finally:
+        sock.close()
+
+
+def ensure_cert(ip: str) -> tuple[Path, Path, Path]:
+    """Selbstsigniertes Zertifikat mit der LAN-Adresse, nur fürs eigene WLAN."""
+    cert_dir = BASE_DIR / "certs"
+    cert_dir.mkdir(exist_ok=True)
+    cert_path = cert_dir / "cert.pem"
+    key_path = cert_dir / "key.pem"
+    cer_path = cert_dir / "cert.cer"
+    stamp_path = cert_dir / "san.txt"
+    want = f"localhost,127.0.0.1,{ip}"
+    if (
+        cert_path.is_file()
+        and key_path.is_file()
+        and cer_path.is_file()
+        and stamp_path.is_file()
+        and stamp_path.read_text(encoding="utf-8").strip() == want
+    ):
+        return cert_path, key_path, cer_path
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Kosmetikschrank")])
+    san_items: list = [x509.DNSName("localhost"), x509.IPAddress(ipaddress.IPv4Address("127.0.0.1"))]
+    if ip:
+        san_items.append(x509.IPAddress(ipaddress.IPv4Address(ip)))
+    now = datetime.datetime.now(datetime.timezone.utc)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - datetime.timedelta(minutes=5))
+        .not_valid_after(now + datetime.timedelta(days=820))
+        .add_extension(x509.SubjectAlternativeName(san_items), critical=False)
+        .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
+        .add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=True,
+                data_encipherment=False,
+                key_agreement=False,
+                key_cert_sign=True,
+                crl_sign=False,
+                encipher_only=False,
+                decipher_only=False,
+            ),
+            critical=True,
+        )
+        .add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), critical=False)
+        .sign(key, hashes.SHA256())
+    )
+    key_path.write_bytes(
+        key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+    )
+    cert_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+    cer_path.write_bytes(cert.public_bytes(serialization.Encoding.DER))
+    stamp_path.write_text(want, encoding="utf-8")
+    return cert_path, key_path, cer_path
+
+
 def main() -> None:
+    global CERT_CER
     args = parse_args(sys.argv[1:])
-    host = "127.0.0.1"
+    host = "0.0.0.0"
+    ip = lan_ipv4()
+    https_port = args.port + 1
+    ThreadingHTTPServer.allow_reuse_address = True
     httpd = ThreadingHTTPServer((host, args.port), Handler)
-    url = f"http://{host}:{args.port}/demo.html"
+    httpsd = None
+    try:
+        cert_path, key_path, cer_path = ensure_cert(ip)
+        CERT_CER = cer_path
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        ctx.load_cert_chain(cert_path, key_path)
+        httpsd = ThreadingHTTPServer((host, https_port), Handler)
+        httpsd.socket = ctx.wrap_socket(httpsd.socket, server_side=True)
+    except Exception as exc:
+        print(f"  HTTPS nicht gestartet: {exc}")
+
+    https_url = f"https://{ip}:{https_port}/" if ip and httpsd else ""
+    PHONE_INFO["https"] = https_url
+    PHONE_INFO["http"] = f"http://{ip}:{args.port}/" if ip else ""
+    PHONE_INFO["ip"] = ip
+    PHONE_INFO["cert"] = f"http://{ip}:{args.port}/kosmetikschrank-ca.cer" if ip else ""
+
+    if httpsd:
+        threading.Thread(target=httpsd.serve_forever, name="kosmetikschrank-https", daemon=True).start()
+
     print("")
-    print("  Kosmetikschrank — lokaler Dev-Server")
-    print(f"  open {url}")
-    print(f"  API: http://{host}:{args.port}/api/live-search?query=CeraVe&country=AT&pageSize=12")
-    print(f"  Alias DE: http://{host}:{args.port}/api/dm-search?query=CeraVe")
+    print("  Kosmetikschrank — nur dieses WLAN, nicht öffentlich")
+    print(f"  Am Computer:  http://127.0.0.1:{args.port}/")
+    if https_url:
+        print(f"  Am iPhone:    {https_url}")
+        print("  Erstes Mal am iPhone: „Details einblenden“, dann „Website besuchen“.")
+        print("  Danach Kamera erlauben. Das Repo bleibt privat.")
     print("  Stop: Ctrl+C")
     print("")
     try:
@@ -1868,6 +1997,8 @@ def main() -> None:
         print("\nServer beendet.")
     finally:
         httpd.server_close()
+        if httpsd:
+            httpsd.server_close()
 
 
 if __name__ == "__main__":

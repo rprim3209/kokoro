@@ -21,3 +21,6 @@ __pycache__/
 # Historical Backups
 archiv/
 *.bak*
+
+# Lokales HTTPS-Zertifikat, privater Schlüssel
+certs/

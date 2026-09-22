@@ -574,9 +574,8 @@ function canUseLocalLiveApi() {
   const loc = window.location;
   if (!loc || loc.protocol === "file:") return false;
   const h = String(loc.hostname || "").toLowerCase();
-  if (h === "localhost" || h === "127.0.0.1" || h === "::1") return true;
-  if (/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(h)) return true;
-  return false;
+  if (h === "github.io" || h.endsWith(".github.io")) return false;
+  return loc.protocol === "http:" || loc.protocol === "https:";
 }
 
 async function searchLiveProducts(query, country) {

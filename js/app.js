@@ -33,6 +33,46 @@ function renderCurrentScreen() {
     // Default: cabinet
     renderMain(false);
   }
+  mountPhoneLink();
+}
+
+function mountPhoneLink() {
+  const container = document.getElementById("appContent");
+  if (!container || location.protocol === "https:") return;
+  const draw = (info) => {
+    if (!info || typeof info.https !== "string" || info.https.indexOf("https://") !== 0) return;
+    window.phoneHttpsUrl = info.https;
+    if (container.querySelector(".phone-link-bar")) return;
+    const onThisPhone = location.hostname !== "localhost" && location.hostname !== "127.0.0.1";
+    const bar = document.createElement("div");
+    bar.className = "phone-link-bar";
+    const title = document.createElement("div");
+    title.className = "phone-link-title";
+    title.textContent = onThisPhone
+      ? "Die Kamera braucht die sichere Adresse."
+      : "Auf dem iPhone, nur in diesem WLAN:";
+    const link = document.createElement("a");
+    link.href = info.https;
+    link.textContent = info.https;
+    const note = document.createElement("div");
+    note.className = "phone-link-note";
+    note.textContent = "Erstes Mal: „Details einblenden“, dann „Website besuchen“. Danach Kamera erlauben. Nichts davon geht ins Internet.";
+    bar.appendChild(title);
+    bar.appendChild(link);
+    bar.appendChild(note);
+    container.insertBefore(bar, container.firstChild);
+  };
+  if (window.phoneLinkInfo) {
+    draw(window.phoneLinkInfo);
+    return;
+  }
+  fetch("/api/phone")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((info) => {
+      window.phoneLinkInfo = info;
+      draw(info);
+    })
+    .catch(() => {});
 }
 
 function updateBottomNav() {

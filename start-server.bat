@@ -18,6 +18,8 @@ echo Oeffne Browser...
 start "" "http://127.0.0.1:8787/demo.html"
 echo.
 echo Wenn die Seite leer ist: in 5 Sek. nochmal F5.
+echo Die iPhone-Adresse steht im Fenster "Kosmetikschrank-Server".
+echo Nur dieses WLAN. Das Repo bleibt privat.
 echo Zum Stoppen: Fenster "Kosmetikschrank-Server" schliessen.
 echo.
 pause

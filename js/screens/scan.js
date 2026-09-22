@@ -1347,8 +1347,10 @@ function stopBarcodeScanner() {
   scannerAcceptLocked = true;
   if (currentScannerTimer) {
     clearInterval(currentScannerTimer);
+    clearTimeout(currentScannerTimer);
     currentScannerTimer = null;
   }
+  document.querySelectorAll(".js-scan-torch").forEach(function (el) { el.remove(); });
   if (currentZxingReader) {
     try { currentZxingReader.reset(); } catch (e) { /* bereits gestoppt */ }
     currentZxingReader = null;
@@ -1383,7 +1385,7 @@ function scannerErrorText(err) {
 
 async function openRearCamera(video) {
   const attempts = [
-    { video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
+    { video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
     { video: { facingMode: { ideal: "environment" } }, audio: false },
     { video: true, audio: false }
   ];
@@ -1409,6 +1411,30 @@ function attachScanStream(video, stream) {
   return video.play();
 }
 
+function mountTorchButton(root, stream) {
+  const actions = root && root.querySelector ? root.querySelector(".scan-camera-actions") : null;
+  const track = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+  if (!actions || !track || !track.getCapabilities) return;
+  let caps = {};
+  try { caps = track.getCapabilities() || {}; } catch (e) { return; }
+  if (!caps.torch || actions.querySelector(".js-scan-torch")) return;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "js-scan-torch ghost-btn";
+  btn.textContent = "Licht";
+  let on = false;
+  btn.onclick = function () {
+    on = !on;
+    track.applyConstraints({ advanced: [{ torch: on }] }).then(function () {
+      btn.textContent = on ? "Licht aus" : "Licht";
+    }).catch(function () {
+      on = false;
+      btn.textContent = "Licht";
+    });
+  };
+  actions.appendChild(btn);
+}
+
 async function enableContinuousFocus(stream) {
   try {
     const track = stream.getVideoTracks()[0];
@@ -1420,6 +1446,17 @@ async function enableContinuousFocus(stream) {
   } catch (e) { /* Fokus ist optional */ }
 }
 
+function gtinChecksumOk(digits) {
+  if (!/^\d{8}$|^\d{12}$|^\d{13}$|^\d{14}$/.test(digits)) return false;
+  const nums = digits.split("").map(Number);
+  const check = nums.pop();
+  let sum = 0;
+  for (let i = nums.length - 1, weight3 = true; i >= 0; i--, weight3 = !weight3) {
+    sum += nums[i] * (weight3 ? 3 : 1);
+  }
+  return (10 - (sum % 10)) % 10 === check;
+}
+
 function watchForRepeat(onAccept) {
   let last = "";
   let hits = 0;
@@ -1427,6 +1464,10 @@ function watchForRepeat(onAccept) {
     if (scannerAcceptLocked) return;
     const code = normalizeScannedCode(raw);
     if (!code) return;
+    if (gtinChecksumOk(code)) {
+      onAccept(code);
+      return;
+    }
     if (code === last) hits += 1;
     else { last = code; hits = 1; }
     if (hits >= 2) onAccept(code);
@@ -1456,6 +1497,38 @@ async function startNativeDetector(video, onHit) {
   }
 }
 
+function paintScanCanvas(video, canvas, ctx, region) {
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+  if (!vw || !vh) return false;
+  const sy = Math.floor(vh * region.y);
+  const sh = Math.max(48, Math.floor(vh * region.h));
+  const scale = Math.min(1, 1100 / vw);
+  const dw = Math.max(160, Math.floor(vw * scale));
+  const dh = Math.max(48, Math.floor(sh * scale));
+  if (canvas.width !== dw) canvas.width = dw;
+  if (canvas.height !== dh) canvas.height = dh;
+  ctx.drawImage(video, 0, sy, vw, sh, 0, 0, dw, dh);
+  return true;
+}
+
+function readBarcodeFromCanvas(canvas, reader) {
+  if (!canvas.width || !canvas.height || typeof ZXing === "undefined") return "";
+  if (!ZXing.HTMLCanvasElementLuminanceSource || !ZXing.BinaryBitmap) return "";
+  const lum = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+  const binarizers = [];
+  if (ZXing.GlobalHistogramBinarizer) binarizers.push(new ZXing.GlobalHistogramBinarizer(lum));
+  if (ZXing.HybridBinarizer) binarizers.push(new ZXing.HybridBinarizer(lum));
+  for (let i = 0; i < binarizers.length; i++) {
+    try {
+      const result = reader.decodeBitmap(new ZXing.BinaryBitmap(binarizers[i]));
+      const text = result && result.getText ? result.getText() : "";
+      if (text) return text;
+    } catch (e) { /* dieses Band enthält keinen lesbaren Code */ }
+  }
+  return "";
+}
+
 function startZxingDetector(video, onHit) {
   if (typeof ZXing === "undefined" || !ZXing.BrowserMultiFormatReader) return false;
   const hints = new Map();
@@ -1467,29 +1540,36 @@ function startZxingDetector(video, onHit) {
       ZXing.BarcodeFormat.UPC_E,
       ZXing.BarcodeFormat.CODE_128
     ]);
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
   }
-  const reader = new ZXing.BrowserMultiFormatReader(hints, 160);
+  const reader = new ZXing.BrowserMultiFormatReader(hints);
   currentZxingReader = reader;
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  currentScannerTimer = setInterval(function () {
+  const regions = [
+    { y: 0.28, h: 0.44 },
+    { y: 0.12, h: 0.36 },
+    { y: 0.48, h: 0.40 },
+    { y: 0.0, h: 1.0 }
+  ];
+  let tick = 0;
+  let busy = false;
+  const step = function () {
     if (scannerAcceptLocked || currentZxingReader !== reader) return;
-    const w = video.videoWidth;
-    const h = video.videoHeight;
-    if (!w || !h) return;
-    // Mittleres Band: dort liegt der Strichcode im Rahmen, und das Bild bleibt klein genug fürs Handy.
-    const bandH = Math.max(80, Math.floor(h * 0.42));
-    const sy = Math.floor((h - bandH) / 2);
-    if (canvas.width !== w) canvas.width = w;
-    if (canvas.height !== bandH) canvas.height = bandH;
-    canvas.naturalWidth = w;
-    canvas.naturalHeight = bandH;
+    currentScannerTimer = setTimeout(step, 80);
+    if (busy || !video.videoWidth) return;
+    busy = true;
     try {
-      ctx.drawImage(video, 0, sy, w, bandH, 0, 0, w, bandH);
-      const result = reader.decode(canvas);
-      if (result) onHit(result.getText ? result.getText() : result.text);
-    } catch (e) { /* kein Code in diesem Bild */ }
-  }, 160);
+      const region = regions[tick % regions.length];
+      tick += 1;
+      if (paintScanCanvas(video, canvas, ctx, region)) {
+        const text = readBarcodeFromCanvas(canvas, reader);
+        if (text) onHit(text);
+      }
+    } catch (e) { /* Frame überspringen */ }
+    busy = false;
+  };
+  currentScannerTimer = setTimeout(step, 80);
   return true;
 }
 
@@ -1509,7 +1589,9 @@ async function startBarcodeScanner(onCode, rootNode) {
     return;
   }
   if (!window.isSecureContext) {
-    status.textContent = "Die Kamera braucht HTTPS. Auf dem iPhone die GitHub-Adresse öffnen, nicht die Datei.";
+    status.textContent = window.phoneHttpsUrl
+      ? "Kamera braucht die sichere Adresse. Öffne " + window.phoneHttpsUrl
+      : "Die Kamera braucht HTTPS im eigenen WLAN. Die Adresse steht im grünen Kasten oben.";
     return;
   }
 
@@ -1538,12 +1620,13 @@ async function startBarcodeScanner(onCode, rootNode) {
       if (typeof onCode === "function") onCode(code);
     };
     const onHit = watchForRepeat(accept);
-    status.textContent = "Strichcode quer in den Rahmen halten…";
+    status.textContent = "Strichcode quer und ruhig in den Rahmen halten, etwa eine Handbreit entfernt.";
+    mountTorchButton(root, stream);
 
-    const nativeOk = await startNativeDetector(video, onHit);
-    if (!nativeOk) {
-      const zxingOk = startZxingDetector(video, onHit);
-      if (!zxingOk) {
+    const zxingOk = startZxingDetector(video, onHit);
+    if (!zxingOk) {
+      const nativeOk = await startNativeDetector(video, onHit);
+      if (!nativeOk) {
         status.textContent = "Scanner konnte nicht starten. EAN unten eintippen.";
         stopBarcodeScanner();
       }
