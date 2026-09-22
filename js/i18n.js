@@ -432,6 +432,146 @@ var I18N_EN = {
   "Neu": "New"
 };
 
+Object.assign(I18N_EN, {
+  "Dein Hautprofil": "Your skin profile",
+  "Hauttyp": "Skin type",
+  "Quiz": "Quiz",
+  "Leeren": "Clear",
+  "Flaschen": "Bottles",
+  "Schrank befüllen & Dose prüfen": "Fill the cabinet & check a pack",
+  "Stelle deine Flaschen in den Schrank oder prüfe ein neues Produkt direkt im Laden.": "Put your bottles in the cabinet or check a new product in the store.",
+  "+ Produkt hinzufügen": "+ Add product",
+  "Im Laden scannen": "Scan in the store",
+  "Markt-Navigator (dm / Rossmann / Apo)": "Market guide (dm / Rossmann / pharmacy)",
+  "Hautarzt & Rx-Wegweiser": "Dermatologist & Rx guide",
+  "Reinigung": "Cleanse",
+  "Hydratisieren & Pflegen": "Hydrate & care",
+  "Gezielter Wirkstoff (Active)": "Targeted active",
+  "Akut-Active (Spot)": "Spot treatment",
+  "Feuchtigkeit & Barriere": "Moisture & barrier",
+  "Tages-Sonnenschutz (LSF 50+)": "Daytime sunscreen (SPF 50+)",
+  "Modus A: Retinoid": "Mode A: Retinoid",
+  "Standard-Active-Nacht": "Standard active night",
+  "Modus B: Akut / Wechsel": "Mode B: Acute / alternate",
+  "Zweit-Wirkstoff im Wechsel": "Second active on alternate nights",
+  "Modus C: Barriere-Pause": "Mode C: Barrier rest",
+  "Nur Feuchtigkeit & Erholung": "Moisture and recovery only",
+  "Milde Reinigung": "Mild cleanser",
+  "Parfümfrei": "Fragrance-free",
+  "Parfümfrei ·": "Fragrance-free ·",
+  "Parfümiert": "Fragranced",
+  "Duftstoffe offen": "Fragrance unknown",
+  "Ölig & Poren": "Oily & pores",
+  "Gesund & Prävention": "Healthy & prevention",
+  "Produkt": "Product",
+  "1. Reinigung": "1. Cleanser",
+  "Tensid-mild & parfümfrei – greift die Säureschutzschicht nicht an": "Mild surfactants, fragrance-free — does not strip the acid mantle",
+  "Dieses empfohlene Produkt zusätzlich in deinen Schrank stellen": "Also add this suggested product to your cabinet",
+  "Per 1-Klick in deinen Schrank stellen": "Add to your cabinet in one tap",
+  "✓ Im Schrank": "✓ In the cabinet",
+  "Evidenzbasierte Budget-Routine": "Evidence-based budget routine",
+  "Für wen möchtest du pflegen?": "Who are you caring for?",
+  "Wähle die Kategorie, vergib einen Namen und bestimme deinen Start-Weg:": "Choose a category, give it a name and pick how you want to start:",
+  "1. Kategorie auswählen": "1. Choose a category",
+  "Schrank komplett leer starten (auf Null)": "Start with a completely empty cabinet",
+  "0 Produkte im Schrank – eigene Produkte selbst scannen oder einsortieren.": "0 products in the cabinet — scan or add your own.",
+  "Wähle deinen aktuellen Hauttyp. Der Wächter gleicht deine Produkte und Empfehlungen sofort darauf ab:": "Choose your current skin type. The guide matches products and suggestions to it:",
+  "Profil löschen": "Delete profile",
+  "Löscht dieses Profil und seinen Schrank (Erwachsener, Teenie, Kind und Baby gleich). Andere Profile bleiben.": "Deletes this profile and its cabinet (adult, teen, child and baby alike). Other profiles stay.",
+  "Das letzte Profil kann nicht gelöscht werden. Lege zuerst ein anderes an.": "The last profile cannot be deleted. Create another one first.",
+  "Löschen hat nicht geklappt. Bitte nochmal versuchen.": "Delete failed. Please try again.",
+  "Baby-Schrank geleert.": "Baby cabinet cleared.",
+  "Kinder-Schrank geleert.": "Child cabinet cleared.",
+  "Noch keine Produkte — Scan oder Beispiel": "No products yet — scan or use an example",
+  "+ Baby-Produkt hinzufügen": "+ Add baby product",
+  "Dein Baby-Schrank ist noch leer (auf Null)": "Your baby cabinet is still empty",
+  "Wähle den Hauttyp deines Babys, starte den Pflege-Check, lade geprüfte Empfehlungen oder stelle eigene Produkte hinein.": "Choose your baby's skin type, start the care check, load checked suggestions or add your own products.",
+  "Hauttyp / Pflegeziel wählen": "Choose skin type / care goal",
+  "Pädiatrie-Starter laden": "Load pediatric starter",
+  "Baby-Routine nach Budget zusammenstellen (z. B. 15 €, 25 €, 40 €)": "Build a baby routine by budget (e.g. €15, €25, €40)",
+  "100% reizarme, parfümfreie Säuglingspflege — von Drogerie-Spar bis Spezial-Apotheke.": "100% low-irritant, fragrance-free infant care — from drugstore to pharmacy.",
+  "Milde Reinigung & Dusche": "Mild wash & shower",
+  "Kinder-Schrank befüllen & prüfen": "Fill & check the child cabinet",
+  "Passende Duschgele, Cremes, LSF 50+ und Shampoos für Kindergarten- & Schulkinder.": "Suitable washes, creams, SPF 50+ and shampoos for kindergarten and school.",
+  "+ Kinder-Produkt hinzufügen": "+ Add child product",
+  "Dein Kinder-Schrank ist noch leer (auf Null)": "Your child cabinet is still empty",
+  "Wähle den Hauttyp des Kindes, starte das Pflege-Quiz, lade kindgerechte Empfehlungen oder stelle eigene Produkte hinein.": "Choose the child's skin type, start the quiz, load age-appropriate suggestions or add your own products.",
+  "Kinder-Routine laden": "Load child routine",
+  "Kinder-Routine nach Budget zusammenstellen (z. B. 15 €, 25 €, 40 €)": "Build a child routine by budget (e.g. €15, €25, €40)",
+  "Pädiatrisch geprüfte Kinderpflege für Kita & Schule — reizarm, kindergerecht & evidenzbasiert.": "Pediatric-checked child care for daycare and school — low-irritant and evidence-based.",
+  "Täglicher Sonnenschutz (LSF 30–50+)": "Daily sunscreen (SPF 30–50+)",
+  "Teenie-Schrank befüllen & prüfen": "Fill & check the teen cabinet",
+  "Schutz vor aggressiven Social-Media-Trends & Anti-Aging-Hype. Milde Reinigung, sanfte Talgkontrolle und täglicher Sonnenschutz.": "Protection from harsh social-media trends and anti-aging hype. Mild cleanser, gentle oil control and daily sunscreen.",
+  "Ölige Haut & Mischhaut": "Oily skin & combination skin",
+  "Talgüberschuss, Glanz in der T-Zone, Mitesser & vergrößerte Poren": "Excess oil, T-zone shine, blackheads and enlarged pores",
+  "Trockene & sensible Haut": "Dry & sensitive skin",
+  "Spannungsgefühl, Trockenheitsschuppen, Rötungen & Barriere-Ceramide": "Tightness, dry flakes, redness and barrier ceramides",
+  "Normale Haut & Prävention": "Normal skin & prevention",
+  "Ausgeglichene Haut, Feuchte-Balance & täglicher Breitband-UV-Schutz": "Balanced skin, moisture balance and daily broad-spectrum UV protection",
+  "Gesunde Haut": "Healthy skin",
+  "Prävention & LSF": "Prevention & SPF",
+  "Sanfte BHA-Klärung & Porenbalance ohne schädliche Anti-Aging-Stoffe": "Gentle BHA clarifying and pore balance without harmful anti-aging actives",
+  "Normale Haut": "Normal skin",
+  "Milde Dusche/Waschlotion & LSF 50+ für Schule, Sport und Hofpause": "Mild shower wash and SPF 50+ for school, sport and the playground",
+  "Sanfter Säuglingsschutz": "Gentle infant protection",
+  "100% parfümfreie, minimalistische Säuglingspflege für zarte Haut": "100% fragrance-free, minimal infant care for delicate skin",
+  "Barriere-Emollient für sensible Wangen & Schienbeine": "Barrier emollient for sensitive cheeks and shins",
+  "Zinkhaltiger Wundschutz gegen Rötungen & Feuchtigkeitsreiz": "Zinc barrier ointment for redness and moisture irritation",
+  "100% Parfümfrei-Prio": "100% fragrance-free first",
+  "Prüfe Produkte vor dem Kauf oder aus dem Bad auf Reizstoffe, Duftstoffe und Leitlinien-Eignung für": "Check products before you buy, or from the bathroom, for irritants, fragrance and guideline fit for",
+  "Inhaltsstoffe & Wirkstoffe": "Ingredients & actives",
+  "Porenverstopfung & Komedogenität (Skala 0–5)": "Pore clogging & comedogenicity (scale 0–5)",
+  "Alternative ist porenfreundlicher": "Alternative is kinder to pores",
+  "Beide nicht komedogen": "Both non-comedogenic",
+  "Alternative ist komedogener": "Alternative is more comedogenic",
+  "Gleiches Risiko": "Same risk",
+  "Porenfreundlich": "Pore-friendly",
+  "Leichtes Risiko": "Slight risk",
+  "Moderat komedogen": "Moderately comedogenic",
+  "Stark verstopfend": "Strongly clogging",
+  "Wirkung & Hautfokus": "Effect & skin focus",
+  "Preisvergleich & Sparpotenzial": "Price comparison & savings",
+  "Erhältlich bei:": "Available at:",
+  "Im Schrank durch diese Alternative ersetzen": "Replace it in the cabinet with this alternative",
+  "Routine- & Verträglichkeits-Check für Alternative": "Routine & compatibility check for the alternative",
+  "Zurück zu Produktdetails": "Back to product details",
+  "Ähnliche Alternativen": "Similar alternatives",
+  "Konflikt — Schrank prüfen": "Clash — check the cabinet",
+  "eher nicht — kleine Anpassung": "rather not — small adjustment",
+  "passt — Routine ohne harten Konflikt": "fits — routine without a hard clash",
+  "Kein bekannter harter Konflikt in der aktuellen Routine.": "No known hard clash in the current routine.",
+  "Kein bekannter Konflikt in diesem Schrank.": "No known clash in this cabinet.",
+  "Routine abgestimmt": "Routine aligned",
+  "Schrank anpassen": "Adjust cabinet",
+  "Warum keine zwei Produkte derselben Klasse? Doppelungen erhöhen das Irritationsrisiko ohne Zusatznutzen.": "Why not two products of the same class? Doubling raises irritation without extra benefit.",
+  "Feuchtigkeitslücke neben Actives — Barriere-Support fehlt.": "Moisture gap next to actives — barrier support is missing.",
+  "Schrank noch leer — Layering folgt nach dem ersten Produkt.": "Cabinet still empty — layering starts after the first product.",
+  "Ohne Schrank-Produkte kein Layering-Claim — nur Zu-dir/Profil-Check.": "No layering claim without cabinet products — only a check against your profile.",
+  "Passt zu Routine & Hauttyp": "Fits the routine and skin type",
+  "Eingeschränkt passend / prüfen": "Limited fit / check",
+  "Routine-Konflikt mit": "Routine clash with",
+  "Erstes Produkt in diesem Routine-Bereich – keine Kollisionen vorhanden.": "First product in this routine slot — no clashes yet.",
+  "Duftstoffe / Parfümierung (keine verifizierten Angaben)": "Fragrance (no verified information)",
+  "Komedogenität (kein Nicht-komedogen-Claim deklariert)": "Comedogenicity (no non-comedogenic claim declared)",
+  "Zusätzlich sinnvoll im Schrank:": "Also useful in the cabinet:",
+  "eine milde Feuchtigkeitscreme (z. B. mit Panthenol oder Ceramiden, möglichst parfümfrei)": "a mild moisturiser (for example with panthenol or ceramides, fragrance-free if possible)",
+  "Sonnenschutz LSF 30–50 für den Morgen": "SPF 30–50 sunscreen for the morning",
+  "eine milde, möglichst parfümfreie Reinigung": "a mild cleanser, fragrance-free if possible",
+  "Parfümfrei — passt zu deiner sensiblen Haut.": "Fragrance-free — fits your sensitive skin.",
+  "Nicht am selben Abend wie dein Retinoid — lieber getrennte Tage (Skin Cycling).": "Not on the same evening as your retinoid — use separate days (skin cycling).",
+  "Parfüm neben Rx/Retinoid — Begleitpflege eher reizarm halten.": "Fragrance next to Rx/retinoid — keep adjunct care low-irritant.",
+  "Sehr mattierend — für trockene Haut oft zu wenig Pflege.": "Very mattifying — often too little care for dry skin.",
+  "Sehr reichhaltig — für ölige Haut oft zu schwer.": "Very rich — often too heavy for oily skin.",
+  "Enthält potenzielle Barrierestress-Stoffe.": "Contains possible barrier-stress ingredients.",
+  "Drogerie": "Drugstore",
+  "Preis n/a": "Price n/a",
+  "Textur:": "Texture:",
+  "Original:": "Original:",
+  "Was bedeutet Begleitpflege-Schutz?": "What does adjunct-care protection mean?",
+  "Dermatologie- & Rx-Wegweiser": "Dermatology & Rx guide",
+  "Markt-Navigator (dm, Rossmann & Apotheke)": "Market guide (dm, Rossmann & pharmacy)"
+});
+
 function currentLang() {
   try {
     return localStorage.getItem("kokoro-lang") === "en" ? "en" : "de";
@@ -536,6 +676,43 @@ function toggleAppLanguage() {
   else applyI18n(document.body);
 }
 
+var i18nApplying = false;
+var i18nScheduled = false;
+
+function scheduleI18n() {
+  if (i18nApplying || i18nScheduled || currentLang() !== "en") return;
+  i18nScheduled = true;
+  var run = function () {
+    i18nScheduled = false;
+    if (currentLang() !== "en") return;
+    i18nApplying = true;
+    applyI18n(document.body);
+    i18nApplying = false;
+  };
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(run);
+  else setTimeout(run, 0);
+}
+
+function installI18nHooks() {
+  if (typeof renderMain === "function" && !renderMain._i18nWrapped) {
+    var origMain = renderMain;
+    var wrappedMain = function () {
+      var result = origMain.apply(this, arguments);
+      scheduleI18n();
+      return result;
+    };
+    wrappedMain._i18nWrapped = true;
+    window.renderMain = wrappedMain;
+  }
+  if (window.MutationObserver && !window._i18nObs) {
+    var obs = new MutationObserver(function () { scheduleI18n(); });
+    window._i18nObs = obs;
+    obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+  updateLangButton();
+  if (currentLang() === "en") applyI18n(document.body);
+}
+
 if (typeof window !== "undefined") {
   var nativeConfirm = window.confirm.bind(window);
   window.confirm = function (msg) {
@@ -545,4 +722,9 @@ if (typeof window !== "undefined") {
   window.toggleAppLanguage = toggleAppLanguage;
   window.applyI18n = applyI18n;
   window.currentLang = currentLang;
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", installI18nHooks);
+  } else {
+    installI18nHooks();
+  }
 }
