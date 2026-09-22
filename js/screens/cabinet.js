@@ -98,6 +98,72 @@ function removeBabyProduct(prodId, profile, slot) {
  * - Short bullet list for quick checks/cautions (no long text walls)
  * - Expandable "Warum?" details accordion for clinical guidelines, background, & rationale
  */
+
+/** Kompakte Hautprofil-Leiste: Chip-Wolke + klare Aktionszeile (Handy-first). */
+function prioritizeProfileTags(tags) {
+  var list = (tags && tags.length) ? tags.slice() : ["Eigene Routine"];
+  var prio = [
+    "Arzt-Thema", "Rx-Begleitpflege", "Skin-of-Color", "PIH-prone", "Akne-prone",
+    "Barriere-fragil", "Sensibel", "Eisenoxid-Schutz", "Zero-White-Cast",
+    "Parfümfrei", "NC-Preference", "Trocken", "Ölig", "Mischhaut", "Normale Haut"
+  ];
+  var score = function (t) {
+    var n = String(t || "");
+    for (var i = 0; i < prio.length; i++) {
+      if (n.toLowerCase().indexOf(prio[i].toLowerCase()) !== -1) return i;
+    }
+    return 100 + n.length;
+  };
+  return list.slice().sort(function (a, b) { return score(a) - score(b); });
+}
+
+function profileTagClass(t) {
+  var s = String(t || "");
+  if (/Rx|Arzt|Begleit/i.test(s)) return "rx";
+  if (/PIH|Skin-of-Color|Eisenoxid|Zero-White/i.test(s)) return "soc-pih";
+  if (/Parf|Duft/i.test(s)) return "ff";
+  if (/NC-Pref/i.test(s)) return "nc";
+  if (/Barriere|Sensibel/i.test(s)) return "warn";
+  return "";
+}
+
+function renderCompactProfileBarHtml(opts) {
+  opts = opts || {};
+  var title = opts.title || "Dein Hautprofil";
+  var tags = prioritizeProfileTags(opts.tags || (typeof appState !== "undefined" && appState.tags) || []);
+  var actions = opts.actionsHtml || "";
+  var accent = opts.accent || "var(--moss)";
+  var maxShow = (opts.maxShow != null) ? opts.maxShow : 4;
+  var expanded = !!(typeof window !== "undefined" && window._profileTagsExpanded);
+  var show = expanded || tags.length <= maxShow ? tags : tags.slice(0, maxShow);
+  var hidden = Math.max(0, tags.length - show.length);
+  var chips = show.map(function (t) {
+    var cls = profileTagClass(t);
+    return '<span class="tag profile-chip ' + cls + '">' + String(t).replace(/</g, "&lt;") + "</span>";
+  }).join("");
+  if (hidden > 0) {
+    chips += '<button type="button" class="tag profile-chip-more" onclick="toggleProfileTagsExpanded()">+' + hidden + " mehr</button>";
+  } else if (expanded && tags.length > maxShow) {
+    chips += '<button type="button" class="tag profile-chip-more" onclick="toggleProfileTagsExpanded()">weniger</button>';
+  }
+  return (
+    '<div class="profile-bar profile-bar-compact" style="border-left-color:' + accent + '">' +
+      '<div class="profile-bar-top">' +
+        '<div class="profile-bar-label">' + title + "</div>" +
+        '<div class="profile-bar-actions">' + actions + "</div>" +
+      "</div>" +
+      '<div class="tags-list profile-tags-cloud">' + chips + "</div>" +
+    "</div>"
+  );
+}
+
+function toggleProfileTagsExpanded() {
+  window._profileTagsExpanded = !window._profileTagsExpanded;
+  if (typeof renderMain === "function") renderMain(false);
+  else if (typeof renderCurrentScreen === "function") renderCurrentScreen();
+}
+
+
 function renderCategoryPrognosisBanner(prog, opts) {
   opts = opts || {};
   var accent = opts.accent || "#1d4ed8";
@@ -261,24 +327,19 @@ function renderBabyCabinet(container) {
   const activeP = getActiveProfile();
 
   let html = `
-    <div class="profile-bar">
-      <div>
-        <div style="font-size:0.7rem;text-transform:uppercase;color:#1d4ed8;font-weight:700;margin-bottom:2px">Säuglings- & Kleinkindpflege</div>
-        <div class="tags-list">
-          <span class="tag ped-blue">👶 Baby &lt;3 Jahre</span>
-          <span class="tag ff">🌸 100% Parfümfrei-Prio</span>
-          <span class="tag" style="background:#f0fdf4;color:#166534">EU VO 1223/2009</span>
-        </div>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <button class="btn-text" onclick="openSkinTypePickerModal()" style="color:#1d4ed8;font-weight:600">⚡ Hauttyp</button>
-        <button class="btn-text" onclick="openQuizModal()" style="color:#1d4ed8">Quiz</button>
-        <button class="btn-text" onclick="loadBabyPreset()" style="color:#1d4ed8;font-weight:600">Beispiel</button>
-        <button class="btn-text" onclick="clearBabyCabinet()" style="color:#92580a">Leeren</button>
-        <button class="btn-text" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
-      </div>
-    </div>
-
+        ${renderCompactProfileBarHtml({
+      title: "Baby- & Kleinkindpflege",
+      tags: ["Baby <3 Jahre", "100% Parfümfrei-Prio", "EU VO 1223/2009"],
+      accent: "#2563eb",
+      maxShow: 3,
+      actionsHtml: `
+        <button type="button" class="profile-action-btn" onclick="openSkinTypePickerModal()" style="color:#1d4ed8">Hauttyp</button>
+        <button type="button" class="profile-action-btn" onclick="openQuizModal()" style="color:#1d4ed8">Quiz</button>
+        <button type="button" class="profile-action-btn" onclick="loadBabyPreset()" style="color:#1d4ed8">Beispiel</button>
+        <button type="button" class="profile-action-btn" onclick="clearBabyCabinet()" style="color:#92580a">Leeren</button>
+        <button type="button" class="profile-action-btn" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
+      `
+    })}
     ${renderCategoryPrognosisBanner(babyProg, { accent: "#3b82f6", totalCount: totalCount, countLabel: "Produkte" })}
 
     <!-- Hero Search Bar -->
@@ -436,24 +497,18 @@ function renderChildCabinet(container) {
   const activeP = getActiveProfile();
 
   let html = `
-    <div class="profile-bar">
-      <div>
-        <div style="font-size:0.7rem;text-transform:uppercase;color:#b45309;font-weight:700;margin-bottom:2px">Kinder-Pflege (Präpubertär)</div>
-        <div class="tags-list">
-          <span class="tag ped-amber">🧒 Kind 3–11 Jahre</span>
-          <span class="tag ff">🌸 Milde Barriere</span>
-          <span class="tag" style="background:#fef3c7;color:#92580a">☀️ LSF 50+ Pflicht</span>
-        </div>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <button class="btn-text" onclick="openSkinTypePickerModal()" style="color:#b45309;font-weight:600">⚡ Hauttyp</button>
-        <button class="btn-text" onclick="openQuizModal()" style="color:#b45309">Quiz</button>
-        <button class="btn-text" onclick="loadChildPreset()" style="color:#b45309;font-weight:600">Beispiel</button>
-        <button class="btn-text" onclick="clearChildCabinet()" style="color:#92580a">Leeren</button>
-        <button class="btn-text" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
-      </div>
-    </div>
-
+        ${renderCompactProfileBarHtml({
+      title: "Kinderpflege",
+      tags: (appState.tags && appState.tags.length ? appState.tags.slice() : ["Kind 3-11"]),
+      accent: "#d97706",
+      actionsHtml: `
+        <button type="button" class="profile-action-btn" onclick="openSkinTypePickerModal()" style="color:#b45309">Hauttyp</button>
+        <button type="button" class="profile-action-btn" onclick="openQuizModal()" style="color:#b45309">Quiz</button>
+        <button type="button" class="profile-action-btn" onclick="loadChildPreset()" style="color:#b45309">Beispiel</button>
+        <button type="button" class="profile-action-btn" onclick="clearChildCabinet()" style="color:#92580a">Leeren</button>
+        <button type="button" class="profile-action-btn" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
+      `
+    })}
     ${renderCategoryPrognosisBanner(childProg, { accent: "#f59e0b", totalCount: totalCount, countLabel: "Produkte" })}
 
     <!-- Hero Search Bar -->
@@ -676,25 +731,17 @@ function renderTeenCabinet(container) {
   const activeP = getActiveProfile();
 
   let html = `
-    <div class="profile-bar">
-      <div>
-        <div style="font-size:0.7rem;text-transform:uppercase;color:#0d9488;font-weight:700;margin-bottom:2px">Jugend- & Teenie-Pflege</div>
-        <div class="tags-list">
-          <span class="tag" style="background:#ccfbf1;color:#0f766e;border:1px solid #99f6e4">🧑‍🦱 Teenie 12–17 J.</span>
-          <span class="tag ff">🌸 Parfümfrei-Prio</span>
-          <span class="tag nc">🛡️ Nicht-Komedogen</span>
-          <span class="tag" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca">🛑 Kein Anti-Aging-Hype</span>
-        </div>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <button class="btn-text" onclick="openSkinTypePickerModal()" style="color:#0d9488;font-weight:600">⚡ Hauttyp</button>
-        <button class="btn-text" onclick="openQuizModal()" style="color:#0f766e">Quiz</button>
-        <button class="btn-text" onclick="loadTeenPreset()" style="color:#0d9488;font-weight:600">Beispiel</button>
-        <button class="btn-text" onclick="clearTeenCabinet()" style="color:#92580a">Leeren</button>
-        <button class="btn-text" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
-      </div>
-    </div>
-
+        ${renderCompactProfileBarHtml({
+      title: "Teenie-Hautprofil",
+      tags: appState.tags && appState.tags.length ? appState.tags : ["Teenie", "Basis & Akne"],
+      accent: "#0d9488",
+      actionsHtml: `
+        <button type="button" class="profile-action-btn" onclick="openSkinTypePickerModal()" style="color:#0f766e">Hauttyp</button>
+        <button type="button" class="profile-action-btn" onclick="openQuizModal()" style="color:#0f766e">Quiz</button>
+        <button type="button" class="profile-action-btn" onclick="startWithEmptyCabinet()" style="color:#92580a">Leeren</button>
+        <button type="button" class="profile-action-btn" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
+      `
+    })}
     ${renderCategoryPrognosisBanner(teenProg, { accent: "#0d9488", totalCount: totalCount, countLabel: "Produkte" })}
 
     <!-- Hero Search Bar -->
@@ -1126,20 +1173,17 @@ function renderMain(autoSave = true) {
   const activeP = getActiveProfile();
 
   let html = `
-    <div class="profile-bar">
-      <div>
-        <div style="font-size:0.7rem;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:2px">Dein Hautprofil</div>
-        <div class="tags-list">
-          ${(appState.tags.length ? appState.tags : ["Eigene Routine"]).map(t => `<span class="tag ${t.includes('Rx') ? 'rx' : ''}">${t}</span>`).join("")}
-        </div>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <button class="btn-text" onclick="openSkinTypePickerModal()" style="color:#4f46e5;font-weight:600">⚡ Hauttyp</button>
-        <button class="btn-text" id="btnEditProfile">Quiz</button>
-        <button class="btn-text" onclick="startWithEmptyCabinet()" style="color:#92580a">Leeren</button>
-        <button class="btn-text" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
-      </div>
-    </div>
+        ${renderCompactProfileBarHtml({
+      title: "Dein Hautprofil",
+      tags: appState.tags,
+      accent: "#0A3323",
+      actionsHtml: `
+        <button type="button" class="profile-action-btn" onclick="openSkinTypePickerModal()" style="color:#4f46e5">Hauttyp</button>
+        <button type="button" class="profile-action-btn" id="btnEditProfile">Quiz</button>
+        <button type="button" class="profile-action-btn" onclick="startWithEmptyCabinet()" style="color:#92580a">Leeren</button>
+        <button type="button" class="profile-action-btn" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
+      `
+    })}
 
     <!-- Live Routine-Prognose Banner (inkl. Intra-Schrank Klassen-Konflikte) -->
     ${renderCategoryPrognosisBanner(prog, {
@@ -2013,6 +2057,8 @@ function openMarketGuideModal() {
 if (typeof window !== "undefined") {
   window.openCabinet = openCabinet;
   window.renderMain = renderMain;
+  window.renderCompactProfileBarHtml = renderCompactProfileBarHtml;
+  window.toggleProfileTagsExpanded = toggleProfileTagsExpanded;
   window.renderBottle = renderBottle;
   window.startWithEmptyCabinet = startWithEmptyCabinet;
 }
