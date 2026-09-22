@@ -423,7 +423,13 @@ var I18N_EN = {
   "Gesunde Babyhaut": "Healthy baby skin",
   "Sanft & LSF 50+": "Gentle & SPF 50+",
   "Trocken & Sensibel": "Dry & sensitive",
-  "Soft-Prefs (Tippen zum Abwählen):": "Soft preferences (tap to turn off):"
+  "Soft-Prefs (Tippen zum Abwählen):": "Soft preferences (tap to turn off):",
+  "Akne & Barriere": "Acne & barrier",
+  "Basis & Akne": "Basics & acne",
+  "Eigene Routine": "My routine",
+  "Klicken zum Umbenennen": "Tap to rename",
+  "Neues Profil anlegen": "Create a new profile",
+  "Neu": "New"
 };
 
 function currentLang() {
@@ -503,20 +509,31 @@ function applyI18n(root) {
 function updateLangButton() {
   var btn = document.getElementById("langToggle");
   if (!btn) return;
-  btn.textContent = currentLang() === "en" ? "Deutsch" : "English";
+  var on = currentLang() === "en";
+  btn.classList.toggle("is-on", on);
+  btn.setAttribute("aria-pressed", on ? "true" : "false");
+  btn.setAttribute("aria-label", on ? "English on. Tap to switch back to German." : "English off. Tap to switch the app to English.");
 }
 
 function toggleAppLanguage() {
   var next = currentLang() === "en" ? "de" : "en";
+  var view = (typeof appState !== "undefined" && appState && appState.view) || "cabinet";
+  var profileId = (typeof appState !== "undefined" && appState) ? appState.activeProfileId : "";
+  if (typeof syncActiveProfileFromWorkingState === "function") syncActiveProfileFromWorkingState();
+  if (typeof saveState === "function") saveState();
   try { localStorage.setItem("kokoro-lang", next); } catch (e) { /* private mode */ }
-  if (typeof renderCurrentScreen === "function") renderCurrentScreen();
-  applyI18n(document.body);
-  var modal = document.getElementById("modalContainer");
-  if (modal && modal.childNodes.length && next === "de" && typeof renderCurrentScreen === "function") {
-    // German source is rebuilt for the page. An open sheet stays as last translated DOM,
-    // so close it only when switching back would leave English stuck. Keep it and restore.
-    applyI18n(modal);
+  if (profileId && appState && Array.isArray(appState.profiles) && typeof loadProfileToAppState === "function") {
+    var same = null;
+    for (var i = 0; i < appState.profiles.length; i++) {
+      if (appState.profiles[i] && appState.profiles[i].id === profileId) same = appState.profiles[i];
+    }
+    if (same) loadProfileToAppState(same);
   }
+  if (typeof appState !== "undefined" && appState) appState.view = view;
+  if (typeof updateCategoryNav === "function") updateCategoryNav();
+  if (typeof updateBottomNav === "function") updateBottomNav();
+  if (typeof renderCurrentScreen === "function") renderCurrentScreen();
+  else applyI18n(document.body);
 }
 
 if (typeof window !== "undefined") {

@@ -100,17 +100,46 @@
     gap: 6px;
     flex-shrink: 0;
   }
-  .lang-toggle {
+  .lang-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     border: 1px solid #0A3323;
     background: #F7F4D5;
     color: #0A3323;
     border-radius: 999px;
-    font-weight: 800;
-    font-size: 0.72rem;
-    letter-spacing: 0.02em;
-    padding: 0.32rem 0.7rem;
+    padding: 3px 8px;
     cursor: pointer;
-    line-height: 1.1;
+    font-weight: 800;
+    font-size: 0.68rem;
+    letter-spacing: 0.03em;
+    line-height: 1;
+  }
+  .lang-switch-label { opacity: 0.4; }
+  .lang-switch:not(.is-on) .lang-switch-de,
+  .lang-switch.is-on .lang-switch-en { opacity: 1; }
+  .lang-switch-track {
+    width: 36px;
+    height: 20px;
+    border-radius: 999px;
+    background: #d9d0bc;
+    position: relative;
+    display: inline-block;
+  }
+  .lang-switch-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #0A3323;
+    transition: transform 0.18s ease;
+  }
+  .lang-switch.is-on .lang-switch-track { background: #1e6b45; }
+  .lang-switch.is-on .lang-switch-knob {
+    transform: translateX(16px);
+    background: #F7F4D5;
   }
   .katalog-badge {
     font-size: 0.68rem;

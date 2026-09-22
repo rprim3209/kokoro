@@ -11,7 +11,7 @@
 <title>Kosmetikschrank — Evidenzbasierter Routine- & Schrank-Wächter</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=20260922-lang1">
+<link rel="stylesheet" href="css/style.css?v=20260922-lang2">
 <link rel="stylesheet" href="css/screens.css?v=20260922-schrank1">
 </head>
 <body>
@@ -26,7 +26,11 @@
       <span>Evidenzbasierter Wächter · DACH</span>
     </div>
     <div class="header-badges">
-      <button type="button" id="langToggle" class="lang-toggle" data-i18n-skip onclick="toggleAppLanguage()">English</button>
+      <button type="button" id="langToggle" class="lang-switch" data-i18n-skip onclick="toggleAppLanguage()" aria-pressed="false" aria-label="English off. Tap to switch the app to English.">
+        <span class="lang-switch-label lang-switch-de">DE</span>
+        <span class="lang-switch-track" aria-hidden="true"><span class="lang-switch-knob"></span></span>
+        <span class="lang-switch-label lang-switch-en">EN</span>
+      </button>
       <div id="katalogStatusBadge" class="katalog-badge" onclick="showKatalogStatusModal()" title="Katalog-Status">
         <span aria-hidden="true" style="font-size:0.55rem">●</span> <span id="katalogStatusText">Lade Katalog…</span>
       </div>
@@ -78,7 +82,7 @@
 <script src="js/vendor/zxing.min.js?v=20260922-schrank1"></script>
 <script src="js/catalog.js?v=20260922-schrank1"></script>
 <script src="js/live-retail.js?v=20260922-schrank1"></script>
-<script src="js/state.js?v=20260922-lang1"></script>
+<script src="js/state.js?v=20260922-lang2"></script>
 <script src="js/rules.js?v=20260922-schrank1"></script>
 <script src="js/ideal-routines.js?v=20260922-schrank1"></script>
 <script src="js/screens/start.js?v=20260922-schrank1"></script>
@@ -86,8 +90,8 @@
 <script src="js/screens/scan.js?v=20260922-schrank1"></script>
 <script src="js/screens/settings.js?v=20260922-schrank1"></script>
 <script src="js/screens/quiz.js?v=20260922-schrank1"></script>
-<script src="js/i18n.js?v=20260922-lang1"></script>
-<script src="js/app.js?v=20260922-lang1"></script>
+<script src="js/i18n.js?v=20260922-lang2"></script>
+<script src="js/app.js?v=20260922-lang2"></script>
 
 </body>
 </html>
