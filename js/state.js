@@ -1528,6 +1528,7 @@ function showToast(msg) {
     document.body.appendChild(toast);
   }
   toast.innerHTML = msg;
+  if (typeof applyI18n === "function") applyI18n(toast);
   toast.classList.add("show");
   if (window._toastTimer) clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(() => {
@@ -1556,6 +1557,7 @@ function showModalSheet(contentHTML) {
     }
     sheet.scrollTop = 0;
   }
+  if (typeof applyI18n === "function") applyI18n(container);
 }
 
 function closeModal() {

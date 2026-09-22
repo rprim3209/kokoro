@@ -34,6 +34,7 @@ function renderCurrentScreen() {
     renderMain(false);
   }
   mountPhoneLink();
+  if (typeof applyI18n === "function") applyI18n(document.body);
 }
 
 function mountPhoneLink() {

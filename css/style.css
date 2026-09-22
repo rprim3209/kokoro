@@ -100,6 +100,18 @@
     gap: 6px;
     flex-shrink: 0;
   }
+  .lang-toggle {
+    border: 1px solid #0A3323;
+    background: #F7F4D5;
+    color: #0A3323;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    padding: 0.32rem 0.7rem;
+    cursor: pointer;
+    line-height: 1.1;
+  }
   .katalog-badge {
     font-size: 0.68rem;
     padding: 4px 9px;
