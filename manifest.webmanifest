@@ -1,6 +1,6 @@
 {
-  "name": "Kosmetikschrank",
-  "short_name": "Kosmetikschrank",
+  "name": "Kokoro – dein Kosmetikschrank",
+  "short_name": "Kokoro",
   "description": "Routine prüfen, Strichcodes scannen, Reiz-Stacking sehen.",
   "start_url": "./",
   "scope": "./",

@@ -1,4 +1,4 @@
-﻿// Language switch. German stays the source. English is applied to the visible text.
+// Language switch. German stays the source. English is applied to the visible text.
 var I18N_EN = {
   "Start": "Home",
   "Schrank": "Cabinet",
@@ -11,7 +11,10 @@ var I18N_EN = {
   "Hauptnavigation": "Main navigation",
   "Zurück zum Start": "Back to home",
   "Kosmetikschrank": "Cosmetic Cabinet",
+  "Kokoro": "Kokoro",
+  "dein Kosmetikschrank": "your skincare cabinet",
   "Evidenzbasierter Wächter · DACH": "Evidence-based guide · DACH",
+  "dein Kosmetikschrank": "your skincare cabinet",
   "Lade Katalog…": "Loading catalog…",
   "Katalog-Status": "Catalog status",
   "Begleitpflege-Info": "Adjunct-care info",
