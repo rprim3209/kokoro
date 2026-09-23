@@ -3430,7 +3430,12 @@ function updateKatalogStatusUI() {
   const badge = document.getElementById("katalogStatusBadge");
   const text = document.getElementById("katalogStatusText");
   if (!badge || !text) return;
-  const tr = (typeof translateString === "function") ? translateString : function (s) { return s; };
+  const tr = function (s) {
+    if (typeof currentLang === "function" && currentLang() === "en" && typeof translateString === "function") {
+      return translateString(s);
+    }
+    return s;
+  };
 
   const mode = window.katalogStatus && window.katalogStatus.mode;
 
