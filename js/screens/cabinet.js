@@ -93,10 +93,10 @@ function removeBabyProduct(prodId, profile, slot) {
 }
 
 
-/** Shared unified verdict card for Adult, Teen, Child, and Baby.
- * - Single concise banner on conflict/warning (no triple repetition!)
- * - Short bullet list for quick checks/cautions (no long text walls)
- * - Expandable "Warum?" details accordion for clinical guidelines, background, & rationale
+/** Shared unified Ampel / routine verdict card for Adult, Teen, Child, and Baby.
+ * - Default collapsed: traffic light + short status by color + optional bottle count
+ * - Expand "Warum?" for detail bullets / reasons (what fits / what doesn't)
+ * - Ampel color drives the short header text
  */
 
 /** Kompakte Hautprofil-Leiste: Chip-Wolke + klare Aktionszeile (Handy-first). */
@@ -224,7 +224,16 @@ function renderCategoryPrognosisBanner(prog, opts) {
   var statusClass = prog.status || "ok";
   var verdict = prog.verdict || "passt";
 
-  // 1. Kurze Meldung oben: Genau EINE prägnante Meldung bei Konflikt oder Warnung
+  // Short Ampel header by severity (collapsed default shows ONLY this + count + Warum)
+  var shortTitle = (typeof routineAmpelTitle === "function")
+    ? routineAmpelTitle(verdict)
+    : (verdict === "konflikt"
+      ? "🔴 Routine mit Konflikt"
+      : verdict === "eher_nicht"
+        ? "🟡 Routine mit Vorsicht"
+        : "🟢 Routine ohne Konflikt");
+
+  // Detail banner reason (shown only when expanded)
   var bannerHtml = "";
   var primaryAlertClean = "";
 
@@ -241,7 +250,6 @@ function renderCategoryPrognosisBanner(prog, opts) {
       rawReason = matchPt;
     }
 
-    // Clean up reason: remove leading icons / verdict tags and trailing suffixes
     primaryAlertClean = String(rawReason || "")
       .replace(/^[🔴🟡🟢ℹ️]\s*(konflikt|eher\s*nicht|passt)\s*—\s*/i, "")
       .replace(/\s*—\s*(eher\s*nicht|konflikt)\.?$/i, "")
@@ -260,8 +268,7 @@ function renderCategoryPrognosisBanner(prog, opts) {
       </div>`;
   }
 
-  // 2. Kurze Cautions & Checks (NUR kurze, prägnante Punkte — keine Romane!)
-  // Wichtig: Den im Banner gezeigten Grund nicht nochmals als Bullet duplizieren!
+  // Detail bullets (expanded only)
   var rawBullets = prog.shortPoints || (prog.points || []);
   var displayBullets = rawBullets.filter(function (pt) {
     var s = String(pt);
@@ -273,7 +280,7 @@ function renderCategoryPrognosisBanner(prog, opts) {
       .replace(/\s*—\s*(eher\s*nicht|konflikt)\.?$/i, "")
       .trim();
     if (primaryAlertClean && (sClean === primaryAlertClean || primaryAlertClean.indexOf(sClean) !== -1 || sClean.indexOf(primaryAlertClean) !== -1)) {
-      return false; // Bereits im Banner oben genannt!
+      return false;
     }
     return true;
   });
@@ -286,7 +293,6 @@ function renderCategoryPrognosisBanner(prog, opts) {
       </ul>`;
   }
 
-  // 3. Aufklappbares "Warum?" (für alle Kategorien!)
   var whyItems = (prog.whyNotes && prog.whyNotes.length > 0) ? prog.whyNotes.slice() : ((prog.eduNotes && prog.eduNotes.length > 0) ? prog.eduNotes.slice() : []);
   if (!whyItems.length && prog.points) {
     whyItems = prog.points.filter(function (pt) {
@@ -301,25 +307,31 @@ function renderCategoryPrognosisBanner(prog, opts) {
     }
   }
 
-  var whyBlock = `
-    <details class="prognosis-why-details">
-      <summary>Warum?</summary>
-      <div class="prognosis-why-content">
+  var whyListHtml = `
         <ul class="prognosis-why-list">
           ${whyItems.map(function (n) { return "<li>" + n + "</li>"; }).join("")}
-        </ul>
-      </div>
-    </details>`;
+        </ul>`;
+
+  var countText = totalCount + " " + (totalCount === 1 ? "Produkt" : countLabel);
 
   return `
-    <div class="prognosis-card ${statusClass}">
-      <div class="prognosis-header">
-        <div class="prognosis-title">${prog.title}</div>
-        <span style="font-size:0.75rem;color:var(--muted);font-weight:600">${totalCount} ${totalCount === 1 ? "Produkt" : countLabel}</span>
-      </div>
-      ${bannerHtml}
-      ${pointsHtml}
-      ${whyBlock}
+    <div class="prognosis-card prognosis-ampel ${statusClass}">
+      <details class="prognosis-ampel-details" ontoggle="var s=this.querySelector('summary'); if(s) s.setAttribute('aria-expanded', this.open ? 'true' : 'false')">
+        <summary class="prognosis-ampel-summary" aria-expanded="false">
+          <div class="prognosis-header prognosis-ampel-header">
+            <div class="prognosis-title">${shortTitle}</div>
+            <span class="prognosis-count">${countText}</span>
+            <span class="prognosis-why-chevron">Warum?</span>
+          </div>
+        </summary>
+        <div class="prognosis-ampel-body">
+          ${bannerHtml}
+          ${pointsHtml}
+          <div class="prognosis-why-content">
+            ${whyListHtml}
+          </div>
+        </div>
+      </details>
     </div>`;
 }
 window.renderUnifiedPrognosisCard = renderCategoryPrognosisBanner;

@@ -607,3 +607,75 @@
     padding: 7px 2px;
   }
 }
+
+/* Ampel routine card: collapsed by default — header only; expand for reasons */
+.prognosis-ampel {
+  padding: 0.8rem 1rem;
+}
+.prognosis-ampel-details {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+.prognosis-ampel-summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+.prognosis-ampel-summary::-webkit-details-marker {
+  display: none;
+}
+.prognosis-ampel-summary::marker {
+  content: "";
+}
+.prognosis-ampel-header {
+  margin-bottom: 0;
+  gap: 0.45rem;
+  align-items: center;
+}
+.prognosis-ampel .prognosis-title {
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+.prognosis-count {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.prognosis-why-chevron {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+.prognosis-why-chevron::before {
+  content: "\25B6 ";
+  font-size: 0.65rem;
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+.prognosis-ampel-details[open] .prognosis-why-chevron::before {
+  transform: rotate(90deg);
+}
+.prognosis-ampel-details[open] .prognosis-why-chevron {
+  color: var(--ink);
+}
+.prognosis-ampel-body {
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--line);
+}
+.prognosis-ampel-body .prognosis-list {
+  margin-top: 0.35rem;
+}
+.prognosis-ampel-body .prognosis-why-content {
+  margin-top: 0.45rem;
+}
+.prognosis-ampel-summary:focus-visible {
+  outline: 2px solid var(--moss, #5a7a62);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+

@@ -185,6 +185,14 @@ function outcomeTitle(outcome) {
   return "🟢 passt";
 }
 
+/** Short Ampel header for Schrank routine card (collapsed default). */
+function routineAmpelTitle(outcome) {
+  var o = normalizeOutcome(outcome) || "passt";
+  if (o === "konflikt") return "🔴 Routine mit Konflikt";
+  if (o === "eher_nicht") return "🟡 Routine mit Vorsicht";
+  return "🟢 Routine ohne Konflikt";
+}
+
 function statusFromOutcome(outcome) {
   var o = normalizeOutcome(outcome) || "passt";
   if (o === "konflikt") return "no";
@@ -1623,11 +1631,11 @@ function calculateCategoryCabinetPrognosis(products, category) {
   var overall = outcomes.length ? worstWins.apply(null, outcomes) : "passt";
   var title;
   if (overall === "konflikt") {
-    title = "🔴 passt schlecht zusammen — Schrank prüfen";
+    title = routineAmpelTitle("konflikt");
   } else if (overall === "eher_nicht") {
-    title = "🟡 eher nicht — kleine Anpassung";
+    title = routineAmpelTitle("eher_nicht");
   } else {
-    title = "🟢 passt — Produkte passen zum Profil";
+    title = routineAmpelTitle("passt");
   }
   if (!points.length) {
     points = [formatVerdictOneLook("passt", "Kein bekannter Konflikt in diesem Schrank.")];
@@ -2124,12 +2132,7 @@ function calculatePrognosis() {
   return {
     status: statusFromOutcome(overall),
     verdict: overall,
-    title:
-      overall === "konflikt"
-        ? "🔴 passt schlecht zusammen — Schrank prüfen"
-        : overall === "eher_nicht"
-          ? "🟡 eher nicht — kleine Anpassung"
-          : "🟢 passt — Routine ohne harten Konflikt",
+    title: routineAmpelTitle(overall),
     points: points.length
       ? points
       : [formatVerdictOneLook("passt", "Kein bekannter harter Konflikt in der aktuellen Routine.")],
