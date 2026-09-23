@@ -1,41 +1,8 @@
 // ==========================================
 // Start / Begrüßungs-Screen
-// Compact accordion sections (Land / Kategorie / Concerns)
+// Clean hero: Quiz + Schrank (no Land/Kategorie/Concerns accordions)
+// Country picker helpers stay here — reused by Quiz & Optionen
 // ==========================================
-
-/** Which start accordion is open: 'country' | 'category' | 'concerns' | null */
-var startAccordionOpen = null;
-
-function toggleStartAccordion(id) {
-  startAccordionOpen = startAccordionOpen === id ? null : id;
-  if (typeof renderStartScreen === "function") renderStartScreen();
-}
-
-function selectStartCategory(cat) {
-  if (typeof switchProfile === "function") {
-    switchProfile(cat);
-  } else {
-    appState.profile = cat;
-  }
-  appState.view = "start";
-  startAccordionOpen = null; // auto-collapse after pick
-  if (typeof saveState === "function") saveState();
-  if (typeof updateCategoryNav === "function") updateCategoryNav();
-  renderStartScreen();
-}
-
-function selectStartCountry(code) {
-  if (typeof setProfileCountry === "function") {
-    setProfileCountry(code);
-  } else {
-    const p = typeof getActiveProfile === "function" ? getActiveProfile() : null;
-    if (p) p.country = code;
-    if (typeof saveState === "function") saveState();
-  }
-  appState.view = "start";
-  startAccordionOpen = null; // auto-collapse after pick
-  renderStartScreen();
-}
 
 /** Alle EU-27 (+ CH/NO/IS) als durchsuchbares, scrollbar Grid. */
 function getProfileCountryOptionsList() {
@@ -121,104 +88,29 @@ function renderCountryChipsHtml(selected, onclickName) {
   return renderCountryPickerHtml(selected, onclickName, { uid: "countryPickerMain", maxHeight: "240px" });
 }
 
-function renderStartAccordion(id, titleSummary, panelHtml) {
-  const open = startAccordionOpen === id;
-  const expanded = open ? "true" : "false";
-  return `
-    <div class="start-accordion start-profile-card${open ? " is-open" : ""}" data-acc="${id}">
-      <button type="button" class="start-acc-summary" aria-expanded="${expanded}" aria-controls="start-acc-panel-${id}" id="start-acc-btn-${id}" onclick="toggleStartAccordion('${id}')">
-        <span class="start-acc-title">${titleSummary}</span>
-        <span class="start-acc-chevron" aria-hidden="true">${open ? "▴" : "▾"}</span>
-      </button>
-      <div class="start-acc-panel" id="start-acc-panel-${id}" role="region" aria-labelledby="start-acc-btn-${id}" ${open ? "" : "hidden"}>
-        ${panelHtml}
-      </div>
-    </div>
-  `;
-}
-
-function getConcernSummaryLabel() {
-  if (typeof CONCERN_QUICK_TAGS === "undefined" || !Array.isArray(CONCERN_QUICK_TAGS)) {
-    return "keine";
+/** Speichert Land ohne Modal zu schließen (Quiz-Schritt). */
+function selectQuizCountry(code) {
+  var cc = String(code || "AT").trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) cc = "AT";
+  if (typeof appState !== "undefined") {
+    appState.country = cc;
+    if (Array.isArray(appState.profiles)) {
+      appState.profiles.forEach(function (pr) { pr.country = cc; });
+    }
   }
-  const active = CONCERN_QUICK_TAGS.filter(function (c) {
-    return typeof hasTag === "function" && hasTag(c.id);
-  });
-  if (!active.length) return "keine";
-  if (active.length <= 2) return active.map(function (c) { return c.label; }).join(", ");
-  return active.length + " gewählt";
+  if (typeof saveState === "function") saveState();
+  if (typeof showToast === "function") {
+    var label = typeof countryLabel === "function" ? countryLabel(cc) : cc;
+    showToast("🌍 Land: <strong>" + label + " (" + cc + ")</strong> — für alle Kategorien & Online-Suche aktiv");
+  }
+  if (typeof renderQuizCountryStep === "function") renderQuizCountryStep();
 }
 
 function renderStartScreen(container) {
   if (!container) container = document.getElementById("appContent");
   if (!container) return;
 
-  const currentProf = appState.profile || "adult";
-  const sub = typeof getProfileSubtitle === "function" ? getProfileSubtitle(currentProf) : "";
-  const country = typeof getProfileCountry === "function" ? getProfileCountry() : "AT";
-  const countryName = typeof countryLabel === "function" ? countryLabel(country) : country;
-
-  const catMeta = {
-    adult: {
-      name: "Erwachsen",
-      icon: "👤",
-      focus: "Akne, Barriere-Support & Skin Cycling (Adapalen / BPO / Actives)"
-    },
-    teen: {
-      name: "Teenie",
-      icon: "🧑‍🦱",
-      focus: "Milde AAD-Basispflege, Porenklärung & Schutz vor schädlichem Anti-Aging-Hype"
-    },
-    child: {
-      name: "Kind",
-      icon: "🧒",
-      focus: "Präpubertäre Haut: Sanfte Reinigung, Barrierecreme & LSF 50+"
-    },
-    baby: {
-      name: "Baby",
-      icon: "👶",
-      focus: "Säuglinge (<3 J.): 100% Parfümfrei-Prio, Windelschutz & EU Annex I Teil B"
-    }
-  };
-
-  const meta = catMeta[currentProf] || catMeta.adult;
   const disclaimer = "Keine Therapie — nur Einkauf & Layering-Hilfe.";
-  const concernSummary = getConcernSummaryLabel();
-
-  const countryPanel = `
-    <p class="start-acc-hint">EU-27 + CH/NO/IS — gilt für alle Kategorien &amp; Live-Suche.</p>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:0.55rem;flex-wrap:wrap">
-      <button type="button" class="country-location-btn" id="btnDetectCountryLocationStart" onclick="detectCountryFromLocationUI(this)" style="padding:0.42rem 0.85rem;font-size:0.8rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;background:#eef6f3;color:#1e4620;border:1px solid #b7dfca;border-radius:8px;cursor:pointer">
-        <span aria-hidden="true">📍</span> Standort des Handys verwenden
-      </button>
-      <span id="countryLocationStatusStart" style="font-size:0.76rem;color:var(--muted)"></span>
-    </div>
-    ${renderCountryPickerHtml(country, "selectStartCountry", { uid: "startCountryPicker", maxHeight: "220px" })}
-  `;
-
-  const categoryPanel = `
-    <div class="start-pills-row">
-      <button type="button" class="start-pill-btn ${currentProf === 'adult' ? 'active' : ''}" onclick="selectStartCategory('adult')">
-        👤 Erwachsen
-      </button>
-      <button type="button" class="start-pill-btn ${currentProf === 'teen' ? 'active pill-teen' : ''}" onclick="selectStartCategory('teen')">
-        🧑‍🦱 Teenie
-      </button>
-      <button type="button" class="start-pill-btn ${currentProf === 'child' ? 'active pill-child' : ''}" onclick="selectStartCategory('child')">
-        🧒 Kind
-      </button>
-      <button type="button" class="start-pill-btn ${currentProf === 'baby' ? 'active pill-baby' : ''}" onclick="selectStartCategory('baby')">
-        👶 Baby
-      </button>
-    </div>
-    <div class="start-profile-focus">
-      ${sub ? `<strong>${sub}</strong> · ` : ''}${meta.focus}
-    </div>
-  `;
-
-  const concernsPanel = typeof renderConcernQuickPanelHtml === "function"
-    ? renderConcernQuickPanelHtml()
-    : (typeof renderConcernQuickHtml === "function" ? renderConcernQuickHtml() : "");
 
   container.innerHTML = `
     <div class="welcome-box">
@@ -239,47 +131,29 @@ function renderStartScreen(container) {
         <span class="start-disclaimer-text">${disclaimer}</span>
       </div>
 
-      ${renderStartAccordion(
-        "country",
-        `1. Land · <strong>${country}</strong> ${countryName}`,
-        countryPanel
-      )}
-
-      ${renderStartAccordion(
-        "category",
-        `2. Kategorie · <strong>${meta.icon} ${meta.name}</strong>`,
-        categoryPanel
-      )}
-
-      ${renderStartAccordion(
-        "concerns",
-        `3. Concerns · <strong>${concernSummary}</strong>`,
-        concernsPanel
-      )}
-
       <div class="start-actions">
-        <button type="button" class="start-action-card primary" onclick="typeof openCabinet==='function'?openCabinet():switchScreen('cabinet')">
-          <div class="start-action-icon">🧴</div>
+        <button type="button" class="start-action-card primary" onclick="openQuizModal()">
+          <div class="start-action-icon">🌱</div>
           <div class="start-action-body">
             <div class="start-action-title">
-              <span>Direkt in deinen Schrank</span>
+              <span>Hautprofil-Quiz starten</span>
               <span class="arrow">→</span>
             </div>
             <div class="start-action-desc">
-              Bestehende Produkte eintragen, Lücken im Typ-Regal erkennen und Reiz-Konflikte auflösen.
+              Land, Hautzustand &amp; Prioritäten — dann passende Routine vorschlagen.
             </div>
           </div>
         </button>
 
-        <button type="button" class="start-action-card secondary" onclick="openQuizModal()">
-          <div class="start-action-icon">🌱</div>
+        <button type="button" class="start-action-card secondary" onclick="typeof openCabinet==='function'?openCabinet():switchScreen('cabinet')">
+          <div class="start-action-icon">🧴</div>
           <div class="start-action-body">
             <div class="start-action-title">
-              <span>1-Minuten-Hautquiz starten</span>
+              <span>Zu meinem Schrank</span>
               <span class="arrow">→</span>
             </div>
             <div class="start-action-desc">
-              Hautzustand & Prioritäten ermitteln — passende evidenzbasierte Routine automatisch vorschlagen.
+              Produkte eintragen, Lücken erkennen und Reiz-Konflikte auflösen.
             </div>
           </div>
         </button>
@@ -299,17 +173,18 @@ function renderWelcome(container) {
 }
 
 if (typeof window !== "undefined") {
-  Object.defineProperty(window, "startAccordionOpen", {
-    get: function () { return startAccordionOpen; },
-    set: function (v) { startAccordionOpen = v; },
-    configurable: true
-  });
-  window.toggleStartAccordion = toggleStartAccordion;
-  window.selectStartCountry = selectStartCountry;
-  window.selectStartCategory = selectStartCategory;
   window.renderCountryChipsHtml = renderCountryChipsHtml;
   window.renderCountryPickerHtml = renderCountryPickerHtml;
   window.filterCountryPicker = filterCountryPicker;
   window.getProfileCountryOptionsList = getProfileCountryOptionsList;
-  window.toggleConcernTag = typeof toggleConcernTag === "function" ? toggleConcernTag : window.toggleConcernTag;
+  window.selectQuizCountry = selectQuizCountry;
+  // Back-compat aliases (old Start accordion handlers)
+  window.selectStartCountry = function (code) {
+    if (typeof setProfileCountry === "function") setProfileCountry(code);
+    else selectQuizCountry(code);
+  };
+  window.selectStartCategory = function (cat) {
+    if (typeof switchProfile === "function") switchProfile(cat);
+    else if (typeof appState !== "undefined") appState.profile = cat;
+  };
 }

@@ -1430,7 +1430,9 @@ function detectCountryFromLocationUI(btnEl) {
     btnEl.disabled = true;
     btnEl.innerHTML = "<span>⏳</span> Standort wird ermittelt…";
   }
-  var statusSpan = document.getElementById("countryLocationStatusStart") || document.getElementById("countryLocationStatusSettings");
+  var statusSpan = document.getElementById("countryLocationStatusQuiz")
+    || document.getElementById("countryLocationStatusStart")
+    || document.getElementById("countryLocationStatusSettings");
   if (statusSpan) statusSpan.innerText = "Frage GPS an…";
 
   detectCountryFromLocation(function (err, cc, source) {
@@ -1445,7 +1447,9 @@ function detectCountryFromLocationUI(btnEl) {
     if (typeof showToast === "function") {
       showToast("📍 Standort aktiv: <strong>" + label + " (" + cc + ")</strong><br><small style='opacity:0.9'>" + source + " — für alle Kategorien & Online-Suche</small>");
     }
-    if (typeof renderCurrentScreen === "function") {
+    if (typeof window !== "undefined" && window._quizCountryStepActive && typeof renderQuizCountryStep === "function") {
+      renderQuizCountryStep();
+    } else if (typeof renderCurrentScreen === "function") {
       renderCurrentScreen();
     } else if (typeof renderStartScreen === "function") {
       renderStartScreen();

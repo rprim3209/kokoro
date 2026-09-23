@@ -246,7 +246,47 @@ let quizIndex = 0;
 let quizAnswers = [];
 
 function openQuizModal() {
-  const p = getActiveProfile();
+  quizIndex = 0;
+  quizAnswers = [];
+  quizTrack = null;
+  renderQuizCountryStep();
+}
+
+/** First quiz step: shopping country (same state field as Options / catalog). */
+function renderQuizCountryStep() {
+  if (typeof window !== "undefined") window._quizCountryStepActive = true;
+  const country = typeof getProfileCountry === "function" ? getProfileCountry() : "AT";
+  const countryName = typeof countryLabel === "function" ? countryLabel(country) : country;
+  const picker = typeof renderCountryPickerHtml === "function"
+    ? renderCountryPickerHtml(country, "selectQuizCountry", { uid: "quizCountryPicker", maxHeight: "200px" })
+    : "";
+
+  showModalSheet(`
+    <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">Dein Einstieg</div>
+    <h2>In welchem Land einkaufen?</h2>
+    <p style="font-size:0.9rem;color:var(--muted);margin:-0.2rem 0 0.85rem">
+      Aktuell: <strong>${country}</strong> · ${countryName}. Gilt für Katalog &amp; Live-Suche — später in Optionen änderbar.
+    </p>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:0.55rem;flex-wrap:wrap">
+      <button type="button" class="country-location-btn" id="btnDetectCountryLocationQuiz" onclick="detectCountryFromLocationUI(this)" style="padding:0.42rem 0.85rem;font-size:0.8rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;background:#eef6f3;color:#1e4620;border:1px solid #b7dfca;border-radius:8px;cursor:pointer">
+        <span aria-hidden="true">📍</span> Standort des Handys verwenden
+      </button>
+      <span id="countryLocationStatusQuiz" style="font-size:0.76rem;color:var(--muted)"></span>
+    </div>
+
+    ${picker}
+
+    <div style="display:flex;gap:8px;margin-top:1.2rem">
+      <button class="ghost-btn" style="width:auto;margin-top:0;padding:0.75rem 1.1rem" onclick="window._quizCountryStepActive=false; closeModal()">Abbrechen</button>
+      <button class="primary" style="margin-top:0;flex:1" onclick="proceedAfterQuizCountry()">Weiter →</button>
+    </div>
+  `);
+}
+
+function proceedAfterQuizCountry() {
+  if (typeof window !== "undefined") window._quizCountryStepActive = false;
+  const p = typeof getActiveProfile === "function" ? getActiveProfile() : { category: "adult" };
   quizIndex = 0;
   quizAnswers = [];
   if (p.category === "baby") {
@@ -771,4 +811,6 @@ function applyStarterRoutine() {
 }
 
 window.openQuizModal = openQuizModal;
+window.renderQuizCountryStep = renderQuizCountryStep;
+window.proceedAfterQuizCountry = proceedAfterQuizCountry;
 

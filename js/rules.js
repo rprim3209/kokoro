@@ -2466,12 +2466,7 @@ function toggleConcernTag(id) {
   }
   if (typeof syncActiveProfileFromWorkingState === "function") syncActiveProfileFromWorkingState();
   if (typeof saveState === "function") saveState();
-  // Concerns stay open on Start (multi-select); country/category auto-close elsewhere.
-  if (appState.view === "start" && typeof window !== "undefined") {
-    try { window.startAccordionOpen = "concerns"; } catch (e) { /* ignore */ }
-  }
   if (typeof renderCurrentScreen === "function") renderCurrentScreen();
-  else if (typeof renderStartScreen === "function" && appState.view === "start") renderStartScreen();
   else if (typeof renderMain === "function") renderMain(false);
 }
 
