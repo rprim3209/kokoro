@@ -116,8 +116,10 @@
     line-height: 1;
   }
   .lang-switch-label { opacity: 0.4; }
-  .lang-switch:not(.is-on) .lang-switch-de,
-  .lang-switch.is-on .lang-switch-en { opacity: 1; }
+  .lang-switch:not(.is-on):not(.is-en):not([aria-pressed="true"]) .lang-switch-de,
+  .lang-switch.is-on .lang-switch-en,
+  .lang-switch.is-en .lang-switch-en,
+  .lang-switch[aria-pressed="true"] .lang-switch-en { opacity: 1; }
   .lang-switch-track {
     width: 36px;
     height: 20px;
@@ -125,6 +127,7 @@
     background: #d9d0bc;
     position: relative;
     display: inline-block;
+    pointer-events: none;
   }
   .lang-switch-knob {
     position: absolute;
@@ -135,9 +138,14 @@
     border-radius: 50%;
     background: #0A3323;
     transition: transform 0.18s ease;
+    pointer-events: none;
   }
-  .lang-switch.is-on .lang-switch-track { background: #1e6b45; }
-  .lang-switch.is-on .lang-switch-knob {
+  .lang-switch.is-on .lang-switch-track,
+  .lang-switch.is-en .lang-switch-track,
+  .lang-switch[aria-pressed="true"] .lang-switch-track { background: #1e6b45; }
+  .lang-switch.is-on .lang-switch-knob,
+  .lang-switch.is-en .lang-switch-knob,
+  .lang-switch[aria-pressed="true"] .lang-switch-knob {
     transform: translateX(16px);
     background: #F7F4D5;
   }

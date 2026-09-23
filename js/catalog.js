@@ -3430,6 +3430,7 @@ function updateKatalogStatusUI() {
   const badge = document.getElementById("katalogStatusBadge");
   const text = document.getElementById("katalogStatusText");
   if (!badge || !text) return;
+  const tr = (typeof translateString === "function") ? translateString : function (s) { return s; };
 
   const mode = window.katalogStatus && window.katalogStatus.mode;
 
@@ -3437,8 +3438,8 @@ function updateKatalogStatusUI() {
     badge.style.background = "#fef3c7";
     badge.style.color = "#92400e";
     badge.style.borderColor = "#fde68a";
-    badge.innerHTML = `<span style="color:#d97706">●</span> <span id="katalogStatusText">Lade Katalog…</span>`;
-    badge.title = "Katalog wird geladen…";
+    badge.innerHTML = `<span style="color:#d97706">●</span> <span id="katalogStatusText">${tr("Lade Katalog…")}</span>`;
+    badge.title = tr("Katalog wird geladen…");
     return;
   }
 
@@ -3446,15 +3447,16 @@ function updateKatalogStatusUI() {
     badge.style.background = "#dcfce7";
     badge.style.color = "#166534";
     badge.style.borderColor = "#bbf7d0";
-    badge.innerHTML = `<span style="color:#16a34a">●</span> Live-Katalog (${window.katalogStatus.count || 985})`;
-    badge.title = "Verbunden: 985 Produkte live aus katalog-produkte.csv geladen. Kamera-Scanner aktiv.";
+    const liveLabel = tr("Live-Katalog") + " (" + (window.katalogStatus.count || 985) + ")";
+    badge.innerHTML = `<span style="color:#16a34a">●</span> ${liveLabel}`;
+    badge.title = tr("Verbunden: 985 Produkte live aus katalog-produkte.csv geladen. Kamera-Scanner aktiv.");
   } else {
     // fallback / unknown → Offline
     badge.style.background = "#fef3c7";
     badge.style.color = "#92400e";
     badge.style.borderColor = "#fde68a";
-    badge.innerHTML = `<span style="color:#d97706">●</span> Offline-Katalog (896)`;
-    badge.title = "file:// Modus: Eingebetteter Katalog aktiv. Klicke für Info zum lokalen Server.";
+    badge.innerHTML = `<span style="color:#d97706">●</span> ${tr("Offline-Katalog (896)")}`;
+    badge.title = tr("file:// Modus: Eingebetteter Katalog aktiv. Klicke für Info zum lokalen Server.");
   }
 }
 

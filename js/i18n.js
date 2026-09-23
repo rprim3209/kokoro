@@ -569,7 +569,61 @@ Object.assign(I18N_EN, {
   "Original:": "Original:",
   "Was bedeutet Begleitpflege-Schutz?": "What does adjunct-care protection mean?",
   "Dermatologie- & Rx-Wegweiser": "Dermatology & Rx guide",
-  "Markt-Navigator (dm, Rossmann & Apotheke)": "Market guide (dm, Rossmann & pharmacy)"
+  "Markt-Navigator (dm, Rossmann & Apotheke)": "Market guide (dm, Rossmann & pharmacy)",
+
+  "Offline-Katalog": "Offline catalog",
+  "Live-Katalog": "Live catalog",
+  "Katalog wird geladen…": "Loading catalog…",
+  "Verbunden: 985 Produkte live aus katalog-produkte.csv geladen. Kamera-Scanner aktiv.": "Connected: 985 products loaded live from katalog-produkte.csv. Camera scanner on.",
+  "file:// Modus: Eingebetteter Katalog aktiv. Klicke für Info zum lokalen Server.": "file:// mode: embedded catalog active. Tap for local server info.",
+  "Offline-Katalog (896)": "Offline catalog (896)",
+  "Offline-Fallback-Modus": "Offline fallback mode",
+  "Offline-Fallback (896 Produkte)": "Offline fallback (896 products)",
+  "Live-Katalog & Server aktiv": "Live catalog & server active",
+  "Lade Katalog…": "Loading catalog…",
+  "Reiz-Budget: entspannt": "Irritation budget: relaxed",
+  "Reiz-Budget: angespannt": "Irritation budget: tense",
+  "Reiz-Budget: kritisch": "Irritation budget: critical",
+  "Heuristik fuer Einkauf & Layering — keine Therapie.": "Heuristic for shopping & layering — not therapy.",
+  "Noch keine starken Actives im Schrank — Budget frei.": "No strong actives in the cabinet yet — budget free.",
+  "Starke Actives besser trennen oder wechseln.": "Better to separate or alternate strong actives.",
+  "Viel Active heute — Support & Abstand helfen.": "A lot of actives today — support and spacing help.",
+  "Keine Therapie — nur Layering-Hinweis.": "Not therapy — layering note only.",
+  "Budget-Optimierer": "Budget optimiser",
+  "Maximale Evidenz für deinen Hauttyp — strikt innerhalb deines Einkaufs-Limits.": "Maximum evidence for your skin type — strictly within your shopping budget.",
+  "Budget festlegen ➔": "Set budget ➔",
+  "Typ-Regal · Nebeneinander-Vergleich": "Type shelf · side-by-side comparison",
+  "Typ-Regal": "Type shelf",
+  "So könnte eine passende Morgen-Routine für deinen Hauttyp aussehen": "What a fitting morning routine for your skin type could look like",
+  "So könnte eine passende Abend-Routine für deinen Hauttyp aussehen": "What a fitting evening routine for your skin type could look like",
+  "Routine-Aufwand:": "Routine effort:",
+  "Hauttyp wählen:": "Choose skin type:",
+  "⚡ 2 Produkte (Minimal)": "⚡ 2 products (minimal)",
+  "🌿 3 Produkte (Basis)": "🌿 3 products (basics)",
+  "✨ 4–5 Produkte (Umfassend)": "✨ 4–5 products (full)",
+  "Akne & Barriere (Rx)": "Acne & barrier (Rx)",
+  "Routine-Abdeckung:": "Routine coverage:",
+  "Schritten belegt": "steps filled",
+  "0 Flaschen": "0 bottles",
+  "1 Flasche": "1 bottle",
+  "Flaschen": "Bottles",
+  "0 Produkte": "0 products",
+  "1 Produkt": "1 product",
+  "Produkte": "Products",
+  "Dein Morgen-Schrank ist noch leer (auf Null)": "Your morning cabinet is still empty",
+  "Dein Abend-Schrank ist noch leer (auf Null)": "Your evening cabinet is still empty",
+  "Dein Teenie-Schrank ist noch leer (auf Null)": "Your teen cabinet is still empty",
+  "Noch keine Produkte — Scan oder Beispiel": "No products yet — scan or use an example",
+  "+ Weiteres Produkt zu dieser Routine hinzufügen": "+ Add another product to this routine",
+  "Entfernen": "Remove",
+  "Ähnliche Alternativen": "Similar alternatives",
+  "🛡️ Schrank-Wächter": "🛡️ Cabinet guide",
+  "🧑‍🦱 Teenie-Wächter · Basis & Akne": "🧑‍🦱 Teen guide · basics & acne",
+  "🧒 Kinder-Wächter · Barriere": "🧒 Child guide · barrier",
+  "🛡️ Begleitpflege aktiv": "🛡️ Adjunct care on",
+  "Erwachsener": "Adult",
+  "Neu": "New",
+  "(Aktiv)": "(Active)",
 });
 
 function currentLang() {
@@ -600,7 +654,17 @@ function translateString(src) {
   if (bare !== core && I18N_EN[bare]) {
     return lead + I18N_EN[bare] + core.slice(bare.length) + trail;
   }
-  var out = text;
+  // Pattern labels with numbers, then longer phrase map.
+  var out = text
+    .replace(/Offline-Katalog\s*\((\d+)\)/g, "Offline catalog ($1)")
+    .replace(/Live-Katalog\s*\((\d+)\s*Produkte\)/g, "Live catalog ($1 products)")
+    .replace(/Offline-Fallback\s*\((\d+)\s*Produkte\)/g, "Offline fallback ($1 products)")
+    .replace(/\bNacht\s+(\d+)\s+·\s+Tag\s+(\d+)\s+\(Heuristik\)/g, "Night $1 · Day $2 (heuristic)")
+    .replace(/Routine-Abdeckung:\s*(\d+)\s+von\s+(\d+)\s+Schritten belegt/g, "Routine coverage: $1 of $2 steps filled")
+    .replace(/(\d+)\s+Flaschen\b/g, "$1 bottles")
+    .replace(/\b1\s+Flasche\b/g, "1 bottle")
+    .replace(/(\d+)\s+Produkte\b/g, "$1 products")
+    .replace(/\b1\s+Produkt\b/g, "1 product");
   var keys = i18nKeys();
   for (var i = 0; i < keys.length; i++) {
     var key = keys[i];
@@ -651,6 +715,7 @@ function updateLangButton() {
   if (!btn) return;
   var on = currentLang() === "en";
   btn.classList.toggle("is-on", on);
+  btn.classList.toggle("is-en", on);
   btn.setAttribute("aria-pressed", on ? "true" : "false");
   btn.setAttribute("aria-label", on ? "English on. Tap to switch back to German." : "English off. Tap to switch the app to English.");
 }
@@ -662,6 +727,7 @@ function toggleAppLanguage() {
   if (typeof syncActiveProfileFromWorkingState === "function") syncActiveProfileFromWorkingState();
   if (typeof saveState === "function") saveState();
   try { localStorage.setItem("kokoro-lang", next); } catch (e) { /* private mode */ }
+  updateLangButton();
   if (profileId && appState && Array.isArray(appState.profiles) && typeof loadProfileToAppState === "function") {
     var same = null;
     for (var i = 0; i < appState.profiles.length; i++) {
@@ -722,6 +788,9 @@ if (typeof window !== "undefined") {
   window.toggleAppLanguage = toggleAppLanguage;
   window.applyI18n = applyI18n;
   window.currentLang = currentLang;
+  window.translateString = translateString;
+  window.t = translateString;
+  window.updateLangButton = updateLangButton;
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", installI18nHooks);
   } else {
