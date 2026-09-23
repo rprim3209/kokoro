@@ -2535,20 +2535,30 @@ function getReizBudgetSummary() {
   };
 }
 
-function renderReizBudgetCardHtml() {
+function renderReizBudgetCardHtml(opts) {
+  opts = opts || {};
+  var compact = !!opts.compact;
   var s = getReizBudgetSummary();
+  if (!s) return "";
   var bg = s.level === "hot" ? "#fef2f2" : (s.level === "warn" ? "#fff7ed" : "#ecfdf5");
   var bd = s.level === "hot" ? "#fecaca" : (s.level === "warn" ? "#fed7aa" : "#a7f3d0");
   var fg = s.level === "hot" ? "#991b1b" : (s.level === "warn" ? "#9a3412" : "#065f46");
   var title = s.title || "Layering-Check (Reiz)";
-  return '<div class="reiz-budget-card" style="margin:0.65rem 0 0.85rem;padding:10px 12px;border-radius:10px;border:1px solid ' + bd +
-    ";background:" + bg + ";color:" + fg + '">' +
+  var cls = compact ? "reiz-budget-card reiz-budget-inline" : "reiz-budget-card";
+  var boxStyle = compact
+    ? "margin:0 0 0.55rem;padding:8px 10px;border-radius:8px;border:1px solid " + bd + ";background:" + bg + ";color:" + fg
+    : "margin:0.65rem 0 0.85rem;padding:10px 12px;border-radius:10px;border:1px solid " + bd + ";background:" + bg + ";color:" + fg;
+  return '<div class="' + cls + '" style="' + boxStyle + '">' +
     '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center">' +
-    '<strong style="font-size:0.88rem">' + title + "</strong>" +
-    '<span style="font-size:0.72rem;opacity:0.9">Nacht ' + s.nightWeight + " · Tag " + s.dayWeight + " (Heuristik)</span></div>" +
-    '<div style="font-size:0.84rem;font-weight:700;margin-top:5px;line-height:1.3">' + s.label + "</div>" +
-    '<div style="font-size:0.78rem;margin-top:4px;line-height:1.35;color:var(--ink)">' + s.tip + "</div>" +
-    '<div style="font-size:0.7rem;color:var(--muted);margin-top:4px">Keine Therapie — nur Layering-Hinweis.</div></div>';
+    '<strong style="font-size:' + (compact ? "0.82" : "0.88") + 'rem">' + title + "</strong>" +
+    '<span style="font-size:0.7rem;opacity:0.9">Nacht ' + s.nightWeight + " · Tag " + s.dayWeight + "</span></div>" +
+    '<div style="font-size:' + (compact ? "0.8" : "0.84") + 'rem;font-weight:700;margin-top:4px;line-height:1.3">' + s.label + "</div>" +
+    '<div style="font-size:0.76rem;margin-top:3px;line-height:1.35;color:var(--ink)">' + s.tip + "</div>" +
+    '<div style="font-size:0.68rem;color:var(--muted);margin-top:3px">Keine Therapie — nur Layering-Hinweis.</div></div>';
+}
+
+function renderReizBudgetInlineHtml() {
+  return renderReizBudgetCardHtml({ compact: true });
 }
 
 function cabinetHasIronOxideSpf(listIds) {
@@ -2599,6 +2609,7 @@ if (typeof window !== "undefined") {
   window.renderConcernQuickPanelHtml = renderConcernQuickPanelHtml;
   window.getReizBudgetSummary = getReizBudgetSummary;
   window.renderReizBudgetCardHtml = renderReizBudgetCardHtml;
+  window.renderReizBudgetInlineHtml = renderReizBudgetInlineHtml;
   window.cabinetHasIronOxideSpf = cabinetHasIronOxideSpf;
   window.renderIronOxideGapHtml = renderIronOxideGapHtml;
   window.hasTag = hasTag;

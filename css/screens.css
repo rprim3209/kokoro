@@ -673,6 +673,13 @@
 .prognosis-ampel-body .prognosis-why-content {
   margin-top: 0.45rem;
 }
+
+.reiz-budget-inline {
+  margin: 0 0 0.55rem;
+}
+.prognosis-ampel-body .reiz-budget-inline {
+  box-shadow: none;
+}
 .prognosis-ampel-summary:focus-visible {
   outline: 2px solid var(--moss, #5a7a62);
   outline-offset: 2px;

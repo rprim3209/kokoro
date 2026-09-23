@@ -314,6 +314,14 @@ function renderCategoryPrognosisBanner(prog, opts) {
 
   var countText = totalCount + " " + (totalCount === 1 ? "Produkt" : countLabel);
 
+  // Compact Layering-Check (Reiz) inside Ampel Warum — not a separate card
+  var reizHtml = "";
+  if (typeof renderReizBudgetInlineHtml === "function") {
+    reizHtml = renderReizBudgetInlineHtml() || "";
+  } else if (typeof renderReizBudgetCardHtml === "function") {
+    reizHtml = renderReizBudgetCardHtml({ compact: true }) || "";
+  }
+
   return `
     <div class="prognosis-card prognosis-ampel ${statusClass}">
       <details class="prognosis-ampel-details" ontoggle="var s=this.querySelector('summary'); if(s) s.setAttribute('aria-expanded', this.open ? 'true' : 'false')">
@@ -326,6 +334,7 @@ function renderCategoryPrognosisBanner(prog, opts) {
         </summary>
         <div class="prognosis-ampel-body">
           ${bannerHtml}
+          ${reizHtml}
           ${pointsHtml}
           <div class="prognosis-why-content">
             ${whyListHtml}
@@ -1240,8 +1249,6 @@ function renderMain(autoSave = true) {
       totalCount: (typeof getFullCabinetProductIds === "function" ? getFullCabinetProductIds().length : (appState.am.length + getActivePMList().length)),
       countLabel: "Flaschen"
     })}
-
-    ${typeof renderReizBudgetCardHtml === "function" ? renderReizBudgetCardHtml() : ""}
 
     <!-- Scan & Search Bar -->
     <div class="scan-hero">
