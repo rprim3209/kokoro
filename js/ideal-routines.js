@@ -656,6 +656,16 @@ function renderTypRegal(tab, currentList) {
 
   return `
     <div class="typ-regal-container" id="typRegalContainer">
+      <details class="ideal-collapse-details" ontoggle="var s=this.querySelector('summary'); if(s) s.setAttribute('aria-expanded', this.open ? 'true' : 'false')">
+        <summary class="ideal-collapse-summary" aria-expanded="false">
+          <div class="ideal-collapse-header">
+            <div class="ideal-collapse-title">Evidenzbasierte ${isAM ? 'Morgen' : 'Abend'}-Routine</div>
+            <span class="ideal-collapse-count">${coveredCount}/${totalCount}</span>
+            <span class="ideal-collapse-chevron">Details</span>
+          </div>
+        </summary>
+        <div class="ideal-collapse-body">
+
       <div class="typ-regal-shelf-header">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
           <div>
@@ -804,6 +814,9 @@ function renderTypRegal(tab, currentList) {
           `;
         }).join("")}
       </div>
+        </div>
+      </details>
+
     </div>
   `;
 }
@@ -878,6 +891,16 @@ function renderTeenTypRegal() {
 
   return `
     <div class="typ-regal-container" id="teenTypRegalContainer" style="border-color:#99f6e4;background:#f0fdfa">
+      <details class="ideal-collapse-details" ontoggle="var s=this.querySelector('summary'); if(s) s.setAttribute('aria-expanded', this.open ? 'true' : 'false')">
+        <summary class="ideal-collapse-summary" aria-expanded="false">
+          <div class="ideal-collapse-header">
+            <div class="ideal-collapse-title">Evidenzbasierte Routine für Jugendliche</div>
+            <span class="ideal-collapse-count">${coveredCount}/${totalCount}</span>
+            <span class="ideal-collapse-chevron">Details</span>
+          </div>
+        </summary>
+        <div class="ideal-collapse-body">
+
       <div class="typ-regal-shelf-header" style="border-color:#ccfbf1">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
           <div>
@@ -992,6 +1015,9 @@ function renderTeenTypRegal() {
           `;
         }).join("")}
       </div>
+        </div>
+      </details>
+
     </div>
   `;
 }
@@ -1171,6 +1197,16 @@ function renderBabyTypRegal() {
 
   return `
     <div class="typ-regal-container" id="babyTypRegalContainer" style="border-color:#bfdbfe;background:#f4f8fe">
+      <details class="ideal-collapse-details" ontoggle="var s=this.querySelector('summary'); if(s) s.setAttribute('aria-expanded', this.open ? 'true' : 'false')">
+        <summary class="ideal-collapse-summary" aria-expanded="false">
+          <div class="ideal-collapse-header">
+            <div class="ideal-collapse-title">Evidenzbasierte Säuglingspflege</div>
+            <span class="ideal-collapse-count">${coveredCount}/${totalCount}</span>
+            <span class="ideal-collapse-chevron">Details</span>
+          </div>
+        </summary>
+        <div class="ideal-collapse-body">
+
       <div class="typ-regal-shelf-header" style="border-color:#dbeafe">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
           <div>
@@ -1285,6 +1321,9 @@ function renderBabyTypRegal() {
           `;
         }).join("")}
       </div>
+        </div>
+      </details>
+
     </div>
   `;
 }
@@ -1306,6 +1345,16 @@ function renderChildTypRegal() {
 
   return `
     <div class="typ-regal-container" id="childTypRegalContainer" style="border-color:#fde68a;background:#fefbf4">
+      <details class="ideal-collapse-details" ontoggle="var s=this.querySelector('summary'); if(s) s.setAttribute('aria-expanded', this.open ? 'true' : 'false')">
+        <summary class="ideal-collapse-summary" aria-expanded="false">
+          <div class="ideal-collapse-header">
+            <div class="ideal-collapse-title">Evidenzbasierte Kinderpflege</div>
+            <span class="ideal-collapse-count">${coveredCount}/${totalCount}</span>
+            <span class="ideal-collapse-chevron">Details</span>
+          </div>
+        </summary>
+        <div class="ideal-collapse-body">
+
       <div class="typ-regal-shelf-header" style="border-color:#fef3c7">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
           <div>
@@ -1420,6 +1469,9 @@ function renderChildTypRegal() {
           `;
         }).join("")}
       </div>
+        </div>
+      </details>
+
     </div>
   `;
 }

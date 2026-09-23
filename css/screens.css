@@ -686,3 +686,69 @@
   border-radius: 6px;
 }
 
+/* Ideal / Typ-Regal card: collapsed by default — title + count; expand for full Ideal/Lücken UI */
+.ideal-collapse-details {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+.ideal-collapse-summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+.ideal-collapse-summary::-webkit-details-marker {
+  display: none;
+}
+.ideal-collapse-summary::marker {
+  content: "";
+}
+.ideal-collapse-header {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+.ideal-collapse-title {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.ideal-collapse-count {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ideal-collapse-chevron {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+.ideal-collapse-chevron::before {
+  content: "\25B6 ";
+  font-size: 0.65rem;
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+.ideal-collapse-details[open] .ideal-collapse-chevron::before {
+  transform: rotate(90deg);
+}
+.ideal-collapse-details[open] .ideal-collapse-chevron {
+  color: var(--ink);
+}
+.ideal-collapse-body {
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--line);
+}
+.ideal-collapse-summary:focus-visible {
+  outline: 2px solid var(--moss, #5a7a62);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
