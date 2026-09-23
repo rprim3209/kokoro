@@ -2266,7 +2266,7 @@ function showVerdict(prodId) {
     ? '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#dcfce7;color:#166534;padding:3px 9px;border-radius:6px;font-weight:800">🟢 passt</span>'
     : ((verdictId === "eher_nicht" || v.status === "warn")
       ? '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#fef3c7;color:#92400e;padding:3px 9px;border-radius:6px;font-weight:800">🟡 eher nicht</span>'
-      : '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#fee2e2;color:#991b1b;padding:3px 9px;border-radius:6px;font-weight:800">🔴 Konflikt</span>');
+      : '<span style="display:inline-block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;background:#fee2e2;color:#991b1b;padding:3px 9px;border-radius:6px;font-weight:800">🔴 passt schlecht zusammen</span>');
 
   function dimLine(label, dim) {
     if (!dim) return "";
@@ -2274,7 +2274,7 @@ function showVerdict(prodId) {
       return `<div style="font-size:0.82rem;line-height:1.35;margin-top:4px"><strong>${label}:</strong> noch nicht prüfbar — ${dim.reason || "Schrank leer"}</div>`;
     }
     const o = dim.outcome || "passt";
-    const lab = o === "konflikt" ? "Konflikt" : (o === "eher_nicht" ? "eher nicht" : "passt");
+    const lab = o === "konflikt" ? "passt schlecht zusammen" : (o === "eher_nicht" ? "eher nicht" : "passt");
     return `<div style="font-size:0.82rem;line-height:1.35;margin-top:4px"><strong>${label}:</strong> ${lab} — ${dim.reason || ""}</div>`;
   }
   const dimsHTML = v.dims ? `
@@ -2296,9 +2296,6 @@ function showVerdict(prodId) {
       <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:6px">
         <div class="verdict-title">${oneLook}</div>
         ${statusPill}
-      </div>
-      <div class="verdict-sub" style="font-size:0.92rem;font-weight:600;margin-top:2px">
-        <strong>Warum?</strong> ${v.reason}
       </div>
       ${dimsHTML}
       ${emptyTip}
@@ -2400,7 +2397,7 @@ function openProductDetail(prodId) {
             ? '<span style="font-size:0.72rem;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:5px;font-weight:700">🟢 Passt</span>'
             : (evalRes.verdict === 'eher_nicht'
                 ? '<span style="font-size:0.72rem;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:5px;font-weight:700">🟡 Eingeschränkt</span>'
-                : '<span style="font-size:0.72rem;background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:5px;font-weight:700">🔴 Konflikt</span>')}
+                : '<span style="font-size:0.72rem;background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:5px;font-weight:700">🔴 passt schlecht zusammen</span>')}
         </div>
         <div style="font-size:0.82rem;color:var(--ink);display:flex;flex-direction:column;gap:6px;margin-top:6px">
           <div><strong>Hauttyp (${evalRes.skinTypeFit.skinSub || evalRes.skinTypeFit.profileName}):</strong></div>

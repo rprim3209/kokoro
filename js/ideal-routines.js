@@ -9,7 +9,7 @@ const IDEAL_ROUTINES = {
     name: "Akne & Barriere-Schutz",
     badge: "Rx / Akne / Sensibel",
     color: "#0a3323",
-    desc: "Evidenzbasiert bei unreiner Haut, Pickeln, Rx-Therapie (Adapalen/Clienzo) oder empfindlicher Barriere. Sanfte Tenside, Rötungshemmung und Reparatur ohne komedogene Öle.",
+    desc: "Bei Unreinheiten & empfindlicher Barriere: milde Reinigung, Beruhigung, LSF.",
     am: [
       { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "baleaWash", why: "Tensid-mild & parfümfrei – greift die Säureschutzschicht nicht an" },
       { slotKey: "serum", slotName: "2. Hydratisieren", prodId: "ha", why: "Gibt tiefenwirksame Feuchtigkeit ohne Poren mit Lipiden zu belasten" },
@@ -39,7 +39,7 @@ const IDEAL_ROUTINES = {
     name: "Ölig & Poren-Balance",
     badge: "Sebum / Mitesser / Glanz",
     color: "#0891b2",
-    desc: "Für Haut mit Sebum-Überschuss, Mitessern und vergrößerten Poren. Fettlösliche Salicylsäure und talgregulierendes Niacinamid.",
+    desc: "Bei Glanz & Mitessern: porentiefe Klärung und leichte Pflege.",
     am: [
       { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "isanaWash", why: "Klärt überschüssiges Sebum der Nacht porentief und reizarm" },
       { slotKey: "serum", slotName: "2. Wirkstoff-Serum", prodId: "bbomb", why: "10% Niacinamid + Zink: Reguliert Talgproduktion und verfeinert Poren" },
@@ -72,7 +72,7 @@ const IDEAL_ROUTINES = {
     name: "Trocken & Sensibel",
     badge: "Spannung / Trockenheit / Schuppen",
     color: "#b45309",
-    desc: "Für trockene, schuppende oder leicht gerötete Haut, die spannt. Hohe Zufuhr von Ceramiden, Ectoin und regenerierenden Lipiden.",
+    desc: "Bei Trockenheit & Spannung: Ceramide, Feuchte und milder Schutz.",
     am: [
       { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "ceraveWash", why: "Cremige, nicht schäumende Waschlotion mit 3 essentiellen Ceramiden" },
       { slotKey: "serum", slotName: "2. Tiefen-Hydrator", prodId: "noHydrator", why: "Ectoin & Panthenol binden Wasser langanhaltend in den oberen Hautschichten" },
@@ -105,7 +105,7 @@ const IDEAL_ROUTINES = {
     name: "Gesunde Haut & Prävention",
     badge: "Gesunderhaltung & Glow",
     color: "#16a34a",
-    desc: "Deine Haut ist im Gleichgewicht! Die 3 evidenzbasierten Grundpfeiler: Sanfte Klärung, Feuchte-Balance und maximaler täglicher UV-Schutz.",
+    desc: "Gesunde Haut: milde Klärung, Feuchte und täglicher LSF.",
     am: [
       { slotKey: "reiniger", slotName: "1. Reinigung", prodId: "baleaWash", why: "Befreit mild von Schweiß und bereitet auf den Tag vor" },
       { slotKey: "serum", slotName: "2. Feuchtigkeitsserum", prodId: "noHydrator", why: "Schützt vor oxidativem Stress und hält die Feuchtebarriere stabil" },
@@ -671,7 +671,7 @@ function renderTypRegal(tab, currentList) {
           </span>
         </div>
 
-        <p style="font-size:0.83rem;color:var(--muted);margin:6px 0 10px;line-height:1.4">
+        <p class="typ-regal-desc-short">
           ${routine.desc}
         </p>
 
@@ -750,7 +750,7 @@ function renderTypRegal(tab, currentList) {
                     Dein Schrank · ${st.slotName}
                   </div>
                   <div style="font-size:0.86rem;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                    ${coveredP ? (coveredP.brand + " " + coveredP.name) : '<span style="color:#b91c1c;font-style:italic">Fach ist leer (Lücke)</span>'}
+                    ${coveredP ? (coveredP.brand + " " + coveredP.name) : `<span style="color:#b91c1c;font-style:italic">Hier fehlt noch: ${st.slotName}</span>`}
                   </div>
                   <div style="font-size:0.74rem;color:var(--muted);line-height:1.2;margin-top:1px">
                     ${coveredP ? (coveredP.wirk || 'Im Schrank') : 'Kein Produkt für diesen Schritt'}
@@ -769,11 +769,11 @@ function renderTypRegal(tab, currentList) {
                 <div style="min-width:0;flex:1">
                   <div style="display:flex;align-items:center;gap:6px">
                     <span style="font-size:0.68rem;text-transform:uppercase;font-weight:700;color:var(--ok);letter-spacing:0.04em">
-                      Sinnvoll: ${idealP.name}
+                      Passt gut hier: ${idealP.name}
                     </span>
                   </div>
                   <div style="font-size:0.75rem;color:var(--muted);line-height:1.3;margin-top:1px">
-                    💡 <strong>Warum:</strong> ${st.why}
+                    ${st.why}
                   </div>
                   <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:3px">
                     <span style="font-size:0.68rem;font-weight:600;color:var(--ok)">${idealP.store || 'dm / Drogerie'}</span>
@@ -796,7 +796,7 @@ function renderTypRegal(tab, currentList) {
                   </button>
                 ` : `
                   <button type="button" class="btn-adopt" onclick="adoptIdealProduct('${idealP.id}', '${tab}')" title="Per 1-Klick in deinen Schrank stellen">
-                    + In Schrank stellen
+                    Übernehmen
                   </button>
                 `)}
               </div>
@@ -956,7 +956,7 @@ function renderTeenTypRegal() {
                     Dein Schrank · ${st.slotName}
                   </div>
                   <div style="font-size:0.86rem;font-weight:700;color:#134e4a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                    ${hasProd ? (userP.brand + " " + userP.name) : '<span style="color:#b91c1c;font-style:italic">Fach ist leer</span>'}
+                    ${hasProd ? (userP.brand + " " + userP.name) : `<span style="color:#b91c1c;font-style:italic">Hier fehlt noch: ${st.slotName}</span>`}
                   </div>
                 </div>
               </div>
@@ -968,7 +968,7 @@ function renderTeenTypRegal() {
               <div class="typ-slot-box" style="background:#fff;padding:6px 9px;border-radius:8px;border:1px solid #ccfbf1">
                 <div style="min-width:0;flex:1">
                   <div style="font-size:0.68rem;text-transform:uppercase;font-weight:700;color:#0d9488;letter-spacing:0.04em">
-                    Empfehlung: ${idealP ? (idealP.brand + " " + idealP.name) : st.title}
+                    Passt gut hier: ${idealP ? (idealP.brand + " " + idealP.name) : st.title}
                   </div>
                   <div style="font-size:0.75rem;color:#134e4a;line-height:1.3;margin-top:2px">
                     💡 ${st.why}
@@ -984,7 +984,7 @@ function renderTeenTypRegal() {
                   </span>
                 ` : `
                   <button type="button" class="btn-adopt" style="background:#0d9488" onclick="adoptTeenProductToSlot('${st.prodId}', '${st.slotKey}')">
-                    + In Schrank stellen
+                    Übernehmen
                   </button>
                 `}
               </div>
@@ -1249,7 +1249,7 @@ function renderBabyTypRegal() {
                     Dein Schrank · ${st.slotName}
                   </div>
                   <div style="font-size:0.86rem;font-weight:700;color:#1e3a8a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                    ${hasProd ? (userP.brand + " " + userP.name) : '<span style="color:#b91c1c;font-style:italic">Fach ist leer</span>'}
+                    ${hasProd ? (userP.brand + " " + userP.name) : `<span style="color:#b91c1c;font-style:italic">Hier fehlt noch: ${st.slotName}</span>`}
                   </div>
                 </div>
               </div>
@@ -1261,7 +1261,7 @@ function renderBabyTypRegal() {
               <div class="typ-slot-box" style="background:#fff;padding:6px 9px;border-radius:8px;border:1px solid #bfdbfe">
                 <div style="min-width:0;flex:1">
                   <div style="font-size:0.68rem;text-transform:uppercase;font-weight:700;color:#2563eb;letter-spacing:0.04em">
-                    Empfehlung: ${idealP ? (idealP.brand + " " + idealP.name) : st.title}
+                    Passt gut hier: ${idealP ? (idealP.brand + " " + idealP.name) : st.title}
                   </div>
                   <div style="font-size:0.75rem;color:#1e3a8a;line-height:1.3;margin-top:2px">
                     💡 ${st.why}
@@ -1277,7 +1277,7 @@ function renderBabyTypRegal() {
                   </span>
                 ` : `
                   <button type="button" class="btn-adopt" style="background:#2563eb" onclick="adoptBabyIdealProduct('${st.prodId}', 'baby', '${st.slotKey}')">
-                    + In Schrank stellen
+                    Übernehmen
                   </button>
                 `}
               </div>
@@ -1384,7 +1384,7 @@ function renderChildTypRegal() {
                     Dein Schrank · ${st.slotName}
                   </div>
                   <div style="font-size:0.86rem;font-weight:700;color:#78350f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                    ${hasProd ? (userP.brand + " " + userP.name) : '<span style="color:#b91c1c;font-style:italic">Fach ist leer</span>'}
+                    ${hasProd ? (userP.brand + " " + userP.name) : `<span style="color:#b91c1c;font-style:italic">Hier fehlt noch: ${st.slotName}</span>`}
                   </div>
                 </div>
               </div>
@@ -1396,7 +1396,7 @@ function renderChildTypRegal() {
               <div class="typ-slot-box" style="background:#fff;padding:6px 9px;border-radius:8px;border:1px solid #fde68a">
                 <div style="min-width:0;flex:1">
                   <div style="font-size:0.68rem;text-transform:uppercase;font-weight:700;color:#d97706;letter-spacing:0.04em">
-                    Empfehlung: ${idealP ? (idealP.brand + " " + idealP.name) : st.title}
+                    Passt gut hier: ${idealP ? (idealP.brand + " " + idealP.name) : st.title}
                   </div>
                   <div style="font-size:0.75rem;color:#78350f;line-height:1.3;margin-top:2px">
                     💡 ${st.why}
@@ -1412,7 +1412,7 @@ function renderChildTypRegal() {
                   </span>
                 ` : `
                   <button type="button" class="btn-adopt" style="background:#d97706" onclick="adoptBabyIdealProduct('${st.prodId}', 'child', '${st.slotKey}')">
-                    + In Schrank stellen
+                    Übernehmen
                   </button>
                 `}
               </div>

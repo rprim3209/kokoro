@@ -1440,3 +1440,52 @@
   background: #eef2ff;
   color: #3730a3;
 }
+
+
+/* UX1 empty-state hierarchy */
+.empty-shelf-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: min(100%, 280px);
+  padding: 0.85rem 1.35rem;
+  font-size: 1.02rem;
+  font-weight: 800;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #c45c7a 0%, #8fbc8f 100%);
+  color: #fffdf9;
+  box-shadow: 0 6px 18px rgba(196, 92, 122, 0.28);
+  cursor: pointer;
+}
+.empty-shelf-primary:hover { filter: brightness(1.04); }
+.empty-shelf-primary:active { transform: scale(0.98); }
+.empty-shelf-secondary {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.empty-shelf-secondary .btn-quiet {
+  padding: 5px 11px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.empty-shelf-secondary .btn-quiet:hover {
+  border-color: #c45c7a;
+  color: #9f3d5c;
+  background: #fff7f9;
+}
+.typ-regal-desc-short {
+  font-size: 0.83rem;
+  color: var(--muted);
+  margin: 6px 0 10px;
+  line-height: 1.4;
+}

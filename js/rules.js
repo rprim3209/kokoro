@@ -173,14 +173,14 @@ function worstWins() {
 function formatVerdictOneLook(outcome, reason) {
   var o = normalizeOutcome(outcome) || "passt";
   var emoji = o === "konflikt" ? "🔴" : o === "eher_nicht" ? "🟡" : "🟢";
-  var label = o === "konflikt" ? "Konflikt" : o === "eher_nicht" ? "eher nicht" : "passt";
+  var label = o === "konflikt" ? "passt schlecht zusammen" : o === "eher_nicht" ? "eher nicht" : "passt";
   var grund = String(reason || "").trim();
   return emoji + " " + label + (grund ? " — " + grund : "");
 }
 
 function outcomeTitle(outcome) {
   var o = normalizeOutcome(outcome) || "passt";
-  if (o === "konflikt") return "🔴 Konflikt";
+  if (o === "konflikt") return "🔴 passt schlecht zusammen";
   if (o === "eher_nicht") return "🟡 eher nicht";
   return "🟢 passt";
 }
@@ -1623,7 +1623,7 @@ function calculateCategoryCabinetPrognosis(products, category) {
   var overall = outcomes.length ? worstWins.apply(null, outcomes) : "passt";
   var title;
   if (overall === "konflikt") {
-    title = "🔴 Konflikt — Schrank prüfen";
+    title = "🔴 passt schlecht zusammen — Schrank prüfen";
   } else if (overall === "eher_nicht") {
     title = "🟡 eher nicht — kleine Anpassung";
   } else {
@@ -2126,7 +2126,7 @@ function calculatePrognosis() {
     verdict: overall,
     title:
       overall === "konflikt"
-        ? "🔴 Konflikt — Schrank prüfen"
+        ? "🔴 passt schlecht zusammen — Schrank prüfen"
         : overall === "eher_nicht"
           ? "🟡 eher nicht — kleine Anpassung"
           : "🟢 passt — Routine ohne harten Konflikt",
@@ -2371,7 +2371,7 @@ function evaluateProductCompatibility(productOrId, tab) {
           if (hit.outcome === "konflikt") {
             hasConflictPair = true;
             routineOutcomes.push("konflikt");
-            routinePoints.push("🔴 Routine-Konflikt mit " + other.name + ": " + hit.reason);
+            routinePoints.push("🔴 passt schlecht zusammen mit " + other.name + ": " + hit.reason);
           } else if (hit.outcome === "eher_nicht") {
             hasWarnPair = true;
             routineOutcomes.push("eher_nicht");
@@ -2400,8 +2400,8 @@ function evaluateProductCompatibility(productOrId, tab) {
     status: statusFromOutcome(overall),
     verdict: overall,
     title: overall === "konflikt"
-      ? "🔴 Routine- oder Reiz-Konflikt"
-      : (overall === "eher_nicht" ? "🟡 Eingeschränkt passend / prüfen" : "🟢 Passt zu Routine & Hauttyp"),
+      ? "🔴 passt schlecht zusammen"
+      : (overall === "eher_nicht" ? "🟡 eher nicht" : "🟢 passt"),
     skinTypeFit: {
       profileName: profileName,
       skinSub: profileSub,

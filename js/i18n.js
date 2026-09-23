@@ -186,6 +186,7 @@ var I18N_EN = {
   "Passt es zu deinem Hauttyp?": "Does it fit your skin type?",
   "Passt": "Fits",
   "Eher nicht": "Rather not",
+  "passt schlecht zusammen": "doesn't go well together",
   "Konflikt": "Clash",
   "Eingeschränkt": "Limited",
   "Dieses Ergebnis ist nur ein Shop-Link und kann nicht in den Schrank.": "This result is only a shop link and cannot go into the cabinet.",
@@ -482,6 +483,7 @@ Object.assign(I18N_EN, {
   "Löschen hat nicht geklappt. Bitte nochmal versuchen.": "Delete failed. Please try again.",
   "Baby-Schrank geleert.": "Baby cabinet cleared.",
   "Kinder-Schrank geleert.": "Child cabinet cleared.",
+  "Noch leer — Produkte hinzufügen": "Still empty — add products",
   "Noch keine Produkte — Scan oder Beispiel": "No products yet — scan or use an example",
   "+ Baby-Produkt hinzufügen": "+ Add baby product",
   "Dein Baby-Schrank ist noch leer (auf Null)": "Your baby cabinet is still empty",
@@ -536,6 +538,7 @@ Object.assign(I18N_EN, {
   "Routine- & Verträglichkeits-Check für Alternative": "Routine & compatibility check for the alternative",
   "Zurück zu Produktdetails": "Back to product details",
   "Ähnliche Alternativen": "Similar alternatives",
+  "passt schlecht zusammen — Schrank prüfen": "doesn't go well together — check the cabinet",
   "Konflikt — Schrank prüfen": "Clash — check the cabinet",
   "eher nicht — kleine Anpassung": "rather not — small adjustment",
   "passt — Routine ohne harten Konflikt": "fits — routine without a hard clash",
@@ -630,8 +633,10 @@ Object.assign(I18N_EN, {
 // I18N_LANG5_BLOCK_START
 Object.assign(I18N_EN, {
   // Empty-state / prognosis (incl. bold-split fragments)
+  "Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.": "Still empty. Add a few products — then we check what goes together.",
   "Füge Produkte hinzu oder tippe auf Beispiel — dann erscheint hier passt / eher nicht / Konflikt.": "Add products or tap Example — then fits / rather not / clash will show here.",
   "Füge Produkte hinzu oder tippe auf ": "Add products or tap ",
+  "Beispiel-Routine": "Sample routine",
   "Beispiel": "Example",
   " — dann erscheint hier passt / eher nicht / Konflikt.": " — then fits / rather not / clash will show here.",
   "Ermittle deinen Hauttyp mit dem Quiz, wähle ihn direkt aus, lade eine Starter-Routine oder stelle deine eigenen Produkte hinein.": "Find your skin type with the quiz, pick it directly, load a starter routine, or put your own products in.",
@@ -679,13 +684,17 @@ Object.assign(I18N_EN, {
   // Shelf compare cards
   "Dein Schrank": "Your cabinet",
   "DEIN SCHRANK": "YOUR CABINET",
+  "Hier fehlt noch:": "Still missing:",
   "Fach ist leer (Lücke)": "Slot is empty (gap)",
   "Fach ist leer": "Slot is empty",
   "Kein Produkt für diesen Schritt": "No product for this step",
+  "Passt gut hier:": "Fits well here:",
   "Sinnvoll:": "Useful:",
   "SINNVOLL:": "USEFUL:",
   "Warum:": "Why:",
   "WARUM:": "WHY:",
+  "Übernehmen": "Adopt",
+  "In meinen Schrank": "Into my cabinet",
   "+ In Schrank stellen": "+ Put in cabinet",
   "+ Als Alternative": "+ As alternative",
   "Im Schrank": "In the cabinet",
@@ -746,7 +755,26 @@ var i18nPhraseKeys = null;
 i18nPhraseKeys = null; // rebuild after late Object.assign blocks
 function i18nKeys() {
   if (!i18nPhraseKeys) {
-    i18nPhraseKeys = Object.keys(I18N_EN).sort(function (a, b) { return b.length - a.length; });
+    
+Object.assign(I18N_EN, {
+  "Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.": "Still empty. Add a few products — then we check what goes together.",
+  "Produkt hinzufügen": "Add product",
+  "Hauttyp wählen": "Choose skin type",
+  "Beispiel-Routine": "Sample routine",
+  "Barcode": "Barcode",
+  "passt schlecht zusammen": "doesn't go well together",
+  "Passt schlecht zusammen:": "Doesn't go well together:",
+  "Eher nicht:": "Rather not:",
+  "Hier fehlt noch:": "Still missing:",
+  "Passt gut hier:": "Fits well here:",
+  "Übernehmen": "Adopt",
+  "Bei Unreinheiten & empfindlicher Barriere: milde Reinigung, Beruhigung, LSF.": "For blemishes & sensitive barrier: gentle cleanse, soothe, SPF.",
+  "Bei Glanz & Mitessern: porentiefe Klärung und leichte Pflege.": "For shine & blackheads: pore cleanse and light care.",
+  "Bei Trockenheit & Spannung: Ceramide, Feuchte und milder Schutz.": "For dryness & tightness: ceramides, moisture and gentle protection.",
+  "Gesunde Haut: milde Klärung, Feuchte und täglicher LSF.": "Healthy skin: gentle cleanse, moisture and daily SPF."
+});
+
+i18nPhraseKeys = Object.keys(I18N_EN).sort(function (a, b) { return b.length - a.length; });
   }
   return i18nPhraseKeys;
 }

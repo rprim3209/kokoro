@@ -173,11 +173,11 @@ function renderCategoryPrognosisBanner(prog, opts) {
     return `
     <div class="prognosis-card empty" style="border-left-color:${accent}">
       <div class="prognosis-header">
-        <div class="prognosis-title">Noch keine Produkte — Scan oder Beispiel</div>
+        <div class="prognosis-title">Noch leer — Produkte hinzufügen</div>
         <span style="font-size:0.75rem;color:var(--muted);font-weight:600">0 ${countLabel}</span>
       </div>
       <ul class="prognosis-list">
-        <li data-i18n-full="Füge Produkte hinzu oder tippe auf Beispiel — dann erscheint hier passt / eher nicht / Konflikt.">Füge Produkte hinzu oder tippe auf <strong>Beispiel</strong> — dann erscheint hier passt / eher nicht / Konflikt.</li>
+        <li data-i18n-full="Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.">Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.</li>
       </ul>
     </div>`;
   }
@@ -196,7 +196,7 @@ function renderCategoryPrognosisBanner(prog, opts) {
     } else if (prog.points && prog.points.length > 0) {
       var matchPt = prog.points.find(function (pt) {
         return verdict === "konflikt"
-          ? String(pt).indexOf("Konflikt") !== -1
+          ? (String(pt).indexOf("Konflikt") !== -1 || String(pt).toLowerCase().indexOf("passt schlecht") !== -1)
           : (String(pt).indexOf("eher nicht") !== -1 || String(pt).indexOf("fehlt") !== -1 || String(pt).indexOf("Duft") !== -1);
       }) || prog.points[0];
       rawReason = matchPt;
@@ -214,7 +214,7 @@ function renderCategoryPrognosisBanner(prog, opts) {
         : "Einige Wirkstoffe passen besser im Wechsel oder erfüllen Profil-Priorität nicht.";
     }
 
-    var bannerPrefix = verdict === "konflikt" ? "🔴 Konflikt:" : "🟡 Hinweis:";
+    var bannerPrefix = verdict === "konflikt" ? "🔴 Passt schlecht zusammen:" : "🟡 Eher nicht:";
     bannerHtml = `
       <div class="schrank-conflict-banner ${verdict === "konflikt" ? "is-konflikt" : "is-warn"}">
         ${bannerPrefix} ${escapeHtml(primaryAlertClean)}
@@ -289,7 +289,7 @@ function conflictBadgeHtml(flag) {
   if (!flag || !flag.outcome) return "";
   var reason = String(flag.reason || "").replace(/"/g, "&quot;");
   if (flag.outcome === "konflikt") {
-    return `<span class="tag conflict-flag konflikt" title="${reason}">🔴 Konflikt</span>`;
+    return `<span class="tag conflict-flag konflikt" title="${reason}">🔴 passt schlecht zusammen</span>`;
   }
   if (flag.outcome === "eher_nicht") {
     return `<span class="tag conflict-flag warn" title="${reason}">🟡 eher nicht</span>`;
@@ -335,7 +335,7 @@ function renderBabyCabinet(container) {
       actionsHtml: `
         <button type="button" class="profile-action-btn" onclick="openSkinTypePickerModal()" style="color:#1d4ed8">Hauttyp</button>
         <button type="button" class="profile-action-btn" onclick="openQuizModal()" style="color:#1d4ed8">Quiz</button>
-        <button type="button" class="profile-action-btn" onclick="loadBabyPreset()" style="color:#1d4ed8">Beispiel</button>
+        <button type="button" class="profile-action-btn" onclick="loadBabyPreset()" style="color:#1d4ed8">Beispiel-Routine</button>
         <button type="button" class="profile-action-btn" onclick="clearBabyCabinet()" style="color:#92580a">Leeren</button>
         <button type="button" class="profile-action-btn" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
       `
@@ -361,28 +361,20 @@ function renderBabyCabinet(container) {
 
   if (allBabyProds.length === 0) {
     html += `
-      <div style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #bfdbfe;border-radius:14px;margin:0.8rem 0 1.2rem">
+      <div class="empty-shelf" style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #bfdbfe;border-radius:14px;margin:0.8rem 0 1.2rem">
         <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">👶</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Baby-Schrank ist noch leer (auf Null)</div>
-        <div style="font-size:0.85rem;color:var(--muted);max-width:440px;margin:4px auto 14px;line-height:1.45">
-          Wähle den Hauttyp deines Babys, starte den Pflege-Check, lade geprüfte Empfehlungen oder stelle eigene Produkte hinein.
+        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Baby-Schrank ist noch leer</div>
+        <div class="empty-shelf-text" style="max-width:440px;margin:4px auto 16px">
+          Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.
         </div>
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button type="button" class="btn-scan" style="padding:7px 14px;font-size:0.85rem;background:#2563eb" onclick="openSkinTypePickerModal()">
-            ⚡ Hauttyp / Pflegeziel wählen
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:#2563eb;color:#1d4ed8;font-weight:600" onclick="openQuizModal()">
-            🔬 Baby-Pflege-Check
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line);color:#1d4ed8" onclick="loadStarterRoutineForActiveProfile()">
-            🎯 Pädiatrie-Starter laden
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line)" onclick="openAddBabyProductModal('all', 'baby')">
-            + Baby-Produkt hinzufügen
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line);color:#1d4ed8" onclick="openBabySafetyGuideModal()">
-            Pädiatrie-Leitlinie
-          </button>
+        <button type="button" class="empty-shelf-primary" style="background:linear-gradient(135deg,#3b82f6 0%,#93c5fd 100%)" onclick="openAddBabyProductModal('all', 'baby')">
+          + Produkt hinzufügen
+        </button>
+        <div class="empty-shelf-secondary">
+          <button type="button" class="btn-quiet" onclick="openQuizModal()">Quiz</button>
+          <button type="button" class="btn-quiet" onclick="openSkinTypePickerModal()">Hauttyp wählen</button>
+          <button type="button" class="btn-quiet" onclick="loadStarterRoutineForActiveProfile()">Beispiel-Routine</button>
+          <button type="button" class="btn-quiet" onclick="openScanModal()">Barcode</button>
         </div>
       </div>
     `;
@@ -504,7 +496,7 @@ function renderChildCabinet(container) {
       actionsHtml: `
         <button type="button" class="profile-action-btn" onclick="openSkinTypePickerModal()" style="color:#b45309">Hauttyp</button>
         <button type="button" class="profile-action-btn" onclick="openQuizModal()" style="color:#b45309">Quiz</button>
-        <button type="button" class="profile-action-btn" onclick="loadChildPreset()" style="color:#b45309">Beispiel</button>
+        <button type="button" class="profile-action-btn" onclick="loadChildPreset()" style="color:#b45309">Beispiel-Routine</button>
         <button type="button" class="profile-action-btn" onclick="clearChildCabinet()" style="color:#92580a">Leeren</button>
         <button type="button" class="profile-action-btn" onclick="appState.view = 'welcome'; renderMain()" style="color:#777">Start</button>
       `
@@ -530,28 +522,20 @@ function renderChildCabinet(container) {
 
   if (allChildProds.length === 0) {
     html += `
-      <div style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #fde68a;border-radius:14px;margin:0.8rem 0 1.2rem">
+      <div class="empty-shelf" style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #fde68a;border-radius:14px;margin:0.8rem 0 1.2rem">
         <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">🧒</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Kinder-Schrank ist noch leer (auf Null)</div>
-        <div style="font-size:0.85rem;color:var(--muted);max-width:440px;margin:4px auto 14px;line-height:1.45">
-          Wähle den Hauttyp des Kindes, starte das Pflege-Quiz, lade kindgerechte Empfehlungen oder stelle eigene Produkte hinein.
+        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Kinder-Schrank ist noch leer</div>
+        <div class="empty-shelf-text" style="max-width:440px;margin:4px auto 16px">
+          Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.
         </div>
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button type="button" class="btn-scan" style="padding:7px 14px;font-size:0.85rem;background:#d97706" onclick="openSkinTypePickerModal()">
-            ⚡ Hauttyp wählen
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:#d97706;color:#b45309;font-weight:600" onclick="openQuizModal()">
-            🔬 Kinder-Pflege-Quiz
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line);color:#b45309" onclick="loadStarterRoutineForActiveProfile()">
-            🎯 Kinder-Routine laden
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line)" onclick="openAddBabyProductModal('all', 'child')">
-            + Kinder-Produkt hinzufügen
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line);color:#b45309" onclick="openBabySafetyGuideModal()">
-            Pädiatrie-Leitlinie
-          </button>
+        <button type="button" class="empty-shelf-primary" style="background:linear-gradient(135deg,#d97706 0%,#fde68a 100%);color:#78350f" onclick="openAddBabyProductModal('all', 'child')">
+          + Produkt hinzufügen
+        </button>
+        <div class="empty-shelf-secondary">
+          <button type="button" class="btn-quiet" onclick="openQuizModal()">Quiz</button>
+          <button type="button" class="btn-quiet" onclick="openSkinTypePickerModal()">Hauttyp wählen</button>
+          <button type="button" class="btn-quiet" onclick="loadStarterRoutineForActiveProfile()">Beispiel-Routine</button>
+          <button type="button" class="btn-quiet" onclick="openScanModal()">Barcode</button>
         </div>
       </div>
     `;
@@ -763,28 +747,20 @@ function renderTeenCabinet(container) {
 
   if (allTeenProds.length === 0) {
     html += `
-      <div style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #99f6e4;border-radius:14px;margin:0.8rem 0 1.2rem">
+      <div class="empty-shelf" style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #99f6e4;border-radius:14px;margin:0.8rem 0 1.2rem">
         <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">🧑‍🦱</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Teenie-Schrank ist noch leer (auf Null)</div>
-        <div style="font-size:0.85rem;color:var(--muted);max-width:440px;margin:4px auto 14px;line-height:1.45">
-          Ermittle deinen Hauttyp mit dem Teenie-Quiz, wähle ihn direkt aus, lade eine Teenie-Routine oder stelle deine Produkte zusammen.
+        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Teenie-Schrank ist noch leer</div>
+        <div class="empty-shelf-text" style="max-width:440px;margin:4px auto 16px">
+          Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.
         </div>
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button type="button" class="btn-scan" style="padding:7px 14px;font-size:0.85rem;background:#0d9488" onclick="openQuizModal()">
-            🔬 Hauttyp-Quiz machen
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:#0d9488;color:#0f766e;font-weight:600" onclick="openSkinTypePickerModal()">
-            ⚡ Hauttyp wählen
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line);color:#0f766e" onclick="loadStarterRoutineForActiveProfile()">
-            🎯 Teenie-Routine laden
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line)" onclick="openAddTeenProductModal('all')">
-            + Produkt hinzufügen
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line);color:#0f766e" onclick="openTeenSafetyGuideModal()">
-            Teenie-Leitlinie
-          </button>
+        <button type="button" class="empty-shelf-primary" style="background:linear-gradient(135deg,#0d9488 0%,#99f6e4 100%)" onclick="openAddTeenProductModal('all')">
+          + Produkt hinzufügen
+        </button>
+        <div class="empty-shelf-secondary">
+          <button type="button" class="btn-quiet" onclick="openQuizModal()">Quiz</button>
+          <button type="button" class="btn-quiet" onclick="openSkinTypePickerModal()">Hauttyp wählen</button>
+          <button type="button" class="btn-quiet" onclick="loadStarterRoutineForActiveProfile()">Beispiel-Routine</button>
+          <button type="button" class="btn-quiet" onclick="openScanModal()">Barcode</button>
         </div>
       </div>
     `;
@@ -1287,26 +1263,18 @@ function renderMain(autoSave = true) {
     html += `
       <div class="empty-shelf" style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #cbd5e1;border-radius:14px;margin:0.8rem 0 1.2rem">
         <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">🧴</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein ${isAM ? 'Morgen-Schrank' : 'Abend-Schrank'} ist noch leer (auf Null)</div>
-        <div style="font-size:0.85rem;color:var(--muted);max-width:440px;margin:4px auto 14px;line-height:1.45">
-          Ermittle deinen Hauttyp mit dem Quiz, wähle ihn direkt aus, lade eine Starter-Routine oder stelle deine eigenen Produkte hinein.
+        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein ${isAM ? 'Morgen-Schrank' : 'Abend-Schrank'} ist noch leer</div>
+        <div class="empty-shelf-text" style="max-width:440px;margin:4px auto 16px">
+          Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.
         </div>
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button type="button" class="btn-scan" style="padding:7px 14px;font-size:0.85rem" onclick="openQuizModal()">
-            🔬 Hauttyp-Quiz machen
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--primary,#4f46e5);color:var(--primary,#4f46e5);font-weight:600" onclick="openSkinTypePickerModal()">
-            ⚡ Hauttyp wählen
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line)" onclick="loadStarterRoutineForActiveProfile()">
-            🎯 Starter-Routine laden
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line)" onclick="openAddProductModal('${appState.tab}')">
-            + Produkt hinzufügen
-          </button>
-          <button type="button" class="btn-manual" style="padding:7px 14px;font-size:0.85rem;background:#fff;border-color:var(--line)" onclick="openScanModal()">
-            📷 Barcode scannen
-          </button>
+        <button type="button" class="empty-shelf-primary" onclick="openAddProductModal('${appState.tab}')">
+          + Produkt hinzufügen
+        </button>
+        <div class="empty-shelf-secondary">
+          <button type="button" class="btn-quiet" onclick="openQuizModal()">Quiz</button>
+          <button type="button" class="btn-quiet" onclick="openSkinTypePickerModal()">Hauttyp wählen</button>
+          <button type="button" class="btn-quiet" onclick="loadStarterRoutineForActiveProfile()">Beispiel-Routine</button>
+          <button type="button" class="btn-quiet" onclick="openScanModal()">Barcode</button>
         </div>
       </div>
     `;
@@ -1321,9 +1289,9 @@ function renderMain(autoSave = true) {
       const flagOutcome = flag && flag.outcome;
       const cardConflictClass = flagOutcome === "konflikt" ? "has-konflikt" : (flagOutcome === "eher_nicht" ? "has-warn" : "");
       const flagBadge = flagOutcome === "konflikt"
-        ? `<span class="tag conflict-flag konflikt" title="${String(flag.reason || "").replace(/"/g, "&quot;")}">🔴 Konflikt</span>`
+        ? `<span class="tag conflict-flag konflikt" title="${String(flag.reason || "").replace(/"/g, "&quot;")}">🔴 passt schlecht zusammen</span>`
         : (flagOutcome === "eher_nicht"
-          ? `<span class="tag conflict-flag warn" title="${String(flag.reason || "").replace(/"/g, "&quot;")}">🟡 im Wechsel</span>`
+          ? `<span class="tag conflict-flag warn" title="${String(flag.reason || "").replace(/"/g, "&quot;")}">🟡 eher nicht</span>`
           : "");
       const classChips = (Array.isArray(p.klassen) ? p.klassen : [])
         .filter(k => ["retinoid_rx","retinoid_cos","aha","bha","bpo","ascorbic","azelaic"].indexOf(k) !== -1)
@@ -2074,10 +2042,10 @@ function openCompatibilityCheckModal(prodId, tab) {
   if (!p) return;
 
   const verdictPill = evalRes.verdict === "passt"
-    ? '<span style="background:#dcfce7;color:#166534;font-size:0.74rem;font-weight:800;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em">🟢 Passt</span>'
+    ? '<span style="background:#dcfce7;color:#166534;font-size:0.74rem;font-weight:800;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em">🟢 passt</span>'
     : (evalRes.verdict === "eher_nicht"
         ? '<span style="background:#fef3c7;color:#92400e;font-size:0.74rem;font-weight:800;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em">🟡 Eingeschränkt</span>'
-        : '<span style="background:#fee2e2;color:#991b1b;font-size:0.74rem;font-weight:800;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em">🔴 Konflikt</span>');
+        : '<span style="background:#fee2e2;color:#991b1b;font-size:0.74rem;font-weight:800;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em">🔴 passt schlecht zusammen</span>');
 
   const tabLabel = (tab === "am") ? "☀️ Morgen-Routine" : ((tab === "pm") ? "🌙 Abend-Routine" : (evalRes.skinTypeFit.category ? evalRes.skinTypeFit.category.toUpperCase() : "Routine"));
 
