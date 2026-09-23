@@ -195,19 +195,20 @@
 
   /* Scan Hero Bar */
   .scan-hero {
+    --btn-min-h: 38px;
     background: var(--primary);
     color: #FFFFFF;
     border-radius: var(--radius-lg);
-    padding: 1.15rem 1.15rem 1.2rem;
+    padding: 0.7rem 0.85rem 0.75rem;
     box-shadow: var(--shadow);
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.45rem;
     margin-bottom: var(--space-block);
   }
   .scan-hero h2 {
     margin: 0;
-    font-size: 1.12rem;
+    font-size: 0.98rem;
     font-family: inherit;
     font-weight: 600;
     letter-spacing: -0.015em;
@@ -217,16 +218,20 @@
     color: #FFFFFF;
     line-height: 1.3;
   }
+  .scan-hero h2 svg {
+    width: 16px;
+    height: 16px;
+  }
   .scan-hero p {
     margin: 0;
-    font-size: 0.88rem;
+    font-size: 0.78rem;
     color: rgba(255, 255, 255, 0.9);
-    line-height: 1.5;
+    line-height: 1.35;
   }
   .scan-btn-group {
     display: flex;
-    gap: 0.6rem;
-    margin-top: 0.2rem;
+    gap: 0.45rem;
+    margin-top: 0;
   }
   .btn-scan {
     flex: 1;
@@ -265,6 +270,26 @@
   }
   .btn-manual:hover {
     background: rgba(255,255,255,0.22);
+  }
+  .scan-hero .btn-scan,
+  .scan-hero .btn-manual {
+    padding: 0.45rem 0.7rem;
+    min-height: var(--btn-min-h);
+    font-size: 0.86rem;
+  }
+  .scan-hero-links {
+    display: flex;
+    gap: 6px;
+    margin-top: 0.2rem;
+  }
+  .scan-hero-links .btn-manual {
+    flex: 1;
+    min-height: 34px;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.72rem;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.09);
+    border-color: rgba(255,255,255,0.18);
   }
 
   /* Profile & Guardrail Card */
@@ -1445,7 +1470,7 @@
     .katalog-badge { max-width: 7.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .step-card { gap: 11px; padding: 0.85rem 0.9rem; }
     .typ-regal-container { padding: 1.05rem 0.95rem; }
-    .scan-hero { padding: 1.05rem 1.05rem 1.1rem; }
+    .scan-hero { padding: 0.65rem 0.75rem 0.7rem; }
   }
 
 

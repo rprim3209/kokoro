@@ -409,7 +409,7 @@ function renderBabyCabinet(container) {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
         Baby-Schrank befüllen & prüfen
       </h2>
-      <p>606 EU-geprüfte Baby- & Kind-Produkte mit pädiatrischen Flags (Parfümfrei, Cruelty-Free, &lt;3 Jahre).</p>
+      <p>Geprüfte Baby- & Kindpflege, parfümfrei und für unter 3 Jahre geeignet.</p>
       <div class="scan-btn-group">
         <button class="btn-scan" style="background:#2563eb" onclick="openAddBabyProductModal('all', 'baby')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -577,7 +577,7 @@ function renderChildCabinet(container) {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
         Kinder-Schrank befüllen & prüfen
       </h2>
-      <p>Passende Duschgele, Cremes, LSF 50+ und Shampoos für Kindergarten- & Schulkinder.</p>
+      <p>Milde Pflege, Sonnenschutz und Shampoo für Kita- und Schulkinder.</p>
       <div class="scan-btn-group">
         <button class="btn-scan" style="background:#d97706" onclick="openAddBabyProductModal('all', 'child')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -809,7 +809,7 @@ function renderTeenCabinet(container) {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
         Teenie-Schrank befüllen & prüfen
       </h2>
-      <p>96 EU-geprüfte Teenie- & Young-Adult-Produkte mit Flags (Parfümfrei, Nicht-komedogen, Cruelty-Free, ohne Anti-Aging).</p>
+      <p>Milde Reinigung, sanfte Talgkontrolle und täglicher Sonnenschutz.</p>
       <div class="scan-btn-group">
         <button class="btn-scan" style="background:#0d9488" onclick="openAddTeenProductModal('all')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1256,7 +1256,7 @@ function renderMain(autoSave = true) {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
         Schrank befüllen & Dose prüfen
       </h2>
-      <p>Stelle deine Flaschen in den Schrank oder prüfe ein neues Produkt direkt im Laden.</p>
+      <p>Flaschen reinlegen oder im Laden prüfen.</p>
       <div class="scan-btn-group">
         <button class="btn-scan" onclick="openAddProductModal('${appState.tab}')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1264,11 +1264,11 @@ function renderMain(autoSave = true) {
         </button>
         <button class="btn-manual" onclick="openScanModal()">Im Laden scannen</button>
       </div>
-      <div style="display:flex;gap:8px;margin-top:0.6rem">
-        <button class="btn-manual" style="flex:1;background:rgba(255,255,255,0.09);border-color:rgba(255,255,255,0.18);font-size:0.78rem;padding:0.55rem;border-radius:10px" onclick="openMarketGuideModal()">
+      <div class="scan-hero-links">
+        <button class="btn-manual" onclick="openMarketGuideModal()">
           🛒 Markt-Navigator (dm / Rossmann / Apo)
         </button>
-        <button class="btn-manual" style="flex:1;background:rgba(255,255,255,0.09);border-color:rgba(255,255,255,0.18);font-size:0.78rem;padding:0.55rem;border-radius:10px" onclick="openDoctorGuideModal()">
+        <button class="btn-manual" onclick="openDoctorGuideModal()">
           🩺 Hautarzt & Rx-Wegweiser
         </button>
       </div>
