@@ -2164,8 +2164,8 @@ function openCompatibilityCheckModal(prodId, tab) {
     ${missingDataBoxHtml}
 
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:1.1rem">
-      <button type="button" class="primary" onclick="placeScannedProductInCabinet('${String(p.id).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}')">🧴 In den Schrank stellen</button>
-      <button type="button" class="primary" onclick="closeModal()">Verstanden</button>
+      <button type="button" class="primary" style="min-height:52px;font-size:1.08rem;font-weight:800" onclick="placeScannedProductInCabinet('${String(p.id).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}')">In meinen Schrank</button>
+      <button type="button" class="primary" style="min-height:48px;font-size:1.02rem;font-weight:800;background:#5c3e1e" onclick="closeModal();if(typeof openScanModal==='function')openScanModal();">Anderes Produkt scannen</button>
       <button type="button" class="ghost-btn" style="color:#0284c7;border-color:#bae6fd;background:#f0f9ff;font-weight:600" onclick="openProductComparisonModal('${p.id}')">✨ Ähnliche Produkte &amp; Alternativen vergleichen</button>
       <button type="button" class="ghost-btn" onclick="${evalRes.skinTypeFit.category === 'teen' ? `openTeenProductDetail('${p.id}')` : (evalRes.skinTypeFit.category === 'baby' || evalRes.skinTypeFit.category === 'child' ? `openBabyProductDetail('${p.id}')` : `openProductDetail('${p.id}')`)}">Vollständige Produkt-Details ansehen ➔</button>
     </div>

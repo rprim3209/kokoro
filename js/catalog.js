@@ -3455,8 +3455,10 @@ function updateKatalogStatusUI() {
     badge.style.background = "#fef3c7";
     badge.style.color = "#92400e";
     badge.style.borderColor = "#fde68a";
-    badge.innerHTML = `<span style="color:#d97706">●</span> ${tr("Offline-Katalog (896)")}`;
-    badge.title = tr("file:// Modus: Eingebetteter Katalog aktiv. Klicke für Info zum lokalen Server.");
+    const offlineCount = (window.katalogStatus && window.katalogStatus.count) || 896;
+    const offlineLabel = tr("Katalog geladen · Live-Suche ggf. eingeschränkt") + " (" + offlineCount + ")";
+    badge.innerHTML = `<span style="color:#d97706">●</span> ${offlineLabel}`;
+    badge.title = tr("Katalog geladen · Live-Suche ggf. eingeschränkt");
   }
 }
 

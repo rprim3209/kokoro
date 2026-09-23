@@ -2288,6 +2288,7 @@ function showVerdict(prodId) {
         Tipp: Produkt speichern oder 2–3 Alltagsprodukte scannen — dann wird „Zum Schrank“ scharf. Scan bleibt frei.
       </div>` : "";
 
+  window._compatProduct = prod;
   showModalSheet(`
     <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">Scan-Ergebnis für:</div>
     <h2>${prod.brand} ${prod.name}</h2>
@@ -2317,27 +2318,26 @@ function showVerdict(prodId) {
 
     ${altsHTML}
 
-    <div style="margin-top:1.2rem;background:#fdfcf9;border:1px solid var(--line);border-radius:12px;padding:0.95rem">
-      <div style="font-weight:700;font-size:0.9rem;color:var(--ink);margin-bottom:0.3rem">
-        ${isFlaggedWithWarning ? '⚠️ Trotz der Hinweise in deine Routine übernehmen?' : '🎯 In deine Routine übernehmen:'}
+    <div style="margin-top:1.2rem;display:flex;flex-direction:column;gap:10px">
+      <button type="button" class="primary" style="width:100%;min-height:52px;font-size:1.08rem;font-weight:800;padding:14px 16px;border-radius:12px;margin-top:0;background:var(--ok,#0A3323)" onclick="window._compatProduct=(typeof resolveCabinetProduct==='function'?resolveCabinetProduct('${prod.id}'):null)||(typeof DB!=='undefined'?DB['${prod.id}']:null)||window._compatProduct;if(typeof placeScannedProductInCabinet==='function'){placeScannedProductInCabinet('${prod.id}');}else{addProductToSlot('${prod.id}', (appState&&appState.tab==='pm')?'pm':'am');}">
+        In meinen Schrank
+      </button>
+      <button type="button" class="primary" style="width:100%;min-height:52px;font-size:1.05rem;font-weight:800;padding:14px 16px;border-radius:12px;margin-top:0;background:#5c3e1e" onclick="closeModal();if(typeof openScanModal==='function')openScanModal();">
+        Anderes Produkt scannen
+      </button>
+      <div style="background:#fdfcf9;border:1px solid var(--line);border-radius:12px;padding:0.75rem">
+        <div style="font-weight:600;font-size:0.78rem;color:var(--muted);margin-bottom:0.45rem">
+          ${isFlaggedWithWarning ? 'Optional: Slot wählen' : 'Optional: Morgen oder Abend wählen'}
+        </div>
+        <div style="display:flex;gap:8px">
+          <button type="button" class="ghost-btn" style="flex:1;margin-top:0;font-size:0.82rem;padding:10px 8px" onclick="addProductToSlot('${prod.id}', 'am')">
+            + In Morgen-Routine
+          </button>
+          <button type="button" class="ghost-btn" style="flex:1;margin-top:0;font-size:0.82rem;padding:10px 8px" onclick="addProductToSlot('${prod.id}', 'pm')">
+            + In Abend-Routine
+          </button>
+        </div>
       </div>
-      <div style="font-size:0.79rem;color:var(--muted);margin-bottom:0.75rem;line-height:1.35">
-        ${isFlaggedWithWarning 
-          ? 'Du entscheidest selbst: Wenn deine Haut das Produkt gut verträgt, kannst du es direkt in die Morgen- oder Abend-Routine stellen.' 
-          : 'Wähle einfach, wann du das Produkt anwenden möchtest:'}
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="primary" style="flex:1;background:#204060;margin-top:0" onclick="addProductToSlot('${prod.id}', 'am')">
-          + In Morgen-Routine
-        </button>
-        <button class="primary" style="flex:1;background:#5c3e1e;margin-top:0" onclick="addProductToSlot('${prod.id}', 'pm')">
-          + In Abend-Routine
-        </button>
-      </div>
-    </div>
-
-    <div style="margin-top:0.6rem">
-      <button class="ghost-btn" onclick="closeModal()">Zurück zum Scanner</button>
     </div>
   `);
 }

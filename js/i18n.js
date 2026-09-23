@@ -580,6 +580,7 @@ Object.assign(I18N_EN, {
   "Verbunden: 985 Produkte live aus katalog-produkte.csv geladen. Kamera-Scanner aktiv.": "Connected: 985 products loaded live from katalog-produkte.csv. Camera scanner on.",
   "file:// Modus: Eingebetteter Katalog aktiv. Klicke für Info zum lokalen Server.": "file:// mode: embedded catalog active. Tap for local server info.",
   "Offline-Katalog (896)": "Offline catalog (896)",
+  "Katalog geladen · Live-Suche ggf. eingeschränkt": "Catalog loaded · live search may be limited",
   "Offline-Fallback-Modus": "Offline fallback mode",
   "Offline-Fallback (896 Produkte)": "Offline fallback (896 products)",
   "Live-Katalog & Server aktiv": "Live catalog & server active",
@@ -587,6 +588,10 @@ Object.assign(I18N_EN, {
   "Reiz-Budget: entspannt": "Irritation budget: relaxed",
   "Reiz-Budget: angespannt": "Irritation budget: tense",
   "Reiz-Budget: kritisch": "Irritation budget: critical",
+  "Layering-Check (Reiz)": "Layering check (irritation)",
+  "Grün — wenig starke Actives": "Green — few strong actives",
+  "Orange — viele starke Actives": "Orange — many strong actives",
+  "Orange — schon viele starke Actives": "Orange — already many strong actives",
   "Heuristik fuer Einkauf & Layering — keine Therapie.": "Heuristic for shopping & layering — not therapy.",
   "Noch keine starken Actives im Schrank — Budget frei.": "No strong actives in the cabinet yet — budget free.",
   "Starke Actives besser trennen oder wechseln.": "Better to separate or alternate strong actives.",
@@ -695,6 +700,9 @@ Object.assign(I18N_EN, {
   "WARUM:": "WHY:",
   "Übernehmen": "Adopt",
   "In meinen Schrank": "Into my cabinet",
+  "Anderes Produkt scannen": "Scan another product",
+  "Optional: Morgen oder Abend wählen": "Optional: choose morning or evening",
+  "Optional: Slot wählen": "Optional: choose a slot",
   "+ In Schrank stellen": "+ Put in cabinet",
   "+ Als Alternative": "+ As alternative",
   "Im Schrank": "In the cabinet",
@@ -794,6 +802,7 @@ function translateString(src) {
   // Pattern labels with numbers, then longer phrase map.
   var out = text
     .replace(/Offline-Katalog\s*\((\d+)\)/g, "Offline catalog ($1)")
+    .replace(/Katalog geladen · Live-Suche ggf\. eingeschränkt\s*\((\d+)\)/g, "Catalog loaded · live search may be limited ($1)")
     .replace(/Live-Katalog\s*\((\d+)\s*Produkte\)/g, "Live catalog ($1 products)")
     .replace(/Offline-Fallback\s*\((\d+)\s*Produkte\)/g, "Offline fallback ($1 products)")
     .replace(/\bNacht\s+(\d+)\s+·\s+Tag\s+(\d+)\s+\(Heuristik\)/g, "Night $1 · Day $2 (heuristic)")

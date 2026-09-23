@@ -2507,13 +2507,19 @@ function getReizBudgetSummary() {
   var level = "ok";
   if ((night && night.outcome === "konflikt") || (day && day.outcome === "konflikt")) level = "hot";
   else if ((night && night.outcome === "eher_nicht") || (day && day.outcome === "eher_nicht") || nightW >= 3 || dayW >= 4) level = "warn";
-  var label = level === "hot" ? "Reiz-Budget: kritisch" : (level === "warn" ? "Reiz-Budget: angespannt" : "Reiz-Budget: entspannt");
+  var title = "Layering-Check (Reiz)";
+  var label = level === "hot"
+    ? "Orange — viele starke Actives"
+    : (level === "warn"
+      ? "Orange — schon viele starke Actives"
+      : "Grün — wenig starke Actives");
   var tip = "Heuristik fuer Einkauf & Layering — keine Therapie.";
   if (level === "hot") tip = (night && night.reason) || (day && day.reason) || "Starke Actives besser trennen oder wechseln.";
   else if (level === "warn") tip = (day && day.reason) || (night && night.reason) || "Viel Active heute — Support & Abstand helfen.";
   else if (nightW === 0 && dayW === 0) tip = "Noch keine starken Actives im Schrank — Budget frei.";
   return {
     level: level,
+    title: title,
     label: label,
     tip: tip,
     nightWeight: nightW,
@@ -2528,11 +2534,13 @@ function renderReizBudgetCardHtml() {
   var bg = s.level === "hot" ? "#fef2f2" : (s.level === "warn" ? "#fff7ed" : "#ecfdf5");
   var bd = s.level === "hot" ? "#fecaca" : (s.level === "warn" ? "#fed7aa" : "#a7f3d0");
   var fg = s.level === "hot" ? "#991b1b" : (s.level === "warn" ? "#9a3412" : "#065f46");
+  var title = s.title || "Layering-Check (Reiz)";
   return '<div class="reiz-budget-card" style="margin:0.65rem 0 0.85rem;padding:10px 12px;border-radius:10px;border:1px solid ' + bd +
     ";background:" + bg + ";color:" + fg + '">' +
     '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center">' +
-    '<strong style="font-size:0.88rem">' + s.label + "</strong>" +
+    '<strong style="font-size:0.88rem">' + title + "</strong>" +
     '<span style="font-size:0.72rem;opacity:0.9">Nacht ' + s.nightWeight + " · Tag " + s.dayWeight + " (Heuristik)</span></div>" +
+    '<div style="font-size:0.84rem;font-weight:700;margin-top:5px;line-height:1.3">' + s.label + "</div>" +
     '<div style="font-size:0.78rem;margin-top:4px;line-height:1.35;color:var(--ink)">' + s.tip + "</div>" +
     '<div style="font-size:0.7rem;color:var(--muted);margin-top:4px">Keine Therapie — nur Layering-Hinweis.</div></div>';
 }
