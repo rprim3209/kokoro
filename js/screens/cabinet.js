@@ -177,7 +177,7 @@ function renderCategoryPrognosisBanner(prog, opts) {
         <span style="font-size:0.75rem;color:var(--muted);font-weight:600">0 ${countLabel}</span>
       </div>
       <ul class="prognosis-list">
-        <li>Füge Produkte hinzu oder tippe auf <strong>Beispiel</strong> — dann erscheint hier passt / eher nicht / Konflikt.</li>
+        <li data-i18n-full="Füge Produkte hinzu oder tippe auf Beispiel — dann erscheint hier passt / eher nicht / Konflikt.">Füge Produkte hinzu oder tippe auf <strong>Beispiel</strong> — dann erscheint hier passt / eher nicht / Konflikt.</li>
       </ul>
     </div>`;
   }

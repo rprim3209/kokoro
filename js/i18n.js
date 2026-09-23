@@ -626,6 +626,114 @@ Object.assign(I18N_EN, {
   "(Aktiv)": "(Active)",
 });
 
+
+// I18N_LANG5_BLOCK_START
+Object.assign(I18N_EN, {
+  // Empty-state / prognosis (incl. bold-split fragments)
+  "Füge Produkte hinzu oder tippe auf Beispiel — dann erscheint hier passt / eher nicht / Konflikt.": "Add products or tap Example — then fits / rather not / clash will show here.",
+  "Füge Produkte hinzu oder tippe auf ": "Add products or tap ",
+  "Beispiel": "Example",
+  " — dann erscheint hier passt / eher nicht / Konflikt.": " — then fits / rather not / clash will show here.",
+  "Ermittle deinen Hauttyp mit dem Quiz, wähle ihn direkt aus, lade eine Starter-Routine oder stelle deine eigenen Produkte hinein.": "Find your skin type with the quiz, pick it directly, load a starter routine, or put your own products in.",
+  "Ermittle deinen Hauttyp mit dem Teenie-Quiz, wähle ihn direkt aus, lade eine Teenie-Routine oder stelle deine Produkte zusammen.": "Find your skin type with the teen quiz, pick it directly, load a teen routine, or put your products together.",
+
+  // Empty-shelf buttons (with emoji as rendered)
+  "Hauttyp-Quiz machen": "Take the skin-type quiz",
+  "🔬 Hauttyp-Quiz machen": "🔬 Take the skin-type quiz",
+  "Hauttyp wählen": "Choose skin type",
+  "⚡ Hauttyp wählen": "⚡ Choose skin type",
+  "Starter-Routine laden": "Load starter routine",
+  "🎯 Starter-Routine laden": "🎯 Load starter routine",
+  "Barcode scannen": "Scan barcode",
+  "📷 Barcode scannen": "📷 Scan barcode",
+  "Teenie-Routine laden": "Load teen routine",
+  "🎯 Teenie-Routine laden": "🎯 Load teen routine",
+  "Kinder-Pflege-Quiz": "Child care quiz",
+  "🔬 Kinder-Pflege-Quiz": "🔬 Child care quiz",
+  "Pädiatrie-Leitlinie": "Pediatric guideline",
+  "Teenie-Leitlinie": "Teen guideline",
+  "+ Teenie-Produkt hinzufügen": "+ Add teen product",
+  "+ Produkt hinzufügen": "+ Add product",
+
+  // Typ-Regal tags / descriptions
+  "Rx / Akne / Sensibel": "Rx / acne / sensitive",
+  "Rx / Akne / Barriere": "Rx / acne / barrier",
+  "Sebum / Mitesser / Glanz": "Sebum / blackheads / shine",
+  "Spannung / Trockenheit / Schuppen": "Tightness / dryness / flakes",
+  "Spannung / Trockenheit": "Tightness / dryness",
+  "Gesunderhaltung & Glow": "Maintenance & glow",
+  "Glow / Prävention": "Glow / prevention",
+  "AAD Teenie-Leitlinie": "AAD teen guideline",
+  "Pädiatrie Kind (3-11J)": "Pediatrics child (ages 3–11)",
+  "Pädiatrie Baby (<3J)": "Pediatrics baby (<3 yrs)",
+  "Evidenzbasiert bei unreiner Haut, Pickeln, Rx-Therapie (Adapalen/Clienzo) oder empfindlicher Barriere. Sanfte Tenside, Rötungshemmung und Reparatur ohne komedogene Öle.": "Evidence-based for blemished skin, spots, Rx therapy (adapalene/Clienzo) or a fragile barrier. Gentle surfactants, redness control and repair without comedogenic oils.",
+  "Evidenzbasiert bei unreiner Haut, Pickeln, Rx-Therapie (Adapalen/Clienzo) oder empfindlicher Barriere.": "Evidence-based for blemished skin, spots, Rx therapy (adapalene/Clienzo) or a fragile barrier.",
+  "Sanfte Tenside, Rötungshemmung und Reparatur ohne komedogene Öle.": "Gentle surfactants, redness control and repair without comedogenic oils.",
+  "Für Haut mit Sebum-Überschuss, Mitessern und vergrößerten Poren. Fettlösliche Salicylsäure und talgregulierendes Niacinamid.": "For skin with excess sebum, blackheads and enlarged pores. Oil-soluble salicylic acid and sebum-regulating niacinamide.",
+  "Für trockene, schuppende oder leicht gerötete Haut, die spannt. Hohe Zufuhr von Ceramiden, Ectoin und regenerierenden Lipiden.": "For dry, flaky or slightly red skin that feels tight. High ceramides, ectoin and repairing lipids.",
+  "Evidenzbasierte Routine bei unreiner Haut, Pickeln, Rötungen oder empfindlicher Barriere.": "Evidence-based routine for blemished skin, spots, redness or a fragile barrier.",
+  "Akne & Barriere-Schutz": "Acne & barrier protection",
+  "Akne & Barriere-Schutz (Rx)": "Acne & barrier protection (Rx)",
+  "Ölig & Poren-Balance": "Oily & pore balance",
+
+  // Shelf compare cards
+  "Dein Schrank": "Your cabinet",
+  "DEIN SCHRANK": "YOUR CABINET",
+  "Fach ist leer (Lücke)": "Slot is empty (gap)",
+  "Fach ist leer": "Slot is empty",
+  "Kein Produkt für diesen Schritt": "No product for this step",
+  "Sinnvoll:": "Useful:",
+  "SINNVOLL:": "USEFUL:",
+  "Warum:": "Why:",
+  "WARUM:": "WHY:",
+  "+ In Schrank stellen": "+ Put in cabinet",
+  "+ Als Alternative": "+ As alternative",
+  "Im Schrank": "In the cabinet",
+  "Komplett abgedeckt": "Fully covered",
+  "✓ Komplett abgedeckt": "✓ Fully covered",
+  "Alle Lücken füllen": "Fill all gaps",
+  "Lücken füllen": "Fill gaps",
+  "2. Rötungshemmung": "2. Redness control",
+  "Rötungshemmung": "Redness control",
+  "RÖTUNGSHEMMUNG": "REDNESS CONTROL",
+  "2. Hydratisieren": "2. Hydrate",
+  "3. Wirkstoff": "3. Active",
+  "4. Barrierecreme": "4. Barrier cream",
+  "3. Barrierecreme": "3. Barrier cream",
+  "3. Nachtpflege": "3. Night care",
+  "2. Nacht-Active": "2. Night active",
+  "2. Akut-Active": "2. Spot active",
+  "2. SOS-Hydrator": "2. SOS hydrator",
+  "3. SOS-Balsam": "3. SOS balm",
+  "2. Hydratisieren & Pflegen": "2. Hydrate & care",
+  "PAD (Azelain-Derivat): Beruhigt Entzündungen reizarm.": "PAD (azelaic derivative): calms inflammation gently.",
+  "Beruhigt Entzündungen reizarm.": "Calms inflammation gently.",
+  "Tensid-mild & parfümfrei – greift die Säureschutzschicht nicht an.": "Mild surfactants & fragrance-free — does not strip the acid mantle.",
+  "Breitband-Schutz verhindert postinflammatorische Pickelmale (PIH).": "Broad-spectrum protection helps prevent post-inflammatory marks (PIH).",
+  "Porentiefe, reizarme Reinigung.": "Deep but gentle pore cleansing.",
+  "BPO 5% bekämpft Entzündungen direkt.": "BPO 5% targets inflammation directly.",
+  "Cica schützt vor BPO-Austrocknung.": "Cica protects against BPO dryness.",
+  "Reizarme Reinigung für die Ruhe-Nacht.": "Low-irritant cleanse for a rest night.",
+  "Panthenol zur Milderung von Spannungsgefühl.": "Panthenol to ease tightness.",
+  "13% Glycerin + Panthenol versiegelt die Haut.": "13% glycerin + panthenol seals the skin.",
+  "Entfernt Schweiß, Talg und LSF sanft.": "Gently removes sweat, sebum and SPF.",
+  "Medizinisches Retinoid: Normalisiert die Zellteilung in der Pore.": "Medical retinoid: normalises cell turnover in the pore.",
+  "Cica & Panthenol verhindern Reizungen.": "Cica & panthenol help prevent irritation.",
+  "Schont die empfindliche Barriere.": "Protects the fragile barrier.",
+  "Ectoin & Feuchtigkeitsfaktoren binden Wasser in der Hornschicht.": "Ectoin & humectants bind water in the stratum corneum.",
+  "Höchster UVA-Schutz mit nährender Textur.": "High UVA protection with a nourishing texture.",
+  "Milde Reinigung ohne Schaum-Aggression.": "Mild cleanse without harsh foaming.",
+  "Sorgt für elastischen Glow & pralle Frische.": "Supports elastic glow and plump freshness.",
+  "Breitband-UV-Schutz als #1 Prävention gegen Hautalterung.": "Broad-spectrum UV protection as #1 prevention against ageing.",
+  "Feste Abend-Routine": "Fixed evening routine",
+  "(gleiche Pflege jeden Abend)": "(same care every evening)",
+  "Wechsel-Abende einrichten": "Set up alternating evenings",
+  "🔀 Wechsel-Abende einrichten": "🔀 Set up alternating evenings",
+  "im Wechsel": "alternating",
+  "🟡 im Wechsel": "🟡 alternating",
+});
+// I18N_LANG5_BLOCK_END
+
 function currentLang() {
   try {
     return localStorage.getItem("kokoro-lang") === "en" ? "en" : "de";
@@ -635,6 +743,7 @@ function currentLang() {
 }
 
 var i18nPhraseKeys = null;
+i18nPhraseKeys = null; // rebuild after late Object.assign blocks
 function i18nKeys() {
   if (!i18nPhraseKeys) {
     i18nPhraseKeys = Object.keys(I18N_EN).sort(function (a, b) { return b.length - a.length; });
@@ -665,10 +774,21 @@ function translateString(src) {
     .replace(/\b1\s+Flasche\b/g, "1 bottle")
     .replace(/(\d+)\s+Produkte\b/g, "$1 products")
     .replace(/\b1\s+Produkt\b/g, "1 product");
+  // Extra chrome patterns (dynamic counts / prefixes)
+  out = out
+    .replace(/Alle\s+(\d+)\s+Lücken füllen/g, "Fill all $1 gaps")
+    .replace(/Alle Lücken füllen\s*\((\d+)\)/g, "Fill all gaps ($1)")
+    .replace(/⚡\s*Alle\s+(\d+)\s+Lücken füllen/g, "⚡ Fill all $1 gaps");
   var keys = i18nKeys();
   for (var i = 0; i < keys.length; i++) {
     var key = keys[i];
-    if (key.length < 10) continue;
+    // Exact full-string match already handled above. For in-string replace:
+    // allow long phrases, or short chrome labels (end with : / ·, or multi-word ≥4).
+    if (key.length < 4) continue;
+    if (key.length < 10) {
+      var shortOk = /[:·]\s*$/.test(key) || /\s/.test(key);
+      if (!shortOk) continue;
+    }
     if (out.indexOf(key) === -1) continue;
     out = out.split(key).join(I18N_EN[key]);
   }
@@ -688,11 +808,36 @@ function applyI18n(root) {
     var parent = textNode.parentElement;
     if (!parent) return;
     if (parent.closest && parent.closest("[data-i18n-skip]")) return;
+    if (parent.closest && parent.closest("[data-i18n-full]")) return;
     var tag = parent.tagName;
     if (tag === "SCRIPT" || tag === "STYLE") return;
     if (!i18nOriginalText.has(textNode)) i18nOriginalText.set(textNode, textNode.nodeValue);
     var src = i18nOriginalText.get(textNode);
     textNode.nodeValue = en ? translateString(src) : src;
+  });
+  // Full-sentence keys on elements whose text is split by nested tags (e.g. <strong>)
+  root.querySelectorAll("[data-i18n-full]").forEach(function (el) {
+    if (el.closest && el.closest("[data-i18n-skip]")) return;
+    var fullKey = el.getAttribute("data-i18n-full");
+    if (!fullKey) return;
+    if (!el.dataset.i18nFullHtml) el.dataset.i18nFullHtml = el.innerHTML;
+    if (!en) {
+      el.innerHTML = el.dataset.i18nFullHtml;
+      return;
+    }
+    var translated = translateString(fullKey);
+    // Preserve a single <strong>…</strong> wrapper around the mapped bold word when present in the original HTML.
+    var boldSrc = "";
+    var m = el.dataset.i18nFullHtml.match(/<strong>([^<]*)<\/strong>/i);
+    if (m) boldSrc = m[1];
+    var boldEn = boldSrc && I18N_EN[boldSrc] ? I18N_EN[boldSrc] : boldSrc;
+    if (boldSrc && boldEn && translated.indexOf(boldEn) !== -1) {
+      el.innerHTML = translated.replace(boldEn, "<strong>" + boldEn + "</strong>");
+    } else if (boldSrc && translated.indexOf(boldSrc) !== -1) {
+      el.innerHTML = translated.replace(boldSrc, "<strong>" + boldSrc + "</strong>");
+    } else {
+      el.innerHTML = translated;
+    }
   });
   root.querySelectorAll("[placeholder], [title], [aria-label]").forEach(function (el) {
     if (el.closest && el.closest("[data-i18n-skip]")) return;
