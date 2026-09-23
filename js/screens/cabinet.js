@@ -402,8 +402,14 @@ function renderBabyCabinet(container) {
   if (allBabyProds.length === 0) {
     html += `
       <div class="empty-shelf" style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #bfdbfe;border-radius:14px;margin:0.8rem 0 1.2rem">
-        <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">👶</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Baby-Schrank ist noch leer</div>
+        <div class="empty-shelf-illust" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 7.5h10v3.2c2.2.9 3.5 2.9 3.5 5.3V38a4.5 4.5 0 0 1-4.5 4.5h-8A4.5 4.5 0 0 1 15.5 38V15.9c0-2.4 1.3-4.4 3.5-5.3V7.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M19 7.5c0-1.8 2.2-3 5-3s5 1.2 5 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M17.5 21.5h13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="empty-shelf-title">Dein Baby-Schrank ist noch leer</div>
         <div class="empty-shelf-text" style="max-width:440px;margin:4px auto 16px">
           Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.
         </div>
@@ -564,8 +570,14 @@ function renderChildCabinet(container) {
   if (allChildProds.length === 0) {
     html += `
       <div class="empty-shelf" style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #fde68a;border-radius:14px;margin:0.8rem 0 1.2rem">
-        <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">🧒</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Kinder-Schrank ist noch leer</div>
+        <div class="empty-shelf-illust" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 7.5h10v3.2c2.2.9 3.5 2.9 3.5 5.3V38a4.5 4.5 0 0 1-4.5 4.5h-8A4.5 4.5 0 0 1 15.5 38V15.9c0-2.4 1.3-4.4 3.5-5.3V7.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M19 7.5c0-1.8 2.2-3 5-3s5 1.2 5 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M17.5 21.5h13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="empty-shelf-title">Dein Kinder-Schrank ist noch leer</div>
         <div class="empty-shelf-text" style="max-width:440px;margin:4px auto 16px">
           Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.
         </div>
@@ -790,8 +802,14 @@ function renderTeenCabinet(container) {
   if (allTeenProds.length === 0) {
     html += `
       <div class="empty-shelf" style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #99f6e4;border-radius:14px;margin:0.8rem 0 1.2rem">
-        <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">🧑‍🦱</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein Teenie-Schrank ist noch leer</div>
+        <div class="empty-shelf-illust" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 7.5h10v3.2c2.2.9 3.5 2.9 3.5 5.3V38a4.5 4.5 0 0 1-4.5 4.5h-8A4.5 4.5 0 0 1 15.5 38V15.9c0-2.4 1.3-4.4 3.5-5.3V7.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M19 7.5c0-1.8 2.2-3 5-3s5 1.2 5 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M17.5 21.5h13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="empty-shelf-title">Dein Teenie-Schrank ist noch leer</div>
         <div class="empty-shelf-text" style="max-width:440px;margin:4px auto 16px">
           Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.
         </div>
@@ -1305,8 +1323,14 @@ function renderMain(autoSave = true) {
   if (currentList.length === 0) {
     html += `
       <div class="empty-shelf" style="text-align:center;padding:1.8rem 1.2rem;background:#fffdf9;border:1.5px dashed #cbd5e1;border-radius:14px;margin:0.8rem 0 1.2rem">
-        <div style="font-size:2.2rem;line-height:1;margin-bottom:8px">🧴</div>
-        <div style="font-weight:700;font-size:1.05rem;color:var(--ink)">Dein ${isAM ? 'Morgen-Schrank' : 'Abend-Schrank'} ist noch leer</div>
+        <div class="empty-shelf-illust" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 7.5h10v3.2c2.2.9 3.5 2.9 3.5 5.3V38a4.5 4.5 0 0 1-4.5 4.5h-8A4.5 4.5 0 0 1 15.5 38V15.9c0-2.4 1.3-4.4 3.5-5.3V7.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M19 7.5c0-1.8 2.2-3 5-3s5 1.2 5 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M17.5 21.5h13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="empty-shelf-title">Dein ${isAM ? 'Morgen-Schrank' : 'Abend-Schrank'} ist noch leer</div>
         <div class="empty-shelf-text" style="max-width:440px;margin:4px auto 16px">
           Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.
         </div>
