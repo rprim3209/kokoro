@@ -777,9 +777,9 @@ function renderTypRegal(tab, currentList) {
                   </div>
                   <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:3px">
                     <span style="font-size:0.68rem;font-weight:600;color:var(--ok)">${idealP.store || 'dm / Drogerie'}</span>
-                    ${idealP.ff ? '<span class="tag ff" style="font-size:0.62rem;padding:0 4px">🌸 FF</span>' : ''}
-                    ${idealP.nc ? '<span class="tag nc" style="font-size:0.62rem;padding:0 4px">🛡️ NC</span>' : ''}
-                    ${idealP.cf ? '<span class="tag cf" style="font-size:0.62rem;padding:0 4px">🐰 CF</span>' : ''}
+                    ${idealP.ff ? '<span class="tag ff" style="font-size:0.62rem;padding:0 4px">🌸 parfümfrei</span>' : ''}
+                    ${idealP.nc ? '<span class="tag nc" style="font-size:0.62rem;padding:0 4px">🛡️ nicht komedogen</span>' : ''}
+                    ${idealP.cf ? '<span class="tag cf" style="font-size:0.62rem;padding:0 4px">🐰 duftstoffarm</span>' : ''}
                   </div>
                 </div>
               </div>
@@ -2061,8 +2061,8 @@ function renderBudgetRoutineModalContent() {
               </div>
               <div style="display:flex;gap:4px;margin-top:4px">
                 ${p.ff === true ? '<span class="tag ff" style="font-size:0.62rem;padding:0 4px">🌸 Parfümfrei</span>' : ''}
-                ${p.nc === true ? '<span class="tag nc" style="font-size:0.62rem;padding:0 4px">🛡️ NC</span>' : ''}
-                ${p.cf === true ? '<span class="tag cf" style="font-size:0.62rem;padding:0 4px">🐰 CF</span>' : ''}
+                ${p.nc === true ? '<span class="tag nc" style="font-size:0.62rem;padding:0 4px">🛡️ nicht komedogen</span>' : ''}
+                ${p.cf === true ? '<span class="tag cf" style="font-size:0.62rem;padding:0 4px">🐰 duftstoffarm</span>' : ''}
               </div>
             </div>
             <div style="text-align:right;flex-shrink:0">

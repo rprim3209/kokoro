@@ -127,6 +127,31 @@ function profileTagClass(t) {
   return "";
 }
 
+
+function compactProfileCategoryLabel(cat) {
+  var c = cat || (typeof appState !== "undefined" && appState && appState.profile) || "adult";
+  if (c === "teen") return "Teenie";
+  if (c === "child") return "Kind";
+  if (c === "baby") return "Baby";
+  return "Erwachsen";
+}
+
+/** Map acne/barrier tags & subtitles to compact German concern shorts (P1). */
+function compactProfileConcernShort(tags, subtitle) {
+  var parts = [];
+  if (Array.isArray(tags)) {
+    for (var i = 0; i < tags.length; i++) parts.push(String(tags[i] || ""));
+  }
+  if (subtitle) parts.push(String(subtitle));
+  var blob = parts.join(" · ");
+  var acne = /akne|unrein|pickel|acne|blemish|comed|mitesser/i.test(blob);
+  var barrier = /barriere|barrier/i.test(blob);
+  if (acne && barrier) return "Unreinheiten & Barriere";
+  if (acne) return "Unreinheiten";
+  if (barrier) return "Barriere";
+  return "";
+}
+
 function renderCompactProfileBarHtml(opts) {
   opts = opts || {};
   var title = opts.title || "Dein Hautprofil";
@@ -137,7 +162,21 @@ function renderCompactProfileBarHtml(opts) {
   var expanded = !!(typeof window !== "undefined" && window._profileTagsExpanded);
   var show = expanded || tags.length <= maxShow ? tags : tags.slice(0, maxShow);
   var hidden = Math.max(0, tags.length - show.length);
-  var chips = show.map(function (t) {
+  var catLabel = opts.categoryLabel || compactProfileCategoryLabel(opts.category);
+  var concernShort = (opts.concernShort != null)
+    ? opts.concernShort
+    : compactProfileConcernShort(
+        tags,
+        opts.subtitle || (typeof getProfileSubtitle === "function"
+          ? getProfileSubtitle(opts.category || (typeof appState !== "undefined" && appState && appState.profile) || "adult")
+          : "")
+      );
+  var chips = "";
+  chips += '<span class="tag profile-chip profile-chip-cat">' + String(catLabel).replace(/</g, "&lt;") + "</span>";
+  if (concernShort) {
+    chips += '<span class="tag profile-chip profile-chip-concern">' + String(concernShort).replace(/</g, "&lt;") + "</span>";
+  }
+  chips += show.map(function (t) {
     var cls = profileTagClass(t);
     return '<span class="tag profile-chip ' + cls + '">' + String(t).replace(/</g, "&lt;") + "</span>";
   }).join("");
@@ -329,6 +368,7 @@ function renderBabyCabinet(container) {
   let html = `
         ${renderCompactProfileBarHtml({
       title: "Baby- & Kleinkindpflege",
+      category: "baby",
       tags: ["Baby <3 Jahre", "100% Parfümfrei-Prio", "EU VO 1223/2009"],
       accent: "#2563eb",
       maxShow: 3,
@@ -491,6 +531,7 @@ function renderChildCabinet(container) {
   let html = `
         ${renderCompactProfileBarHtml({
       title: "Kinderpflege",
+      category: "child",
       tags: (appState.tags && appState.tags.length ? appState.tags.slice() : ["Kind 3-11"]),
       accent: "#d97706",
       actionsHtml: `
@@ -717,6 +758,7 @@ function renderTeenCabinet(container) {
   let html = `
         ${renderCompactProfileBarHtml({
       title: "Teenie-Hautprofil",
+      category: "teen",
       tags: appState.tags && appState.tags.length ? appState.tags : ["Teenie", "Basis & Akne"],
       accent: "#0d9488",
       actionsHtml: `
@@ -791,7 +833,7 @@ function renderTeenCabinet(container) {
                 if (ca && (ca.flagged.length > 0 || p.inci)) {
                   return `<span class="tag" style="font-size:0.65rem;padding:1px 5px;background:${ca.badgeColor};color:${ca.textColor};border:1px solid ${ca.borderColor}" title="${ca.summary}">🛡️ Score ${ca.maxScore}/5</span>`;
                 }
-                return p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px">🛡️ NC</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ NC offen</span>');
+                return p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px">🛡️ nicht komedogen</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ nicht komedogen offen</span>');
               })()}
               ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ CF offen</span>')}
               ${p.notForMinors ? '<span class="tag" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;font-size:0.66rem;padding:1px 5px">🛑 Kein Teen-Vorschlag</span>' : ''}
@@ -1151,6 +1193,7 @@ function renderMain(autoSave = true) {
   let html = `
         ${renderCompactProfileBarHtml({
       title: "Dein Hautprofil",
+      category: "adult",
       tags: appState.tags,
       accent: "#0A3323",
       actionsHtml: `
@@ -1305,7 +1348,7 @@ function renderMain(autoSave = true) {
           <div class="step-info">
             <div class="step-cat">${catLabel}</div>
             <div class="step-prod-name" style="font-size:0.92rem;font-weight:700;color:var(--ink);margin:1px 0 2px">${p.name}</div>
-            <div class="step-active-desc">Marke: <strong>${p.brand || ""}</strong> · Wirkstoff: <strong>${(typeof p.wirk === "string" ? p.wirk : ((typeof formatLivePrice === "function" ? formatLivePrice(p.wirk) : "") || (typeof p.price === "string" ? p.price : ((typeof formatLivePrice === "function" ? formatLivePrice(p.price) : "") || ""))))}</strong> ${p.rx ? '<span class="tag rx">Rx-Arzneimittel</span>' : ''}</div>
+            <div class="step-active-desc">Marke: <strong>${p.brand || ""}</strong> · Wirkstoff: <strong>${(typeof p.wirk === "string" ? p.wirk : ((typeof formatLivePrice === "function" ? formatLivePrice(p.wirk) : "") || (typeof p.price === "string" ? p.price : ((typeof formatLivePrice === "function" ? formatLivePrice(p.price) : "") || ""))))}</strong> ${p.rx ? '<span class="tag rx">Rx (nur mit ärztlicher Vorgabe)</span>' : ''}</div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
               ${flagBadge}
               ${classChips}
@@ -1315,7 +1358,7 @@ function renderMain(autoSave = true) {
                 if (ca && (ca.flagged.length > 0 || p.inci)) {
                   return `<span class="tag" style="font-size:0.65rem;padding:1px 5px;background:${ca.badgeColor};color:${ca.textColor};border:1px solid ${ca.borderColor}" title="${ca.summary}">🛡️ Score ${ca.maxScore}/5</span>`;
                 }
-                return p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px" title="Nicht-komedogen ausgelobt">🛡️ NC</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Nicht als komedogenarm ausgewiesen">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px" title="Keine offizielle Herstellerangabe zur Komedogenität im Online-Katalog hinterlegt">ℹ️ NC offen</span>');
+                return p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px" title="Nicht-komedogen ausgelobt">🛡️ nicht komedogen</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Nicht als komedogenarm ausgewiesen">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px" title="Keine offizielle Herstellerangabe zur Komedogenität im Online-Katalog hinterlegt">ℹ️ nicht komedogen offen</span>');
               })()}
               ${p.cf === true ? '<span class="tag cf" style="font-size:0.66rem;padding:1px 5px" title="Zertifiziert tierversuchsfrei (CFI/Leaping Bunny)">🐰 Cruelty-Free</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Keine Verbandszertifizierung hinterlegt">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px" title="Kein Verbandssiegel (CFI/Leaping Bunny) im Online-Katalog hinterlegt">ℹ️ CF offen</span>')}
               ${p.no_white_cast === true ? '<span class="tag soc-nwc" style="font-size:0.66rem;padding:1px 5px" title="Hinterlässt keinen weißen Kreideschleier">✨ Zero White-Cast</span>' : ''}
@@ -1710,7 +1753,7 @@ function openGuardModal() {
 
   const lead = (isRx || hasRxProd)
     ? "Du hast <strong>Begleitpflege / ein Rx-Mittel</strong> aktiv. Medizinische Akne-Wirkstoffe (z.&nbsp;B. Adapalen / BPO) können die Barriere vorübergehend empfindlicher machen — die App filtert dann schärfer beim Einkauf & Layering."
-    : "Der <strong>Schrank-Wächter</strong> prüft Konflikte in deiner Routine (gleiche Wirkstoffklasse, Stacking, fehlender LSF). <strong>Begleitpflege</strong> schaltet du im Quiz oder im Rx-Wegweiser dazu — dann wird bei Duft & starken Säuren strenger gefiltert.";
+    : "Die <strong>Kurzanleitung</strong> erklärt Konflikte in deiner Routine (gleiche Wirkstoffklasse, Stacking, fehlender LSF). <strong>Begleitpflege</strong> schaltet du im Quiz oder im Rx-Wegweiser dazu — dann wird bei Duft & starken Säuren strenger gefiltert.";
 
   showModalSheet(`
     <h2>🛡️ Was bedeutet Begleitpflege-Schutz?</h2>
@@ -2025,7 +2068,9 @@ function openMarketGuideModal() {
 if (typeof window !== "undefined") {
   window.openCabinet = openCabinet;
   window.renderMain = renderMain;
-  window.renderCompactProfileBarHtml = renderCompactProfileBarHtml;
+  window.compactProfileCategoryLabel = compactProfileCategoryLabel;
+window.compactProfileConcernShort = compactProfileConcernShort;
+window.renderCompactProfileBarHtml = renderCompactProfileBarHtml;
   window.toggleProfileTagsExpanded = toggleProfileTagsExpanded;
   window.renderBottle = renderBottle;
   window.startWithEmptyCabinet = startWithEmptyCabinet;

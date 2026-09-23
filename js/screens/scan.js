@@ -621,7 +621,7 @@ function openAddTeenProductModal(targetSlot = "all") {
             <div style="font-weight:600;font-size:0.88rem;color:var(--ink);line-height:1.25;margin:2px 0">${p.name}</div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
               ${p.ff === true ? '<span class="tag ff" style="font-size:0.64rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.64rem;padding:1px 5px">⚠️ Parfümiert</span>' : '')}
-              ${p.nc === true ? '<span class="tag nc" style="font-size:0.64rem;padding:1px 5px">🛡️ NC</span>' : ''}
+              ${p.nc === true ? '<span class="tag nc" style="font-size:0.64rem;padding:1px 5px">🛡️ nicht komedogen</span>' : ''}
               ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.64rem;padding:1px 5px">🐰 Cruelty-Free</span>' : ''}
               ${p.notForMinors ? '<span class="tag" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;font-size:0.64rem;padding:1px 5px">🛑 Anti-Aging / Nicht für Minderjährige</span>' : ''}
               ${p.ean ? `<span style="font-size:0.64rem;color:#888;background:#f5f0e6;padding:1px 4px;border-radius:4px">EAN ${p.ean}</span>` : ''}
@@ -1061,8 +1061,8 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
                 </div>
                 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
                   ${p.ff === true ? '<span class="tag ff" style="font-size:0.65rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.65rem;padding:1px 5px">⚠️ Parfümiert</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ Duftstoffe offen</span>')}
-                  ${p.nc === true ? '<span class="tag nc" style="font-size:0.65rem;padding:1px 5px">🛡️ NC</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.65rem;padding:1px 5px">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ NC offen</span>')}
-                  ${p.cf === true ? '<span class="tag cf" style="font-size:0.65rem;padding:1px 5px">🐰 CF</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.65rem;padding:1px 5px">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ CF offen</span>')}
+                  ${p.nc === true ? '<span class="tag nc" style="font-size:0.65rem;padding:1px 5px">🛡️ nicht komedogen</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.65rem;padding:1px 5px">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ nicht komedogen offen</span>')}
+                  ${p.cf === true ? '<span class="tag cf" style="font-size:0.65rem;padding:1px 5px">🐰 duftstoffarm</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.65rem;padding:1px 5px">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ CF offen</span>')}
                   ${p.no_white_cast === true ? '<span class="tag soc-nwc" style="font-size:0.65rem;padding:1px 5px">✨ Zero White-Cast</span>' : ''}
                   ${p.iron_ox === true ? '<span class="tag soc-iron" style="font-size:0.65rem;padding:1px 5px">🛡️ Eisenoxide</span>' : ''}
                   ${p.pih === true ? '<span class="tag soc-pih" style="font-size:0.65rem;padding:1px 5px">🎯 PIH</span>' : ''}
@@ -1905,8 +1905,8 @@ function openScanModal() {
               <div style="font-size:0.74rem;color:var(--muted)">
                 ${p.price ? `<span style="color:#16a34a;font-weight:700">${(typeof formatLivePrice==="function"?escapeHtml(formatLivePrice(p.price)||""):(typeof p.price==="object"?"":escapeHtml(p.price||"")))}</span> · ` : ''}
                 ${p.ff === true ? '<span style="color:#16a34a;font-weight:600">🌸 Parfümfrei</span> · ' : (p.ff === false ? '<span style="color:#d97706">⚠️ Parfüm</span> · ' : '')}
-                ${p.nc === true ? '<span style="color:#2563eb;font-weight:600">🛡️ NC</span> · ' : ''}
-                ${p.cf === true ? '<span style="color:#6b21a8;font-weight:600">🐰 CF</span> · ' : ''}
+                ${p.nc === true ? '<span style="color:#2563eb;font-weight:600">🛡️ nicht komedogen</span> · ' : ''}
+                ${p.cf === true ? '<span style="color:#6b21a8;font-weight:600">🐰 duftstoffarm</span> · ' : ''}
                 <span style="color:#64748b">${escapeHtml(p.retailerLabel || p.store || 'Drogerie')}</span>
               </div>
             </div>
@@ -1979,8 +1979,8 @@ function openScanModal() {
 
         if (p.ff === false) badges.push('<span class="tag warn" style="font-size:0.65rem;padding:1px 4px">⚠️ Parfüm</span>');
         else if (p.ff === true) badges.push('<span class="tag ff" style="font-size:0.65rem;padding:1px 4px">🌸 Parfümfrei</span>');
-        if (p.nc === true) badges.push('<span class="tag nc" style="font-size:0.65rem;padding:1px 4px">🛡️ NC</span>');
-        if (p.cf === true) badges.push('<span class="tag cf" style="font-size:0.65rem;padding:1px 4px">🐰 CF</span>');
+        if (p.nc === true) badges.push('<span class="tag nc" style="font-size:0.65rem;padding:1px 4px">🛡️ nicht komedogen</span>');
+        if (p.cf === true) badges.push('<span class="tag cf" style="font-size:0.65rem;padding:1px 4px">🐰 duftstoffarm</span>');
 
         const clickAction = m.type === "teen" ? `openTeenProductDetail('${p.id}')` : (m.type === "baby" ? `openBabyProductDetail('${p.id}')` : `showVerdict('${p.id}')`);
 
@@ -2037,7 +2037,7 @@ function openCustomProductModal(initialQuery = "") {
       <div>
         <label style="font-size:0.78rem;font-weight:700;color:var(--ink)">Marke / Hersteller</label>
         <input type="text" id="custBrand" class="search-input" placeholder="z. B. Balea Med, CeraVe, Garnier, Cien, The Inkey List..." style="margin-top:3px" oninput="window.onCustBrandInput(this.value)">
-        <div id="custCfiNotice" style="display:none;margin-top:4px;font-size:0.75rem;color:#6b21a8;font-weight:600">🐰 CFI Leaping Bunny genehmigte Marke erkannt!</div>
+        <div id="custCfiNotice" style="display:none;margin-top:4px;font-size:0.75rem;color:#6b21a8;font-weight:600">🐰 duftstoffarmI Leaping Bunny genehmigte Marke erkannt!</div>
       </div>
 
       <div>
@@ -2477,7 +2477,7 @@ function openProductDetail(prodId) {
     <div class="alt-title">Produktdetails & Kriterien-Prüfung</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem">
       <span class="tag ${p.rx ? 'rx' : ''}">${p.rx ? 'Verschreibungspflichtig (Rx)' : 'Kosmetik frei'}</span>
-      ${p.nc === true ? '<span class="tag nc">🛡️ Nicht-Komedogen Claim</span>' : (p.nc === false ? '<span class="tag warn">⚠️ Nicht als komedogenarm ausgewiesen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa" title="Kein offizieller Nicht-komedogen-Claim im Katalog deklariert">ℹ️ NC offen</span>')}
+      ${p.nc === true ? '<span class="tag nc">🛡️ Nicht-Komedogen Claim</span>' : (p.nc === false ? '<span class="tag warn">⚠️ Nicht als komedogenarm ausgewiesen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa" title="Kein offizieller Nicht-komedogen-Claim im Katalog deklariert">ℹ️ nicht komedogen offen</span>')}
       ${p.ff === true ? '<span class="tag ff">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn">⚠️ Enthält Parfüm/Duftstoffe</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa" title="Keine verifizierten Angaben zur Parfümierung im Online-Katalog hinterlegt">ℹ️ Duftstoffe offen</span>')}
       ${p.cf === true ? `<span class="tag cf">🐰 Cruelty-Free (${p.cf_basis || 'CFI / Leaping Bunny'})</span>` : (p.cf === false ? '<span class="tag warn">⚠️ Kein CF-Nachweis</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0" title="Standard EU-Tierversuchsverbot erfüllt, kein gesondertes Verbandssiegel">ℹ️ CF offen / EU-Standard</span>')}
       ${isLive ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-weight:700">⚠️ Live-Katalog</span>' : ''}
@@ -2672,8 +2672,8 @@ function openProductComparisonModal(originalId, candidateId) {
             <div style="font-size:0.7rem;color:var(--muted);margin-bottom:4px">${escapeHtml(prodA.store || 'Handel')}</div>
             <div style="display:flex;gap:3px;flex-wrap:wrap">
               ${prodA.ff === true ? '<span class="tag ff" style="font-size:0.6rem;padding:1px 4px">🌸 PF</span>' : (prodA.ff === false ? '<span class="tag warn" style="font-size:0.6rem;padding:1px 4px">⚠️ Parfüm</span>' : '')}
-              ${prodA.nc === true ? '<span class="tag nc" style="font-size:0.6rem;padding:1px 4px">🛡️ NC</span>' : ''}
-              ${prodA.cf === true ? '<span class="tag cf" style="font-size:0.6rem;padding:1px 4px">🐰 CF</span>' : ''}
+              ${prodA.nc === true ? '<span class="tag nc" style="font-size:0.6rem;padding:1px 4px">🛡️ nicht komedogen</span>' : ''}
+              ${prodA.cf === true ? '<span class="tag cf" style="font-size:0.6rem;padding:1px 4px">🐰 duftstoffarm</span>' : ''}
             </div>
           </div>
         </div>
@@ -2691,8 +2691,8 @@ function openProductComparisonModal(originalId, candidateId) {
             <div style="font-size:0.7rem;color:var(--muted);margin-bottom:4px">${escapeHtml(prodB.store || 'Drogerie')}</div>
             <div style="display:flex;gap:3px;flex-wrap:wrap">
               ${prodB.ff === true ? '<span class="tag ff" style="font-size:0.6rem;padding:1px 4px">🌸 PF</span>' : (prodB.ff === false ? '<span class="tag warn" style="font-size:0.6rem;padding:1px 4px">⚠️ Parfüm</span>' : '')}
-              ${prodB.nc === true ? '<span class="tag nc" style="font-size:0.6rem;padding:1px 4px">🛡️ NC</span>' : ''}
-              ${prodB.cf === true ? '<span class="tag cf" style="font-size:0.6rem;padding:1px 4px">🐰 CF</span>' : ''}
+              ${prodB.nc === true ? '<span class="tag nc" style="font-size:0.6rem;padding:1px 4px">🛡️ nicht komedogen</span>' : ''}
+              ${prodB.cf === true ? '<span class="tag cf" style="font-size:0.6rem;padding:1px 4px">🐰 duftstoffarm</span>' : ''}
             </div>
           </div>
         </div>

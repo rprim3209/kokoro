@@ -121,7 +121,7 @@ function renderStartScreen(container) {
 
   const catMeta = {
     adult: {
-      name: "Erwachsener",
+      name: "Erwachsen",
       icon: "👤",
       focus: "Akne, Barriere-Support & Skin Cycling (Adapalen / BPO / Actives)"
     },
@@ -189,7 +189,7 @@ function renderStartScreen(container) {
 
         <div class="start-pills-row">
           <button type="button" class="start-pill-btn ${currentProf === 'adult' ? 'active' : ''}" onclick="selectStartCategory('adult')">
-            👤 Erwachsener
+            👤 Erwachsen
           </button>
           <button type="button" class="start-pill-btn ${currentProf === 'teen' ? 'active pill-teen' : ''}" onclick="selectStartCategory('teen')">
             🧑‍🦱 Teenie

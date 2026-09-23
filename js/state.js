@@ -14,7 +14,7 @@ let appState = {
   childComplexity: "basis",
   teenComplexity: "basis",
   profileSubtitles: {
-    adult: "Akne & Barriere",
+    adult: "Unreinheiten & Barriere",
     teen: "Basis & Akne",
     child: "Sanft & LSF 50+",
     baby: "Parfümfrei-Prio"
@@ -46,9 +46,9 @@ let appState = {
   profiles: [
     {
       id: "p_adult_1",
-      name: "Erwachsener",
+      name: "Erwachsen",
       category: "adult",
-      subtitle: "Akne & Barriere",
+      subtitle: "Unreinheiten & Barriere",
       complexity: "basis",
       tags: ["Eigene Routine"],
       country: "AT",
@@ -120,7 +120,7 @@ if (saved) {
       if (!appState.teenComplexity) appState.teenComplexity = "basis";
       if (!appState.profileSubtitles) {
         appState.profileSubtitles = {
-          adult: "Akne & Barriere",
+          adult: "Unreinheiten & Barriere",
           teen: "Basis & Akne",
           child: "Sanft & LSF 50+",
           baby: "Parfümfrei-Prio"
@@ -151,9 +151,9 @@ if (saved) {
         appState.profiles = [
           {
             id: "p_adult_1",
-            name: "Erwachsener",
+            name: "Erwachsen",
             category: "adult",
-            subtitle: (appState.profileSubtitles && appState.profileSubtitles.adult) || "Akne & Barriere",
+            subtitle: (appState.profileSubtitles && appState.profileSubtitles.adult) || "Unreinheiten & Barriere",
             complexity: appState.routineComplexity || "basis",
             tags: appState.tags || ["Eigene Routine"],
             data: {
@@ -230,7 +230,7 @@ function resetSchrank() {
     childComplexity: "basis",
     teenComplexity: "basis",
     profileSubtitles: {
-      adult: "Akne & Barriere",
+      adult: "Unreinheiten & Barriere",
       teen: "Basis & Akne",
       child: "Sanft & LSF 50+",
       baby: "Parfümfrei-Prio"
@@ -246,9 +246,9 @@ function resetSchrank() {
     profiles: [
       {
         id: "p_adult_1",
-        name: "Erwachsener",
+        name: "Erwachsen",
         category: "adult",
-        subtitle: "Akne & Barriere",
+        subtitle: "Unreinheiten & Barriere",
         complexity: "basis",
         tags: ["Eigene Routine"],
         country: "AT",
@@ -282,12 +282,12 @@ function getCategoryDefaultSubtitle(cat) {
   if (cat === "teen") return "Basis & Akne";
   if (cat === "child") return "Sanft & LSF 50+";
   if (cat === "baby") return "Parfümfrei-Prio";
-  return "Akne & Barriere";
+  return "Unreinheiten & Barriere";
 }
 
 function computeAdultSubtitleFromTags(tags) {
   const t = tags || [];
-  const isAcne = t.some(x => x.includes("Akne") || x.includes("Arzt-Thema"));
+  const isAcne = t.some(x => x.includes("Akne") || x.includes("Unreinheiten") || x.includes("Arzt-Thema"));
   const isSensibel = t.some(x => x.includes("Sensibel"));
   const isDry = t.some(x => x.includes("Trocken"));
   const isOily = t.some(x => x.includes("Ölig") || x.includes("Oelig"));
@@ -307,8 +307,8 @@ function computeAdultSubtitleFromTags(tags) {
   if (isAcne && isDry) return "Akne & Trocken";
   if (isAcne && isOily) return "Ölig & Akne";
   if (isAcne && isMixed) return "Mischhaut & Akne";
-  if (isAcne && isBarrier) return "Akne & Barriere";
-  if (isAcne) return "Akne";
+  if (isAcne && isBarrier) return "Unreinheiten & Barriere";
+  if (isAcne) return "Unreinheiten";
 
   // 2. Trocken-Kombinationen (wenn nur trocken, dann "Trocken")
   if (isDry && isSensibel) return "Trocken & Sensibel";
@@ -324,12 +324,12 @@ function computeAdultSubtitleFromTags(tags) {
 
   // 5. Sensibel / Barriere einzeln
   if (isSensibel) return "Sensibel";
-  if (isBarrier) return "Barriere-Schutz";
+  if (isBarrier) return "Barriere";
 
   // 6. Normal / Gesund
   if (isHealthy) return "Gesunde Haut";
 
-  return "Akne & Barriere";
+  return "Unreinheiten & Barriere";
 }
 
 function getProfileSubtitle(profile) {
@@ -350,9 +350,9 @@ function getActiveProfile() {
     appState.profiles = [
       {
         id: "p_adult_1",
-        name: "Erwachsener",
+        name: "Erwachsen",
         category: "adult",
-        subtitle: "Akne & Barriere",
+        subtitle: "Unreinheiten & Barriere",
         complexity: "basis",
         tags: ["Eigene Routine"],
         country: "AT",
@@ -487,8 +487,8 @@ function switchProfile(profileIdOrCategory) {
   // If user clicked category which doesn't exist yet, auto-create it
   if (!target) {
     const cat = ["adult", "teen", "child", "baby"].includes(profileIdOrCategory) ? profileIdOrCategory : "adult";
-    const defaultNames = { adult: "Erwachsener", teen: "Teenie 12–17 J.", child: "Kind 3–11 J.", baby: "Baby <3 J." };
-    const defaultSubs = { adult: "Akne & Barriere", teen: "Basis & Akne", child: "Sanft & LSF 50+", baby: "Parfümfrei-Prio" };
+    const defaultNames = { adult: "Erwachsen", teen: "Teenie 12–17 J.", child: "Kind 3–11 J.", baby: "Baby <3 J." };
+    const defaultSubs = { adult: "Unreinheiten & Barriere", teen: "Basis & Akne", child: "Sanft & LSF 50+", baby: "Parfümfrei-Prio" };
     target = {
       id: "p_" + cat + "_" + Date.now(),
       name: defaultNames[cat],
@@ -560,20 +560,7 @@ function updateCategoryNav() {
   const manualBtn = document.getElementById("btnManualPaste");
 
   if (guardBadge) {
-    if (activeP.category === "teen") {
-      guardBadge.innerHTML = "🧑‍🦱 Teenie-Wächter · Basis & Akne";
-    } else if (activeP.category === "baby") {
-      guardBadge.innerHTML = "👶 Säuglings-Schutz · Parfümfrei";
-    } else if (activeP.category === "child") {
-      guardBadge.innerHTML = "🧒 Kinder-Wächter · Barriere";
-    } else {
-      var tagBag = [].concat((activeP && activeP.tags) || [], (appState && appState.tags) || []);
-      var isRxGuard = tagBag.some(function (t) {
-        var s = String(t || "").toLowerCase();
-        return s.indexOf("begleit") !== -1 || s.indexOf("rx") !== -1;
-      });
-      guardBadge.innerHTML = isRxGuard ? "🛡️ Begleitpflege aktiv" : "🛡️ Schrank-Wächter";
-    }
+    guardBadge.innerHTML = "Kurzanleitung";
   }
 
   if (scanLabel) {
@@ -607,9 +594,9 @@ const CATEGORY_SKIN_TYPES = {
   adult: [
     {
       id: "acne_barrier",
-      name: "Akne & Unreinheiten",
+      name: "Unreinheiten & Barriere",
       desc: "Pickel, verstopfte Poren, Rx-Optionen (BPO/Adapalen) & Barriere-Support",
-      subtitle: "Akne & Barriere",
+      subtitle: "Unreinheiten & Barriere",
       tags: ["Akne-prone", "Barriere-Support"],
       badge: "🔴 Akne & Poren",
       routineId: "acne_barrier"
@@ -943,7 +930,7 @@ function selectNewProfileCategory(cat) {
   const inp = document.getElementById("newProfileNameInput");
   if (inp) {
     const defaultNames = {
-      adult: "Erwachsene",
+      adult: "Erwachsen",
       teen: "Teenie",
       child: "Kind",
       baby: "Baby"
@@ -958,7 +945,7 @@ function submitCreateProfile() {
   const inp = document.getElementById("newProfileNameInput");
   const rawName = inp ? inp.value.trim() : "";
   const cat = newProfileSelectedCat || "adult";
-  const defaultNames = { adult: "Erwachsene", teen: "Teenie", child: "Kind", baby: "Baby" };
+  const defaultNames = { adult: "Erwachsen", teen: "Teenie", child: "Kind", baby: "Baby" };
   const finalName = rawName || defaultNames[cat];
 
   syncActiveProfileFromWorkingState();
@@ -1120,7 +1107,7 @@ function openRenameProfileModal(profileId) {
   const p = appState.profiles.find(x => x.id === profileId) || getActiveProfile();
   if (!p) return;
 
-  const catLabel = p.category === "adult" ? "Erwachsener"
+  const catLabel = p.category === "adult" ? "Erwachsen"
     : (p.category === "teen" ? "Teenie"
     : (p.category === "child" ? "Kind" : "Baby"));
   const canDelete = (appState.profiles || []).length > 1;
@@ -1202,7 +1189,7 @@ function deleteProfile(profileId) {
       return;
     }
     // Alle Kategorien (adult/teen/child/baby) gleich — kein Sonderfall Teenie
-    const catLabel = p.category === "adult" ? "Erwachsener"
+    const catLabel = p.category === "adult" ? "Erwachsen"
       : (p.category === "teen" ? "Teenie"
       : (p.category === "child" ? "Kind" : "Baby"));
     if (!confirm("Profil \u201e" + p.name + "\u201c (" + catLabel + ") wirklich löschen?\n\nDer Schrank dieses Profils geht verloren.")) {

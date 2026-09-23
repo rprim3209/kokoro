@@ -18,7 +18,7 @@ var I18N_EN = {
   "Lade Katalog…": "Loading catalog…",
   "Katalog-Status": "Catalog status",
   "Begleitpflege-Info": "Adjunct-care info",
-  "Schrank-Wächter": "Cabinet guide",
+  "Kurzanleitung": "Quick guide",
   "Im dm / Laden scannen": "Scan at the store",
 
   "Evidenzbasierter Routine-Check · EU-27 + DACH": "Evidence-based routine check · EU-27 + DACH",
@@ -37,11 +37,11 @@ var I18N_EN = {
   "EFTA / Nachbarn": "EFTA / neighbours",
   "Kein Land gefunden — anderen Suchbegriff versuchen.": "No country found — try another search.",
   "2. Kategorie wählen": "2. Choose a category",
-  "Erwachsener": "Adult",
+  "Erwachsen": "Adult",
   "Teenie": "Teen",
   "Kind": "Child",
   "Baby": "Baby",
-  "👤 Erwachsener": "👤 Adult",
+  "👤 Erwachsen": "👤 Adult",
   "🧑‍🦱 Teenie": "🧑‍🦱 Teen",
   "🧒 Kind": "🧒 Child",
   "👶 Baby": "👶 Baby",
@@ -428,12 +428,19 @@ var I18N_EN = {
   "Sanft & LSF 50+": "Gentle & SPF 50+",
   "Trocken & Sensibel": "Dry & sensitive",
   "Soft-Prefs (Tippen zum Abwählen):": "Soft preferences (tap to turn off):",
-  "Akne & Barriere": "Acne & barrier",
+  "Unreinheiten & Barriere": "Blemishes & barrier",
   "Basis & Akne": "Basics & acne",
   "Eigene Routine": "My routine",
   "Klicken zum Umbenennen": "Tap to rename",
   "Neues Profil anlegen": "Create a new profile",
-  "Neu": "New"
+  "Neu": "New",
+  "nicht komedogen": "non-comedogenic",
+  "parfümfrei": "fragrance-free",
+  "duftstoffarm": "low-fragrance",
+  "Rx (nur mit ärztlicher Vorgabe)": "Rx (only with medical advice)",
+  "Unreinheiten": "Blemishes",
+  "Barriere": "Barrier",
+  "nicht komedogen offen": "non-comedogenic unknown",
 };
 
 Object.assign(I18N_EN, {
@@ -612,7 +619,7 @@ Object.assign(I18N_EN, {
   "⚡ 2 Produkte (Minimal)": "⚡ 2 products (minimal)",
   "🌿 3 Produkte (Basis)": "🌿 3 products (basics)",
   "✨ 4–5 Produkte (Umfassend)": "✨ 4–5 products (full)",
-  "Akne & Barriere (Rx)": "Acne & barrier (Rx)",
+  "Unreinheiten & Barriere (Rx)": "Blemishes & barrier (Rx)",
   "Routine-Abdeckung:": "Routine coverage:",
   "Schritten belegt": "steps filled",
   "0 Flaschen": "0 bottles",
@@ -633,11 +640,11 @@ Object.assign(I18N_EN, {
   "+ Weiteres Produkt zu dieser Routine hinzufügen": "+ Add another product to this routine",
   "Entfernen": "Remove",
   "Ähnliche Alternativen": "Similar alternatives",
-  "🛡️ Schrank-Wächter": "🛡️ Cabinet guide",
+  "Kurzanleitung": "Quick guide",
   "🧑‍🦱 Teenie-Wächter · Basis & Akne": "🧑‍🦱 Teen guide · basics & acne",
   "🧒 Kinder-Wächter · Barriere": "🧒 Child guide · barrier",
   "🛡️ Begleitpflege aktiv": "🛡️ Adjunct care on",
-  "Erwachsener": "Adult",
+  "Erwachsen": "Adult",
   "Neu": "New",
   "(Aktiv)": "(Active)",
 });
@@ -895,7 +902,7 @@ function applyI18n(root) {
     });
   });
   if (en) document.title = "Cosmetic Cabinet — evidence-based routine guide";
-  else document.title = "Kosmetikschrank — Evidenzbasierter Routine- & Schrank-Wächter";
+  else document.title = "Kosmetikschrank — Evidenzbasierter Routine-Check";
   document.documentElement.lang = en ? "en" : "de";
   updateLangButton();
 }
