@@ -1,4 +1,4 @@
-// Language switch. German stays the source. English is applied to the visible text.
+﻿// Language switch. German stays the source. English is applied to the visible text.
 var I18N_EN = {
   "Start": "Home",
   "Schrank": "Cabinet",
@@ -619,6 +619,11 @@ Object.assign(I18N_EN, {
   "1 Produkt": "1 product",
   "Produkte": "Products",
   "Dein Morgen-Schrank ist noch leer (auf Null)": "Your morning cabinet is still empty",
+  "Dein Morgen-Schrank ist noch leer": "Your morning cabinet is still empty",
+  "Dein Abend-Schrank ist noch leer": "Your evening cabinet is still empty",
+  "Dein Baby-Schrank ist noch leer": "Your baby cabinet is still empty",
+  "Dein Kinder-Schrank ist noch leer": "Your child cabinet is still empty",
+  "Dein Teenie-Schrank ist noch leer": "Your teen cabinet is still empty",
   "Dein Abend-Schrank ist noch leer (auf Null)": "Your evening cabinet is still empty",
   "Dein Teenie-Schrank ist noch leer (auf Null)": "Your teen cabinet is still empty",
   "Noch keine Produkte — Scan oder Beispiel": "No products yet — scan or use an example",
