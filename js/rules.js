@@ -17,7 +17,7 @@ const OUTCOME_RANK = { passt: 0, eher_nicht: 1, konflikt: 2 };
 const TAG_ALIASES = {
   sensibel: ["sensibel", "sensible"],
   barrier: ["barriere-fragil", "barrier", "barriere"],
-  "akne-prone": ["akne-prone", "akne prone", "akne"],
+  "akne-prone": ["akne-prone", "akne prone", "akne", "akne-neigung", "akne neigung"],
   "arzt-thema": ["arzt-thema", "arzt thema", "zystisch"],
   begleitpflege: ["rx-begleitpflege", "begleitpflege", "rx"],
   duftstofffrei: ["parfümfrei", "parfumfrei", "duftstofffrei"],
@@ -2428,7 +2428,7 @@ function evaluateProductCompatibility(productOrId, tab) {
 var CONCERN_QUICK_TAGS = [
   { id: "skin-of-color", label: "Skin-of-Color", hint: "Mehr Melanin / Phototyp IV-VI (Einkaufsfilter)" },
   { id: "pih-prone", label: "PIH-prone", hint: "Neigung zu dunklen Pickelmalen" },
-  { id: "akne-prone", label: "Akne-prone", hint: "Unreinheiten — ohne Arzt-Therapie" },
+  { id: "akne-prone", label: "Akne-Neigung", hint: "Unreinheiten — ohne Arzt-Therapie" },
   { id: "barrier", label: "Barriere-fragil", hint: "Leicht gereizt / spannt" },
   { id: "arzt-thema", label: "Arzt-Thema", hint: "Rx / dermatologische Behandlung" }
 ];
@@ -2466,23 +2466,31 @@ function toggleConcernTag(id) {
   }
   if (typeof syncActiveProfileFromWorkingState === "function") syncActiveProfileFromWorkingState();
   if (typeof saveState === "function") saveState();
+  // Concerns stay open on Start (multi-select); country/category auto-close elsewhere.
+  if (appState.view === "start" && typeof window !== "undefined") {
+    try { window.startAccordionOpen = "concerns"; } catch (e) { /* ignore */ }
+  }
   if (typeof renderCurrentScreen === "function") renderCurrentScreen();
   else if (typeof renderStartScreen === "function" && appState.view === "start") renderStartScreen();
   else if (typeof renderMain === "function") renderMain(false);
 }
 
-function renderConcernQuickHtml() {
+function renderConcernQuickPanelHtml() {
   var chips = CONCERN_QUICK_TAGS.map(function (c) {
     var on = hasTag(c.id);
     return '<button type="button" class="start-pill-btn concern-chip ' + (on ? "active" : "") +
       '" title="' + c.hint + '" onclick="toggleConcernTag(\'' + c.id + '\')" style="font-size:0.78rem">' +
       (on ? "✓ " : "") + c.label + "</button>";
   }).join("");
+  return '<p class="start-acc-hint">An/Aus — steuert Scan &amp; Schrank (keine Diagnose).</p>' +
+    '<div class="start-pills-row" style="gap:6px;flex-wrap:wrap">' + chips + "</div>";
+}
+
+/** Full card (legacy / non-accordion callers). */
+function renderConcernQuickHtml() {
   return '<div class="start-profile-card" style="margin-bottom:0.75rem">' +
     '<div class="start-profile-head"><span class="start-profile-label">3. Concerns (Einkauf — keine Diagnose)</span></div>' +
-    '<p style="font-size:0.76rem;color:var(--muted);margin:0 0 0.45rem;line-height:1.4">Tipp zum An/Aus. Steuert Scan &amp; Schrank-Hinweise. ' +
-    (typeof VERDICT_DISCLAIMER !== "undefined" ? VERDICT_DISCLAIMER : "Keine Therapie.") + "</p>" +
-    '<div class="start-pills-row" style="gap:6px;flex-wrap:wrap">' + chips + "</div></div>";
+    renderConcernQuickPanelHtml() + "</div>";
 }
 
 function getReizBudgetSummary() {
@@ -2590,6 +2598,7 @@ if (typeof window !== "undefined") {
   window.CONCERN_QUICK_TAGS = CONCERN_QUICK_TAGS;
   window.toggleConcernTag = toggleConcernTag;
   window.renderConcernQuickHtml = renderConcernQuickHtml;
+  window.renderConcernQuickPanelHtml = renderConcernQuickPanelHtml;
   window.getReizBudgetSummary = getReizBudgetSummary;
   window.renderReizBudgetCardHtml = renderReizBudgetCardHtml;
   window.cabinetHasIronOxideSpf = cabinetHasIronOxideSpf;

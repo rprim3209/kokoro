@@ -1,6 +1,15 @@
 // ==========================================
 // Start / Begrüßungs-Screen
+// Compact accordion sections (Land / Kategorie / Concerns)
 // ==========================================
+
+/** Which start accordion is open: 'country' | 'category' | 'concerns' | null */
+var startAccordionOpen = null;
+
+function toggleStartAccordion(id) {
+  startAccordionOpen = startAccordionOpen === id ? null : id;
+  if (typeof renderStartScreen === "function") renderStartScreen();
+}
 
 function selectStartCategory(cat) {
   if (typeof switchProfile === "function") {
@@ -9,6 +18,7 @@ function selectStartCategory(cat) {
     appState.profile = cat;
   }
   appState.view = "start";
+  startAccordionOpen = null; // auto-collapse after pick
   if (typeof saveState === "function") saveState();
   if (typeof updateCategoryNav === "function") updateCategoryNav();
   renderStartScreen();
@@ -23,6 +33,7 @@ function selectStartCountry(code) {
     if (typeof saveState === "function") saveState();
   }
   appState.view = "start";
+  startAccordionOpen = null; // auto-collapse after pick
   renderStartScreen();
 }
 
@@ -110,6 +121,34 @@ function renderCountryChipsHtml(selected, onclickName) {
   return renderCountryPickerHtml(selected, onclickName, { uid: "countryPickerMain", maxHeight: "240px" });
 }
 
+function renderStartAccordion(id, titleSummary, panelHtml) {
+  const open = startAccordionOpen === id;
+  const expanded = open ? "true" : "false";
+  return `
+    <div class="start-accordion start-profile-card${open ? " is-open" : ""}" data-acc="${id}">
+      <button type="button" class="start-acc-summary" aria-expanded="${expanded}" aria-controls="start-acc-panel-${id}" id="start-acc-btn-${id}" onclick="toggleStartAccordion('${id}')">
+        <span class="start-acc-title">${titleSummary}</span>
+        <span class="start-acc-chevron" aria-hidden="true">${open ? "▴" : "▾"}</span>
+      </button>
+      <div class="start-acc-panel" id="start-acc-panel-${id}" role="region" aria-labelledby="start-acc-btn-${id}" ${open ? "" : "hidden"}>
+        ${panelHtml}
+      </div>
+    </div>
+  `;
+}
+
+function getConcernSummaryLabel() {
+  if (typeof CONCERN_QUICK_TAGS === "undefined" || !Array.isArray(CONCERN_QUICK_TAGS)) {
+    return "keine";
+  }
+  const active = CONCERN_QUICK_TAGS.filter(function (c) {
+    return typeof hasTag === "function" && hasTag(c.id);
+  });
+  if (!active.length) return "keine";
+  if (active.length <= 2) return active.map(function (c) { return c.label; }).join(", ");
+  return active.length + " gewählt";
+}
+
 function renderStartScreen(container) {
   if (!container) container = document.getElementById("appContent");
   if (!container) return;
@@ -144,6 +183,42 @@ function renderStartScreen(container) {
 
   const meta = catMeta[currentProf] || catMeta.adult;
   const disclaimer = "Keine Therapie — nur Einkauf & Layering-Hilfe.";
+  const concernSummary = getConcernSummaryLabel();
+
+  const countryPanel = `
+    <p class="start-acc-hint">EU-27 + CH/NO/IS — gilt für alle Kategorien &amp; Live-Suche.</p>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:0.55rem;flex-wrap:wrap">
+      <button type="button" class="country-location-btn" id="btnDetectCountryLocationStart" onclick="detectCountryFromLocationUI(this)" style="padding:0.42rem 0.85rem;font-size:0.8rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;background:#eef6f3;color:#1e4620;border:1px solid #b7dfca;border-radius:8px;cursor:pointer">
+        <span aria-hidden="true">📍</span> Standort des Handys verwenden
+      </button>
+      <span id="countryLocationStatusStart" style="font-size:0.76rem;color:var(--muted)"></span>
+    </div>
+    ${renderCountryPickerHtml(country, "selectStartCountry", { uid: "startCountryPicker", maxHeight: "220px" })}
+  `;
+
+  const categoryPanel = `
+    <div class="start-pills-row">
+      <button type="button" class="start-pill-btn ${currentProf === 'adult' ? 'active' : ''}" onclick="selectStartCategory('adult')">
+        👤 Erwachsen
+      </button>
+      <button type="button" class="start-pill-btn ${currentProf === 'teen' ? 'active pill-teen' : ''}" onclick="selectStartCategory('teen')">
+        🧑‍🦱 Teenie
+      </button>
+      <button type="button" class="start-pill-btn ${currentProf === 'child' ? 'active pill-child' : ''}" onclick="selectStartCategory('child')">
+        🧒 Kind
+      </button>
+      <button type="button" class="start-pill-btn ${currentProf === 'baby' ? 'active pill-baby' : ''}" onclick="selectStartCategory('baby')">
+        👶 Baby
+      </button>
+    </div>
+    <div class="start-profile-focus">
+      ${sub ? `<strong>${sub}</strong> · ` : ''}${meta.focus}
+    </div>
+  `;
+
+  const concernsPanel = typeof renderConcernQuickPanelHtml === "function"
+    ? renderConcernQuickPanelHtml()
+    : (typeof renderConcernQuickHtml === "function" ? renderConcernQuickHtml() : "");
 
   container.innerHTML = `
     <div class="welcome-box">
@@ -164,50 +239,23 @@ function renderStartScreen(container) {
         <span class="start-disclaimer-text">${disclaimer}</span>
       </div>
 
-      <div class="start-profile-card" style="margin-bottom:0.75rem">
-        <div class="start-profile-head">
-          <span class="start-profile-label">1. In welchem Land einkaufen?</span>
-          <span class="start-profile-active">Aktiv: <strong>${country}</strong> · ${countryName}</span>
-        </div>
-        <p style="font-size:0.78rem;color:var(--muted);margin:0 0 0.45rem;line-height:1.4">
-          Alle <strong>27 EU-Länder</strong> (+ Schweiz/Norwegen/Island). Gilt einheitlich für alle Kategorien &amp; die Live-Online-Suche.
-        </p>
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:0.6rem;flex-wrap:wrap">
-          <button type="button" class="country-location-btn" id="btnDetectCountryLocationStart" onclick="detectCountryFromLocationUI(this)" style="padding:0.42rem 0.85rem;font-size:0.8rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;background:#eef6f3;color:#1e4620;border:1px solid #b7dfca;border-radius:8px;cursor:pointer">
-            <span aria-hidden="true">📍</span> Standort des Handys verwenden
-          </button>
-          <span id="countryLocationStatusStart" style="font-size:0.76rem;color:var(--muted)"></span>
-        </div>
-        ${renderCountryPickerHtml(country, "selectStartCountry", { uid: "startCountryPicker", maxHeight: "260px" })}
-      </div>
+      ${renderStartAccordion(
+        "country",
+        `1. Land · <strong>${country}</strong> ${countryName}`,
+        countryPanel
+      )}
 
-      <div class="start-profile-card">
-        <div class="start-profile-head">
-          <span class="start-profile-label">2. Kategorie wählen</span>
-          <span class="start-profile-active">Aktiv: <strong>${meta.icon} ${meta.name}</strong></span>
-        </div>
+      ${renderStartAccordion(
+        "category",
+        `2. Kategorie · <strong>${meta.icon} ${meta.name}</strong>`,
+        categoryPanel
+      )}
 
-        <div class="start-pills-row">
-          <button type="button" class="start-pill-btn ${currentProf === 'adult' ? 'active' : ''}" onclick="selectStartCategory('adult')">
-            👤 Erwachsen
-          </button>
-          <button type="button" class="start-pill-btn ${currentProf === 'teen' ? 'active pill-teen' : ''}" onclick="selectStartCategory('teen')">
-            🧑‍🦱 Teenie
-          </button>
-          <button type="button" class="start-pill-btn ${currentProf === 'child' ? 'active pill-child' : ''}" onclick="selectStartCategory('child')">
-            🧒 Kind
-          </button>
-          <button type="button" class="start-pill-btn ${currentProf === 'baby' ? 'active pill-baby' : ''}" onclick="selectStartCategory('baby')">
-            👶 Baby
-          </button>
-        </div>
-
-        <div class="start-profile-focus">
-          ${sub ? `<strong>${sub}</strong> · ` : ''}${meta.focus}
-        </div>
-      </div>
-
-      ${typeof renderConcernQuickHtml === "function" ? renderConcernQuickHtml() : ""}
+      ${renderStartAccordion(
+        "concerns",
+        `3. Concerns · <strong>${concernSummary}</strong>`,
+        concernsPanel
+      )}
 
       <div class="start-actions">
         <button type="button" class="start-action-card primary" onclick="typeof openCabinet==='function'?openCabinet():switchScreen('cabinet')">
@@ -251,7 +299,14 @@ function renderWelcome(container) {
 }
 
 if (typeof window !== "undefined") {
+  Object.defineProperty(window, "startAccordionOpen", {
+    get: function () { return startAccordionOpen; },
+    set: function (v) { startAccordionOpen = v; },
+    configurable: true
+  });
+  window.toggleStartAccordion = toggleStartAccordion;
   window.selectStartCountry = selectStartCountry;
+  window.selectStartCategory = selectStartCategory;
   window.renderCountryChipsHtml = renderCountryChipsHtml;
   window.renderCountryPickerHtml = renderCountryPickerHtml;
   window.filterCountryPicker = filterCountryPicker;

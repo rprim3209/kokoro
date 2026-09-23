@@ -147,7 +147,7 @@ function getSelectedIdealRoutineId() {
     return window.selectedIdealRoutineId;
   }
   const tags = appState.tags || [];
-  if (tags.includes("Rx-Begleitpflege") || tags.includes("Akne-prone") || tags.includes("Arzt-Thema")) {
+  if (tags.includes("Rx-Begleitpflege") || tags.includes("Arzt-Thema") || tags.some(function (t) { return /akne|unrein/i.test(String(t || "")); })) {
     return "acne_barrier";
   }
   if (tags.includes("Ölig") || tags.includes("Mischhaut")) {

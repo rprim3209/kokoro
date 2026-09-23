@@ -597,7 +597,7 @@ const CATEGORY_SKIN_TYPES = {
       name: "Unreinheiten & Barriere",
       desc: "Pickel, verstopfte Poren, Rx-Optionen (BPO/Adapalen) & Barriere-Support",
       subtitle: "Unreinheiten & Barriere",
-      tags: ["Akne-prone", "Barriere-Support"],
+      tags: ["Akne-Neigung", "Barriere-Support"],
       badge: "🔴 Akne & Poren",
       routineId: "acne_barrier"
     },
@@ -635,7 +635,7 @@ const CATEGORY_SKIN_TYPES = {
       name: "Talg, Mitesser & Pickel",
       desc: "Sanfte BHA-Klärung & Porenbalance ohne schädliche Anti-Aging-Stoffe",
       subtitle: "Basis & Akne",
-      tags: ["Teen", "Akne-prone"],
+      tags: ["Teen", "Akne-Neigung"],
       badge: "🔴 Akne & Talg"
     },
     {

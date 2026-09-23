@@ -103,7 +103,7 @@ function removeBabyProduct(prodId, profile, slot) {
 function prioritizeProfileTags(tags) {
   var list = (tags && tags.length) ? tags.slice() : ["Eigene Routine"];
   var prio = [
-    "Arzt-Thema", "Rx-Begleitpflege", "Skin-of-Color", "PIH-prone", "Akne-prone",
+    "Arzt-Thema", "Rx-Begleitpflege", "Skin-of-Color", "PIH-prone", "Akne-Neigung",
     "Barriere-fragil", "Sensibel", "Eisenoxid-Schutz", "Zero-White-Cast",
     "Parfümfrei", "NC-Preference", "Trocken", "Ölig", "Mischhaut", "Normale Haut"
   ];
@@ -1107,7 +1107,7 @@ function startWithEmptyCabinet() {
   showToast("Schrank geleert.");
 }
 function loadPrimPreset() {
-  appState.tags = ["Trocken", "Sensibel", "Akne-prone", "Rx-Begleitpflege"];
+  appState.tags = ["Trocken", "Sensibel", "Akne-Neigung", "Rx-Begleitpflege"];
   appState.am = sortRoutine(["water", "ha", "aza", "purito", "anthelios"], true);
   appState.pm_a = sortRoutine(["ceraveWash", "ha", "purito", "adap", "baleaCreme"], false);
   appState.pm_b = sortRoutine(["ceraveWash", "ha", "purito", "clienzo", "baleaCreme"], false);
@@ -1893,7 +1893,7 @@ function activateRxBegleitpflege() {
 // Market Decision Engine & Navigator
 function openMarketGuideModal() {
   const profileTags = appState.tags.join(", ") || "Individuell";
-  const isAcne = appState.tags.includes("Akne-prone");
+  const isAcne = appState.tags.some(function (t) { return /akne|unrein/i.test(String(t||"")); });
   const isRx = appState.tags.includes("Rx-Begleitpflege");
   // Arzt-Thema: keine Serum-/Active-Upsell-Liste im Markt-Navigator
   const isArztThema = (typeof hasArztThema === "function") ? hasArztThema() : (appState.tags || []).some(t => String(t).includes("Arzt-Thema") || String(t).toLowerCase().includes("arzt-thema") || String(t).toLowerCase().includes("zystisch"));

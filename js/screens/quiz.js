@@ -542,7 +542,7 @@ function finishQuiz() {
 
     // Soft-Prefs auch Teen (constraints-v1)
     let teenTags = Array.isArray(activeP.tags) ? activeP.tags.slice() : [];
-    if (hasAcne) teenTags.push("Akne-prone");
+    if (hasAcne) teenTags.push("Akne-Neigung");
     if (isSensibel) teenTags.push("Sensibel");
     if (typeof applySoftPrefsToTagList === "function") teenTags = applySoftPrefsToTagList(teenTags);
     activeP.tags = teenTags;
@@ -615,7 +615,7 @@ function finishQuiz() {
   if ((scores.rasur || 0) >= 1) newTags.push("Rasur-sensibel");
 
   // Unreinheiten:
-  if ((scores["akne-prone"] || 0) >= 2) newTags.push("Akne-prone");
+  if ((scores["akne-prone"] || 0) >= 2) newTags.push("Akne-Neigung");
   if ((scores["arzt-thema"] || 0) >= 1) newTags.push("Arzt-Thema");
 
   // Melanin & Pigmentierung (Skin of Color / Fitzpatrick IV-VI / PIH):
@@ -677,7 +677,7 @@ function finishQuiz() {
     pharmaDesc = "Produkte werden ab sofort gegen deine Feuchte- und Empfindlichkeits-Tags geprüft, um Reiz-Stacking zu verhindern.";
   }
 
-  const hasAcneOrRx = newTags.includes("Akne-prone") || newTags.includes("Arzt-Thema") || isBegleit;
+  const hasAcneOrRx = newTags.some(function (t) { return /akne|unrein/i.test(String(t||"")); }) || newTags.includes("Arzt-Thema") || isBegleit;
   const compLabel = appState.routineComplexity === "minimal" ? "Minimalistisch (2 Produkte)" : (appState.routineComplexity === "basis" ? "Ausgewogene Basis (3 Produkte)" : "Umfassend (4–5 Produkte)");
 
   saveState();

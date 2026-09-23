@@ -2361,7 +2361,7 @@ function analyzeInciComedogenicity(textOrProduct) {
     const names = lowRisk.map(l => `${l.name} (${l.score}/5)`).join(", ");
     summary = `Enthält milde Lipide/Fettalkohole (${names}, Score 2/5). Für normale bis trockene Haut hervorragend geeignet.`;
   } else {
-    summary = `Keine porenverstopfenden Inhaltsstoffe erkannt (Score 0–1). Sicher für Akne-prone, ölige und sensible Haut.`;
+    summary = `Keine porenverstopfenden Inhaltsstoffe erkannt (Score 0–1). Sicher für akne-neigende, ölige und sensible Haut.`;
   }
 
   if (cysticTriggers.length > 0) {

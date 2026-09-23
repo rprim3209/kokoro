@@ -385,6 +385,71 @@
   font-weight: 600;
 }
 
+
+/* Start page compact accordions */
+.start-accordion.start-profile-card {
+  padding: 0;
+  margin-bottom: 0.7rem;
+  overflow: hidden;
+}
+.start-acc-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 0.85rem 1.05rem;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+}
+.start-acc-summary:hover {
+  background: rgba(47, 93, 86, 0.04);
+}
+.start-acc-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+  flex: 1;
+  min-width: 0;
+}
+.start-acc-title strong {
+  color: #2F5D56;
+  font-weight: 700;
+}
+.start-acc-chevron {
+  flex-shrink: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #F6EEEF;
+  color: #2F5D56;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.start-accordion.is-open .start-acc-summary {
+  border-bottom: 1px solid var(--line);
+}
+.start-acc-panel {
+  padding: 0.75rem 1.05rem 1rem;
+}
+.start-acc-hint {
+  font-size: 0.76rem;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+  line-height: 1.4;
+}
+.start-accordion .start-profile-head {
+  display: none;
+}
+
 .start-profile-card {
   margin-bottom: 1.4rem;
   background: var(--card);
