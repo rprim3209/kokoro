@@ -94,6 +94,28 @@ function renderSettingsScreen(container) {
       </div>
     </div>
 
+
+    <div class="settings-section">
+      <div class="settings-title">
+        <span>📤 Profil an Prim senden</span>
+      </div>
+      <p style="font-size:0.82rem;color:var(--muted);margin:0 0 0.8rem;line-height:1.4">
+        Daten bleiben auf dem Handy — Teilen schickt sie manuell an dich.
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button type="button" class="ghost-btn" style="width:auto;margin-top:0;padding:0.55rem 1.1rem;font-size:0.84rem" onclick="shareKokoroProfil()">
+          📤 Profil teilen
+        </button>
+        <button type="button" class="ghost-btn" style="width:auto;margin-top:0;padding:0.55rem 1.1rem;font-size:0.84rem" onclick="downloadKokoroExport()">
+          💾 Als Datei exportieren
+        </button>
+        <button type="button" class="ghost-btn" style="width:auto;margin-top:0;padding:0.55rem 1.1rem;font-size:0.84rem" onclick="document.getElementById('kokoroImportFile').click()">
+          📂 Datei importieren
+        </button>
+        <input type="file" id="kokoroImportFile" accept="application/json,.json" style="display:none" onchange="importKokoroExport(this.files && this.files[0]); this.value='';">
+      </div>
+    </div>
+
     <div class="settings-section">
       <div class="settings-title">
         <span>⚠️ Schrank-Verwaltung</span>

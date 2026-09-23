@@ -1496,6 +1496,352 @@ function countryLabel(code) {
 }
 
 
+
+// ==========================================
+// SHARE / EXPORT / IMPORT (Tester → Prim)
+// Freiwillig, lokal — kein Cloud-Backend
+// ==========================================
+
+var KOKORO_EXPORT_VERSION = 1;
+
+function _kokoroCategoryLabel(cat) {
+  if (cat === "teen") return "Teenie";
+  if (cat === "child") return "Kind";
+  if (cat === "baby") return "Baby";
+  return "Erwachsen";
+}
+
+function _kokoroProductDisplayName(id) {
+  if (!id) return "";
+  var p = null;
+  if (typeof resolveProfileCabinetProduct === "function") {
+    try { p = resolveProfileCabinetProduct(id); } catch (e) { p = null; }
+  }
+  if (!p && typeof DB === "object" && DB) p = DB[id];
+  if (!p && typeof TEEN_DB === "object" && TEEN_DB) p = TEEN_DB[id];
+  if (!p && typeof BABY_DB === "object" && BABY_DB) p = BABY_DB[id];
+  if (!p && appState && appState.customProducts) p = appState.customProducts[id];
+  if (!p) return String(id);
+  var brand = (p.brand || "").toString().trim();
+  var name = (p.name || "").toString().trim();
+  var label = (brand + " " + name).trim();
+  return label || String(id);
+}
+
+function _kokoroNamesFromIds(ids, limit) {
+  var max = (typeof limit === "number") ? limit : 12;
+  var out = [];
+  (ids || []).forEach(function (id) {
+    if (out.length >= max) return;
+    var n = _kokoroProductDisplayName(id);
+    if (n) out.push(n);
+  });
+  return out;
+}
+
+function _kokoroShelfLinesForActive() {
+  var lines = [];
+  var p = (typeof getActiveProfile === "function") ? getActiveProfile() : null;
+  var cat = (p && p.category) || appState.profile || "adult";
+  if (cat === "adult") {
+    var am = _kokoroNamesFromIds(appState.am || []);
+    var pmKey = "pm_" + (appState.pmMode || "a");
+    var pm = _kokoroNamesFromIds(appState[pmKey] || appState.pm_a || []);
+    if (am.length) lines.push("Morgen: " + am.join(", "));
+    if (pm.length) lines.push("Abend: " + pm.join(", "));
+  } else if (cat === "baby") {
+    var b = appState.baby || {};
+    ["reiniger", "creme", "windel", "spf"].forEach(function (slot) {
+      var names = _kokoroNamesFromIds(b[slot] || []);
+      if (names.length) lines.push(slot.charAt(0).toUpperCase() + slot.slice(1) + ": " + names.join(", "));
+    });
+  } else if (cat === "child") {
+    var c = appState.child || {};
+    ["reiniger", "creme", "spf", "haar"].forEach(function (slot) {
+      var names = _kokoroNamesFromIds(c[slot] || []);
+      if (names.length) lines.push(slot.charAt(0).toUpperCase() + slot.slice(1) + ": " + names.join(", "));
+    });
+  } else if (cat === "teen") {
+    var t = appState.teen || {};
+    ["reiniger", "active", "creme", "spf"].forEach(function (slot) {
+      var names = _kokoroNamesFromIds(t[slot] || []);
+      if (names.length) lines.push(slot.charAt(0).toUpperCase() + slot.slice(1) + ": " + names.join(", "));
+    });
+  }
+  return lines;
+}
+
+function buildKokoroShareText() {
+  if (typeof syncActiveProfileFromWorkingState === "function") {
+    try { syncActiveProfileFromWorkingState(); } catch (e) {}
+  }
+  var p = (typeof getActiveProfile === "function") ? getActiveProfile() : null;
+  var now = new Date();
+  var dateStr = now.toLocaleDateString("de-AT", { year: "numeric", month: "2-digit", day: "2-digit" });
+  var cat = (p && p.category) || appState.profile || "adult";
+  var name = (p && p.name) || _kokoroCategoryLabel(cat);
+  var subtitle = (p && p.subtitle) || "";
+  var country = (typeof getProfileCountry === "function")
+    ? getProfileCountry()
+    : (appState.country || (p && p.country) || "AT");
+  var countryName = (typeof countryLabel === "function") ? countryLabel(country) : country;
+  var tags = [];
+  if (p && Array.isArray(p.tags) && p.tags.length) tags = p.tags.slice();
+  else if (Array.isArray(appState.tags)) tags = appState.tags.slice();
+
+  var lines = [];
+  lines.push("Kokoro – Profil");
+  lines.push("Datum: " + dateStr);
+  lines.push("");
+  lines.push("Profil: " + name + " (" + _kokoroCategoryLabel(cat) + ")");
+  if (subtitle) lines.push("Anliegen: " + subtitle);
+  lines.push("Land: " + countryName + " (" + String(country).toUpperCase() + ")");
+  if (tags.length) {
+    lines.push("Quiz / Tags: " + tags.join(", "));
+  }
+  var shelves = _kokoroShelfLinesForActive();
+  if (shelves.length) {
+    lines.push("");
+    lines.push("Schrank (Namen):");
+    shelves.forEach(function (s) { lines.push("· " + s); });
+  }
+  lines.push("");
+  lines.push("Kokoro Demo — nur Einkauf & Layering");
+  return lines.join("\n");
+}
+
+function buildKokoroExportObject() {
+  if (typeof syncActiveProfileFromWorkingState === "function") {
+    try { syncActiveProfileFromWorkingState(); } catch (e) {}
+  }
+  return {
+    version: KOKORO_EXPORT_VERSION,
+    app: "kokoro",
+    exportedAt: new Date().toISOString(),
+    appState: {
+      activeProfileId: appState.activeProfileId,
+      profiles: appState.profiles,
+      country: appState.country,
+      hideUnknownCountries: appState.hideUnknownCountries,
+      profile: appState.profile,
+      view: appState.view,
+      tab: appState.tab,
+      tags: appState.tags,
+      routineComplexity: appState.routineComplexity,
+      babyComplexity: appState.babyComplexity,
+      childComplexity: appState.childComplexity,
+      teenComplexity: appState.teenComplexity,
+      profileSubtitles: appState.profileSubtitles,
+      am: appState.am,
+      pm_a: appState.pm_a,
+      pm_b: appState.pm_b,
+      pm_c: appState.pm_c,
+      pmMode: appState.pmMode,
+      useSkinCycling: appState.useSkinCycling,
+      baby: appState.baby,
+      child: appState.child,
+      teen: appState.teen,
+      customProducts: appState.customProducts || {}
+    }
+  };
+}
+
+function _kokoroCopyTextFallback(text) {
+  return new Promise(function (resolve, reject) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(resolve).catch(function () {
+          _kokoroCopyViaTextarea(text) ? resolve() : reject(new Error("clipboard"));
+        });
+        return;
+      }
+    } catch (e) {}
+    if (_kokoroCopyViaTextarea(text)) resolve();
+    else reject(new Error("clipboard"));
+  });
+}
+
+function _kokoroCopyViaTextarea(text) {
+  try {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return !!ok;
+  } catch (e) {
+    return false;
+  }
+}
+
+function shareKokoroProfil() {
+  var text = buildKokoroShareText();
+  var finishCopy = function () {
+    _kokoroCopyTextFallback(text).then(function () {
+      if (typeof showToast === "function") showToast("Kopiert — in WhatsApp einfügen");
+    }).catch(function () {
+      if (typeof showToast === "function") showToast("Teilen nicht möglich — bitte manuell kopieren");
+    });
+  };
+  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    try {
+      var p = navigator.share({ title: "Kokoro Profil", text: text });
+      if (p && typeof p.then === "function") {
+        p.then(function () {
+          if (typeof showToast === "function") showToast("Profil geteilt");
+        }).catch(function (err) {
+          if (err && (err.name === "AbortError" || err.name === "NotAllowedError")) return;
+          finishCopy();
+        });
+        return;
+      }
+    } catch (e) {
+      finishCopy();
+      return;
+    }
+  }
+  finishCopy();
+}
+
+function downloadKokoroExport() {
+  try {
+    var obj = buildKokoroExportObject();
+    var json = JSON.stringify(obj, null, 2);
+    var blob = new Blob([json], { type: "application/json;charset=utf-8" });
+    var now = new Date();
+    var y = now.getFullYear();
+    var m = String(now.getMonth() + 1).padStart(2, "0");
+    var d = String(now.getDate()).padStart(2, "0");
+    var filename = "kokoro-profil-" + y + m + d + ".json";
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 1500);
+    if (typeof showToast === "function") showToast("Export gespeichert: " + filename);
+  } catch (e) {
+    console.warn("downloadKokoroExport", e);
+    if (typeof showToast === "function") showToast("Export fehlgeschlagen");
+  }
+}
+
+function isValidKokoroExport(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return false;
+  if (data.version != null && typeof data.version !== "number" && typeof data.version !== "string") return false;
+  if (data.app != null && data.app !== "kokoro") return false;
+  var s = data.appState;
+  if (s == null && (Array.isArray(data.profiles) || data.activeProfileId || data.am || data.baby || data.tags)) {
+    s = data;
+  }
+  if (!s || typeof s !== "object" || Array.isArray(s)) return false;
+  if (Array.isArray(s.profiles)) return true;
+  if (s.activeProfileId || s.am || s.pm_a || s.baby || s.child || s.teen || Array.isArray(s.tags)) return true;
+  return false;
+}
+
+function _kokoroReinjectCustomProducts(customs) {
+  if (!customs || typeof customs !== "object") return;
+  Object.keys(customs).forEach(function (cid) {
+    var cprod = customs[cid];
+    if (!cprod) return;
+    if (typeof sanitizeProductPriceFields === "function") sanitizeProductPriceFields(cprod);
+    if (typeof enrichProductClasses === "function") enrichProductClasses(cprod);
+    if (typeof DB === "object" && DB) DB[cid] = cprod;
+    if (typeof TEEN_DB === "object" && TEEN_DB && !TEEN_DB[cid]) {
+      TEEN_DB[cid] = Object.assign({}, cprod, {
+        slot: cprod.kat === "reiniger" ? "reiniger" : (cprod.kat === "spf" ? "spf" : (cprod.kat === "serum" || cprod.kat === "active" ? "active" : "creme"))
+      });
+    }
+    if (typeof BABY_DB === "object" && BABY_DB && !BABY_DB[cid]) {
+      BABY_DB[cid] = Object.assign({}, cprod, {
+        slot: cprod.kat === "reiniger" ? "reiniger" : (cprod.kat === "spf" ? "spf" : "creme")
+      });
+    }
+  });
+  if (typeof enrichAllDbProducts === "function") {
+    try { enrichAllDbProducts(); } catch (e) {}
+  }
+}
+
+function applyImportedKokoroAppState(snapshot) {
+  if (!snapshot || typeof snapshot !== "object") return false;
+  var keys = [
+    "activeProfileId", "profiles", "country", "hideUnknownCountries", "profile",
+    "view", "tab", "tags", "routineComplexity", "babyComplexity", "childComplexity",
+    "teenComplexity", "profileSubtitles", "am", "pm_a", "pm_b", "pm_c", "pmMode",
+    "useSkinCycling", "baby", "child", "teen", "customProducts"
+  ];
+  keys.forEach(function (k) {
+    if (snapshot[k] !== undefined) appState[k] = snapshot[k];
+  });
+  if (!appState.baby) appState.baby = { reiniger: [], creme: [], windel: [], spf: [] };
+  if (!appState.child) appState.child = { reiniger: [], creme: [], spf: [], haar: [] };
+  if (!appState.teen) appState.teen = { reiniger: [], active: [], creme: [], spf: [] };
+  if (!appState.customProducts || typeof appState.customProducts !== "object") appState.customProducts = {};
+  if (!appState.country) appState.country = "AT";
+  else appState.country = String(appState.country).toUpperCase();
+  if (Array.isArray(appState.profiles)) {
+    appState.profiles.forEach(function (pr) { pr.country = appState.country; });
+  }
+  _kokoroReinjectCustomProducts(appState.customProducts);
+  var activeP = (typeof getActiveProfile === "function") ? getActiveProfile() : null;
+  if (activeP && typeof loadProfileToAppState === "function") {
+    loadProfileToAppState(activeP);
+  }
+  return true;
+}
+
+function importKokoroExport(file) {
+  if (!file) {
+    if (typeof showToast === "function") showToast("Keine Datei gewählt");
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function () {
+    try {
+      var raw = String(reader.result || "");
+      var data = JSON.parse(raw);
+      if (!isValidKokoroExport(data)) {
+        if (typeof showToast === "function") showToast("Ungültige Kokoro-Datei");
+        return;
+      }
+      var snapshot = data.appState || data;
+      if (!confirm("Vorhandenes Profil und Schrank mit der Datei überschreiben?\n\n(Daten bleiben lokal — Teilen war freiwillig.)")) {
+        return;
+      }
+      applyImportedKokoroAppState(snapshot);
+      if (typeof saveState === "function") saveState();
+      if (typeof updateCategoryNav === "function") updateCategoryNav();
+      if (typeof renderCurrentScreen === "function") renderCurrentScreen();
+      else if (appState.view === "settings" && typeof renderSettingsScreen === "function") renderSettingsScreen();
+      else if (typeof renderMain === "function") renderMain();
+      if (typeof showToast === "function") showToast("Profil importiert");
+    } catch (e) {
+      console.warn("importKokoroExport", e);
+      if (typeof showToast === "function") showToast("Import fehlgeschlagen — Datei prüfen");
+    }
+  };
+  reader.onerror = function () {
+    if (typeof showToast === "function") showToast("Datei konnte nicht gelesen werden");
+  };
+  reader.readAsText(file);
+}
+
+window.buildKokoroShareText = buildKokoroShareText;
+window.buildKokoroExportObject = buildKokoroExportObject;
+window.shareKokoroProfil = shareKokoroProfil;
+window.downloadKokoroExport = downloadKokoroExport;
+window.importKokoroExport = importKokoroExport;
+window.isValidKokoroExport = isValidKokoroExport;
+
+
 window.openRenameProfileModal = openRenameProfileModal;
 window.submitRenameProfile = submitRenameProfile;
 window.deleteProfile = deleteProfile;

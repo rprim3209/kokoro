@@ -500,6 +500,9 @@ function finishQuiz() {
         <button class="ghost-btn" style="margin-top:0" onclick="closeModal(); renderMain();">
           🧴 Mit leerem Schrank starten (eigene Produkte einsortieren)
         </button>
+        <button class="ghost-btn" style="margin-top:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="shareKokoroProfil()">
+          📤 Profil teilen (an Prim)
+        </button>
         <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:4px">
           ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
         </div>
@@ -552,6 +555,9 @@ function finishQuiz() {
         </button>
         <button class="ghost-btn" style="margin-top:0" onclick="closeModal(); renderMain();">
           🧴 Mit leerem Schrank starten (eigene Produkte einsortieren)
+        </button>
+        <button class="ghost-btn" style="margin-top:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="shareKokoroProfil()">
+          📤 Profil teilen (an Prim)
         </button>
         <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:4px">
           ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
@@ -617,6 +623,9 @@ function finishQuiz() {
         </button>
         <button class="ghost-btn" style="margin-top:0" onclick="closeModal(); renderMain();">
           🧴 Mit leerem Schrank starten (eigene Produkte einsortieren)
+        </button>
+        <button class="ghost-btn" style="margin-top:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="shareKokoroProfil()">
+          📤 Profil teilen (an Prim)
         </button>
         <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:4px">
           ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}
@@ -778,6 +787,9 @@ function finishQuiz() {
       </button>
       <button class="ghost-btn" style="margin-top:0" onclick="startWithEmptyCabinet(); closeModal();">
         🧴 Mit leerem Schrank starten (eigene Produkte einsortieren)
+      </button>
+      <button class="ghost-btn" style="margin-top:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="shareKokoroProfil()">
+        📤 Profil teilen (an Prim)
       </button>
       <div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:4px">
         ⚖️ ${window.APP_DISCLAIMER || "Keine Therapie — dein Ratgeber für Einkauf & Layering."}

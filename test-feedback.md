@@ -7,3 +7,6 @@ Nach dem Test bitte kurz antworten (Chat, Sprachnachricht oder Zettel):
 3. **Würdest du das am Regal nutzen?** (ja / eher nein / vielleicht — ein Satz)
 
 Optional: Ein Satz, was dich am Layout gestört hat (zu voll, zu klein, unklar…).
+
+**Nach dem Test:** Unter Optionen → „Profil teilen“ (WhatsApp) oder „Als Datei exportieren“ die JSON an Prim schicken.
+Prim importiert unter Optionen → „Datei importieren“.

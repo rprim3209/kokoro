@@ -9,3 +9,5 @@
 **Bitte nicht erwarten:** medizinische Diagnose, Therapietipps, perfekte Fotos, jeden Drogerie-Artikel der Welt.
 
 **Das ist:** Einkaufs- & Layering-Hilfe für *deinen* Schrank.
+
+Nach dem Test: **Optionen → Profil teilen** oder JSON-Export an Prim senden (kein Server — nur manuell).
