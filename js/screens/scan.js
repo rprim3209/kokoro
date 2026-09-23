@@ -53,7 +53,7 @@ function mountProfileDmLiveSearch(opts) {
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0" onclick="event.stopPropagation()">
           ${p.url ? `<a class="btn-text" style="background:#fff7ed;color:#9a3412;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:700;flex-shrink:0;text-decoration:none" href="${p.url}" target="_blank" rel="noopener">Shop ↗</a>` : ''}
-          <button type="button" class="btn-text" style="background:var(--ok);color:#F7F4D5;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:700;flex-shrink:0" onclick="adoptDmProductToSlot('${p.id}', 'pm')">+ Schrank</button>
+          <button type="button" class="btn-text" style="background:var(--ok);color:#F7F4D5;padding:6px 10px;border-radius:6px;font-size:0.76rem;font-weight:700;flex-shrink:0" onclick="adoptDmProductToSlot('${p.id}', 'pm')">In meinen Schrank</button>
         </div>
       </div>
     `).join("");
@@ -206,7 +206,7 @@ function openAddBabyProductModal(targetSlot = "all", profileType = "baby") {
           </div>
           <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
             <button class="btn-text" style="background:var(--ok);color:#F7F4D5;font-weight:700;padding:6px 11px;border-radius:8px;font-size:0.78rem" onclick="addBabyProduct('${p.id}', '${profileType}', '${targetSlot}')">
-              + Schrank
+              In meinen Schrank
             </button>
             <button class="btn-text" style="font-size:0.72rem;color:#666;padding:2px 6px" onclick="openBabyProductDetail('${p.id}')">
               Info
@@ -629,7 +629,7 @@ function openAddTeenProductModal(targetSlot = "all") {
           </div>
           <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
             <button class="btn-text" style="background:var(--ok);color:#F7F4D5;font-weight:700;padding:6px 11px;border-radius:8px;font-size:0.78rem" onclick="addTeenProduct('${p.id}', '${targetSlot}')">
-              + Schrank
+              In meinen Schrank
             </button>
             <button class="btn-text" style="font-size:0.72rem;color:#666;padding:2px 6px" onclick="openTeenProductDetail('${p.id}')">
               Info
@@ -1023,7 +1023,7 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
           <div style="text-align:center;padding:2.2rem 1rem;color:var(--muted);font-size:0.9rem">
             <div style="font-size:1.8rem;margin-bottom:8px">🛒</div>
             ${searchVal && searchVal.trim().length >= 2 
-              ? `<div style="font-weight:600;color:var(--ink)">Kein Treffer bei ${escapeHtml(retailer.label)} für „${escapeHtml(searchVal)}“.</div><div style="font-size:0.8rem;color:var(--muted);margin-top:3px">Probiere Marken wie Balea Med, CeraVe, Nivea, Isana oder eine 13-stellige EAN.</div>`
+              ? `<div style="font-weight:600;color:var(--ink)">Kein Treffer</div><div style="font-size:0.8rem;color:var(--muted);margin-top:3px">Versuch's mit dem Produktnamen — oder scanne den Barcode noch einmal.</div>`
               : `<div style="font-weight:600;color:var(--ink)">Live im Sortiment (${escapeHtml(retailer.label)}) suchen</div><div style="font-size:0.8rem;color:var(--muted);margin-top:3px">Tippe oben einen Suchbegriff (z.B. Waschgel, Niacinamid, Sonnenschutz oder EAN).</div>`}
           </div>
         `;
@@ -1889,8 +1889,7 @@ function openScanModal() {
     prods.forEach(pr => { if (pr && pr.id) window.dmResultsMap[pr.id] = pr; });
 
     if (prods.length === 0) {
-      const errMsg = window.lastDmError || ('Kein Treffer für „' + escapeHtml(q) + '“ gefunden.');
-      container.innerHTML = `<div style="font-size:0.8rem;color:var(--muted);padding:6px 0">${errMsg}</div>`;
+      container.innerHTML = `<div style="text-align:center;padding:0.8rem 0.2rem"><div style="font-weight:600;color:var(--ink);font-size:0.95rem">Kein Treffer</div><div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Versuch's mit dem Produktnamen — oder scanne den Barcode noch einmal.</div></div>`;
       return;
     }
 
@@ -1996,7 +1995,7 @@ function openScanModal() {
         `;
       }).join("");
     } else {
-      html += `<div style="text-align:center;padding:1rem;color:var(--muted);font-size:0.85rem">Kein Treffer in den 985+ Basis-Artikeln.</div>`;
+      html += `<div style="text-align:center;padding:1rem"><div style="font-weight:600;color:var(--ink);font-size:0.95rem">Kein Treffer</div><div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Versuch's mit dem Produktnamen — oder scanne den Barcode noch einmal.</div></div>`;
     }
 
     html += `
@@ -2331,10 +2330,10 @@ function showVerdict(prodId) {
         </div>
         <div style="display:flex;gap:8px">
           <button type="button" class="ghost-btn" style="flex:1;margin-top:0;font-size:0.82rem;padding:10px 8px" onclick="addProductToSlot('${prod.id}', 'am')">
-            + In Morgen-Routine
+            + Morgen
           </button>
           <button type="button" class="ghost-btn" style="flex:1;margin-top:0;font-size:0.82rem;padding:10px 8px" onclick="addProductToSlot('${prod.id}', 'pm')">
-            + In Abend-Routine
+            + Abend
           </button>
         </div>
       </div>

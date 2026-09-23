@@ -796,7 +796,7 @@ function renderTypRegal(tab, currentList) {
                   </button>
                 ` : `
                   <button type="button" class="btn-adopt" onclick="adoptIdealProduct('${idealP.id}', '${tab}')" title="Per 1-Klick in deinen Schrank stellen">
-                    Übernehmen
+                    In meinen Schrank
                   </button>
                 `)}
               </div>
@@ -984,7 +984,7 @@ function renderTeenTypRegal() {
                   </span>
                 ` : `
                   <button type="button" class="btn-adopt" style="background:#0d9488" onclick="adoptTeenProductToSlot('${st.prodId}', '${st.slotKey}')">
-                    Übernehmen
+                    In meinen Schrank
                   </button>
                 `}
               </div>
@@ -1277,7 +1277,7 @@ function renderBabyTypRegal() {
                   </span>
                 ` : `
                   <button type="button" class="btn-adopt" style="background:#2563eb" onclick="adoptBabyIdealProduct('${st.prodId}', 'baby', '${st.slotKey}')">
-                    Übernehmen
+                    In meinen Schrank
                   </button>
                 `}
               </div>
@@ -1412,7 +1412,7 @@ function renderChildTypRegal() {
                   </span>
                 ` : `
                   <button type="button" class="btn-adopt" style="background:#d97706" onclick="adoptBabyIdealProduct('${st.prodId}', 'child', '${st.slotKey}')">
-                    Übernehmen
+                    In meinen Schrank
                   </button>
                 `}
               </div>
@@ -2077,7 +2077,7 @@ function renderBudgetRoutineModalContent() {
     <!-- 5. Aktions-Buttons -->
     <div style="display:flex;flex-direction:column;gap:8px">
       <button type="button" class="primary" id="btnApplyBudgetRoutine" onclick="applyBudgetRoutineToCabinet(calculateBudgetRoutine(currentBudgetAmount, currentBudgetSkinType))">
-        🎯 Diese Routine in den Schrank übernehmen (${result.totalCost.toFixed(2).replace('.', ',')} €)
+        🎯 In meinen Schrank (${result.totalCost.toFixed(2).replace('.', ',')} €)
       </button>
       <button type="button" class="ghost-btn" onclick="closeModal()">
         Schließen

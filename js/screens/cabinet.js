@@ -1742,29 +1742,15 @@ window.placeScannedProductInCabinet = placeScannedProductInCabinet;
 // 3-Second Verdict Logic against Cabinet
 
 function openGuardModal() {
-  const tags = [].concat((appState && appState.tags) || []);
-  const isRx = tags.some(function (t) {
-    const s = String(t || "").toLowerCase();
-    return s.indexOf("begleit") !== -1 || s.indexOf("rx") !== -1;
-  });
-  const hasRxProd = (typeof getFullCabinetProductIds === "function" ? getFullCabinetProductIds() : [])
-    .map(function (id) { return typeof resolveCabinetProduct === "function" ? resolveCabinetProduct(id) : (typeof DB !== "undefined" ? DB[id] : null); })
-    .some(function (p) { return p && (p.rx || p.schiene === "arzneimittel" || (Array.isArray(p.klassen) && p.klassen.some(function (k) { return /retinoid_rx|bpo/.test(k); }))); });
-
-  const lead = (isRx || hasRxProd)
-    ? "Du hast <strong>Begleitpflege / ein Rx-Mittel</strong> aktiv. Medizinische Akne-Wirkstoffe (z.&nbsp;B. Adapalen / BPO) können die Barriere vorübergehend empfindlicher machen — die App filtert dann schärfer beim Einkauf & Layering."
-    : "Die <strong>Kurzanleitung</strong> erklärt Konflikte in deiner Routine (gleiche Wirkstoffklasse, Stacking, fehlender LSF). <strong>Begleitpflege</strong> schaltet du im Quiz oder im Rx-Wegweiser dazu — dann wird bei Duft & starken Säuren strenger gefiltert.";
-
   showModalSheet(`
-    <h2>🛡️ Was bedeutet Begleitpflege-Schutz?</h2>
-    <p style="font-size:0.92rem;line-height:1.45">${lead}</p>
-    <div class="pharma-box">
-      <div class="pharma-title">${(isRx || hasRxProd) ? "Deine automatischen Schutz-Regeln:" : "Was der Wächter prüft:"}</div>
-      <div class="pharma-text">
-        • <strong>Kein Säure-Stacking:</strong> AHA/BHA-Peelings werden am selben Abend blockiert.<br>
-        • <strong>Reizstoff-Filter:</strong> Warnung vor austrocknenden Alkoholen & ätherischen Zitrusölen.<br>
-        • <strong>Barriere-Support:</strong> Bevorzugung von Panthenol, Ceramiden und Glycerin.
-      </div>
+    <h2 style="margin:0 0 0.75rem;font-size:1.25rem">In 3 Schritten</h2>
+    <ol style="margin:0 0 1rem;padding-left:1.25rem;font-size:0.95rem;line-height:1.55;color:var(--ink)">
+      <li style="margin-bottom:0.45rem"><strong>Produkte in den Schrank legen</strong></li>
+      <li style="margin-bottom:0.45rem"><strong>Neues Produkt scannen oder suchen</strong></li>
+      <li style="margin-bottom:0.45rem"><strong>Ampel lesen — passt / eher nicht / passt schlecht zusammen</strong></li>
+    </ol>
+    <div style="font-size:0.78rem;color:var(--muted);font-style:italic;margin-bottom:1rem">
+      Keine Therapie — nur Einkauf & Layering.
     </div>
     <div style="display:flex;flex-direction:column;gap:8px">
       <button class="primary" onclick="closeModal()">Verstanden</button>
@@ -1922,21 +1908,21 @@ function openMarketGuideModal() {
             <div style="font-weight:700;font-size:0.9rem">Balea Med Ultra Sensitive Waschgel</div>
             <div style="font-size:0.78rem;color:var(--muted)">Parfümfrei, extrem tensidmild · <strong style="color:var(--ok)">dm (~2,45 €)</strong></div>
           </div>
-          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('baleaWash', 'am'); openMarketGuideModal();">+ In Schrank</button>
+          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('baleaWash', 'am'); openMarketGuideModal();">In meinen Schrank</button>
         </div>
         <div class="alt-card" style="padding:0.7rem 0.85rem">
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:0.9rem">Isana Pure Reinigungsschaum</div>
             <div style="font-size:0.78rem;color:var(--muted)">Budget-Favorit, sanft & seifenfrei · <strong style="color:var(--ok)">Rossmann (~2,95 €)</strong></div>
           </div>
-          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('isanaWash', 'am'); openMarketGuideModal();">+ In Schrank</button>
+          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('isanaWash', 'am'); openMarketGuideModal();">In meinen Schrank</button>
         </div>
         <div class="alt-card" style="padding:0.7rem 0.85rem">
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:0.9rem">CeraVe Hydrating Cleanser</div>
             <div style="font-size:0.78rem;color:var(--muted)">Schäumt nicht, schützt mit 3 Ceramiden · <strong style="color:var(--ok)">Apotheke / dm (~11 €)</strong></div>
           </div>
-          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('ceraveWash', 'am'); openMarketGuideModal();">+ In Schrank</button>
+          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('ceraveWash', 'am'); openMarketGuideModal();">In meinen Schrank</button>
         </div>
       </div>
     </div>
@@ -1957,14 +1943,14 @@ function openMarketGuideModal() {
               <div style="font-weight:700;font-size:0.9rem">Good Molecules Hyaluronic Acid Serum</div>
               <div style="font-size:0.78rem;color:var(--muted)">Support-Feuchte, kein Active-Upsell – <strong style="color:var(--ok)">Online / Handel (~12 €)</strong></div>
             </div>
-            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('ha', 'am'); openMarketGuideModal();">+ In Schrank</button>
+            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('ha', 'am'); openMarketGuideModal();">In meinen Schrank</button>
           </div>
           <div class="alt-card" style="padding:0.7rem 0.85rem">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:0.9rem">Nø Cosmetics 120h Liquid Hydrator</div>
               <div style="font-size:0.78rem;color:var(--muted)">Panthenol + Ectoin Barriere-Feuchte – <strong style="color:var(--ok)">dm / Rossmann (~9,95 €)</strong></div>
             </div>
-            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('noHydrator', 'am'); openMarketGuideModal();">+ In Schrank</button>
+            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('noHydrator', 'am'); openMarketGuideModal();">In meinen Schrank</button>
           </div>
 ` : isAcne || isRx ? `
           <div class="alt-card" style="padding:0.7rem 0.85rem">
@@ -1972,21 +1958,21 @@ function openMarketGuideModal() {
               <div style="font-weight:700;font-size:0.9rem">Geek & Gorgeous aPAD (Azelain-Derivat)</div>
               <div style="font-size:0.78rem;color:var(--muted)">Mild gegen Rötungen, Pickel & Talg · <strong style="color:var(--ok)">dm / Online (~10,50 €)</strong></div>
             </div>
-            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('apad', 'am'); openMarketGuideModal();">+ In Schrank</button>
+            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('apad', 'am'); openMarketGuideModal();">In meinen Schrank</button>
           </div>
           <div class="alt-card" style="padding:0.7rem 0.85rem">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:0.9rem">The Ordinary Azelaic Acid 10%</div>
               <div style="font-size:0.78rem;color:var(--muted)">Reine Azelainsäure, mild keratolytisch · <strong style="color:var(--ok)">dm / Douglas (~12 €)</strong></div>
             </div>
-            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('aza', 'am'); openMarketGuideModal();">+ In Schrank</button>
+            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('aza', 'am'); openMarketGuideModal();">In meinen Schrank</button>
           </div>
           <div class="alt-card" style="padding:0.7rem 0.85rem">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:0.9rem">Paula's Choice 2% BHA Liquid Peeling</div>
               <div style="font-size:0.78rem;color:var(--muted)">Klärt verstopfte Poren fettlöslich · <strong style="color:var(--ok)">Douglas / Online (~39 €)</strong></div>
             </div>
-            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('bha', 'pm'); openMarketGuideModal();">+ In Schrank</button>
+            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('bha', 'pm'); openMarketGuideModal();">In meinen Schrank</button>
           </div>
         ` : `
           <div class="alt-card" style="padding:0.7rem 0.85rem">
@@ -1994,14 +1980,14 @@ function openMarketGuideModal() {
               <div style="font-weight:700;font-size:0.9rem">Good Molecules Hyaluronic Acid Serum</div>
               <div style="font-size:0.78rem;color:var(--muted)">Reine Tiefenfeuchte ohne Reizstoffe · <strong style="color:var(--ok)">Online / Handel (~12 €)</strong></div>
             </div>
-            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('ha', 'am'); openMarketGuideModal();">+ In Schrank</button>
+            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('ha', 'am'); openMarketGuideModal();">In meinen Schrank</button>
           </div>
           <div class="alt-card" style="padding:0.7rem 0.85rem">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:0.9rem">Nø Cosmetics 120h Liquid Hydrator</div>
               <div style="font-size:0.78rem;color:var(--muted)">Panthenol + Ectoin Barriere-Feuchte · <strong style="color:var(--ok)">dm / Rossmann (~9,95 €)</strong></div>
             </div>
-            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('noHydrator', 'am'); openMarketGuideModal();">+ In Schrank</button>
+            <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('noHydrator', 'am'); openMarketGuideModal();">In meinen Schrank</button>
           </div>
         `}
       </div>
@@ -2016,21 +2002,21 @@ function openMarketGuideModal() {
             <div style="font-weight:700;font-size:0.9rem">Balea Med Ultra Sensitive Intensivcreme</div>
             <div style="font-size:0.78rem;color:var(--muted)">Cica + 7% Panthenol, unschlagbarer Preis · <strong style="color:var(--ok)">dm (~3,95 €)</strong></div>
           </div>
-          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('baleaCreme', 'pm'); openMarketGuideModal();">+ In Schrank</button>
+          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('baleaCreme', 'pm'); openMarketGuideModal();">In meinen Schrank</button>
         </div>
         <div class="alt-card" style="padding:0.7rem 0.85rem">
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:0.9rem">Isana Pure Feuchtigkeitscreme</div>
             <div style="font-size:0.78rem;color:var(--muted)">Leicht, zieht schnell ein, Niacinamid · <strong style="color:var(--ok)">Rossmann (~3,95 €)</strong></div>
           </div>
-          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('isanaCreme', 'pm'); openMarketGuideModal();">+ In Schrank</button>
+          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('isanaCreme', 'pm'); openMarketGuideModal();">In meinen Schrank</button>
         </div>
         <div class="alt-card" style="padding:0.7rem 0.85rem">
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:0.9rem">Purito Mighty Bamboo Panthenol Cream</div>
             <div style="font-size:0.78rem;color:var(--muted)">10% Panthenol SOS-Pflege bei Retinoid-Trockenheit · <strong style="color:var(--ok)">EU-Shop (~18 €)</strong></div>
           </div>
-          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('purito', 'pm'); openMarketGuideModal();">+ In Schrank</button>
+          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('purito', 'pm'); openMarketGuideModal();">In meinen Schrank</button>
         </div>
       </div>
     </div>
@@ -2044,14 +2030,14 @@ function openMarketGuideModal() {
             <div style="font-weight:700;font-size:0.9rem">Balea Med Ultra Sensitive Sonnenfluid LSF 50+</div>
             <div style="font-size:0.78rem;color:var(--muted)">Parfümfrei, brennt nicht in den Augen · <strong style="color:var(--ok)">dm (~5,95 €)</strong></div>
           </div>
-          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('baleaSpf', 'am'); openMarketGuideModal();">+ In Schrank</button>
+          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('baleaSpf', 'am'); openMarketGuideModal();">In meinen Schrank</button>
         </div>
         <div class="alt-card" style="padding:0.7rem 0.85rem">
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:0.9rem">La Roche-Posay Anthelios UVMune 400 LSF 50+</div>
             <div style="font-size:0.78rem;color:var(--muted)">Modernster Mexoryl 400 Filter gegen tiefste UVA-Strahlen · <strong style="color:var(--ok)">Apotheke (~19 €)</strong></div>
           </div>
-          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('anthelios', 'am'); openMarketGuideModal();">+ In Schrank</button>
+          <button class="btn-text" style="background:#eaf0f6;color:#204060;padding:5px 9px;border-radius:6px;font-size:0.76rem" onclick="addProductToSlot('anthelios', 'am'); openMarketGuideModal();">In meinen Schrank</button>
         </div>
       </div>
     </div>
