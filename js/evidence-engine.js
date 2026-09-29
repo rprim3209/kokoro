@@ -9,10 +9,19 @@
     aad: {title:'AAD · Akneleitlinie 2024',url:'https://www.aad.org/news/updated-guidelines-acne-management',kind:'Leitlinie'},
     ema: {title:'EMA · Retinoide und Schwangerschaft',url:'https://www.ema.europa.eu/en/news/updated-measures-pregnancy-prevention-during-retinoid-use',kind:'Behörde'},
     comedo: {title:'Draelos & DiNardo 2006 · fertige Formulierungen',url:'https://pubmed.ncbi.nlm.nih.gov/16488305/',kind:'Humanstudie · begrenzter Umfang'},
-    twyneo: {title:'TWYNEO · formulierte Tretinoin/BPO-Kombination',url:'https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=27208dff-e376-4c18-b56e-0a260f685a39',kind:'US-Fachinformation · keine EU-Freigabe'}
+    twyneo: {title:'TWYNEO · formulierte Tretinoin/BPO-Kombination',url:'https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=27208dff-e376-4c18-b56e-0a260f685a39',kind:'US-Fachinformation · keine EU-Freigabe'},
+    fulton: {title:'Fulton 1989 · Komedogenitäts-Index & Follikelschwellung',url:'https://pubmed.ncbi.nlm.nih.gov/2529713/',kind:'Dermatologische Studie'},
+    occlusion: {title:'Kligman 1972 · Acne cosmetica & Okklusions-Hypoxie',url:'https://pubmed.ncbi.nlm.nih.gov/4263158/',kind:'Dermatologische Grundlagenarbeit'}
   };
   const labels={konflikt:'Nicht anwenden · Grund beachten',eher_nicht:'Mit Vorsicht kombinieren',unbekannt:'Basischeck · kein bekannter Konflikt',passt:'Kein hinterlegter Konflikt erkannt'};
   const ranks={passt:0,unbekannt:1,eher_nicht:2,konflikt:3};
+  function isAcneProfile(profile) {
+    if (!profile) return false;
+    const tags = Array.isArray(profile.tags) ? profile.tags.map(t => String(t).toLowerCase()) : [];
+    const text = [profile.name, profile.subtitle, profile.skinType, ...tags].join(' ').toLowerCase();
+    return tags.includes('akne') || tags.includes('oily') || tags.includes('mischhaut') || tags.includes('pickel') ||
+           /akne|unrein|oily|talg|seborrh|mischhaut|pickel|mitesser/i.test(text);
+  }
   function normalize(p) {
     p=p||{};
     const text=[p.name,p.wirk,Array.isArray(p.inci)?p.inci.join(', '):p.inci].filter(Boolean).join(' ').toLowerCase();
@@ -36,6 +45,26 @@
       if(['baby','child','teen'].includes(profile.category)&&(p.ret||p.groups.has('bpo')||p.groups.has('aha')||p.groups.has('bha'))) add('age-review','unbekannt','Altersfreigabe prüfen','Für '+p.name+' ist hier keine verifizierte, altersbezogene Anwendung hinterlegt.','Packungsangaben und bei Arzneimitteln den ärztlichen Plan prüfen. Keine automatische Wirkstoffempfehlung.',[p],null,'Prüfgrenze');
       if(p.groups.has('ab_top')&&!items.some(x=>x.groups.has('bpo')))add('antibiotic-plan','eher_nicht','Behandlungsplan prüfen','Ein topisches Antibiotikum ist erfasst. Antibiotika sollten nicht allein gegen Akne verwendet werden. Der Schrank bildet den verordneten Plan möglicherweise nicht vollständig ab.','Verordnung mit der Praxis abgleichen; BPO nicht eigenständig hinzufügen.',[p],'aad','Leitlinienhinweis');
       if(p.rx)add('rx-plan','unbekannt','Arzneimittel: Verordnung hat Vorrang','Die App prüft keine Dosierung, vollständigen Wechselwirkungen oder persönliche Arzneimittel-Eignung.','Anwendung nach Fachinformation und ärztlichem Plan.',[p],null,'Prüfgrenze');
+      if(!p.rinse && isAcneProfile(profile)){
+        const raw = p.raw || {};
+        const cAnal = typeof root.analyzeInciComedogenicity === 'function' ? root.analyzeInciComedogenicity(raw) : null;
+        const text = [p.name, raw.wirk, Array.isArray(raw.inci) ? raw.inci.join(', ') : raw.inci, raw.notes, raw.textur].filter(Boolean).join(' ').toLowerCase();
+        const hasCystic = (cAnal && cAnal.hasCysticTrigger && cAnal.cysticTriggers.length > 0) ||
+          /\b(carrageenan|chondrus\s*crispus|laminaria\s*(?:digitata|saccharina)|algae\s*extract|kelp\s*extract|squalene\b(?!ane)|isopropyl\s*(?:myristate|isostearate)|myristyl\s*myristate|wheat\s*germ\s*oil)\b/i.test(text);
+        if(hasCystic){
+          const triggers = cAnal?.cysticTriggers?.length ? cAnal.cysticTriggers.map(x=>x.name).join(', ') : 'Rotalgen/Ester/Squalen';
+          add('acne-cystic-trigger','eher_nicht','Follikelreizung & Zysten-Trigger möglich',p.name+' enthält Inhaltsstoffe ('+triggers+'), die in dermatologischen Studien als starke Auslöser für Follikelschwellungen und Mikrokomedonen beschrieben sind (Fulton 1989). Die tatsächliche Auswirkung hängt von der Konzentration im Endprodukt ab (Draelos 2006).','Bei Neigung zu zystischen Entzündungen oder verstopften Poren vorab an einer kleinen Stelle testen oder eine leichtere Alternative wählen.',[p],'fulton','Evidenzbasierte Inhaltsstoff-Heuristik');
+        } else if(cAnal && cAnal.maxScore >= 4){
+          const highRisk = cAnal.highRisk.map(x=>x.name).join(', ');
+          add('acne-comedogenic-high','eher_nicht','Stark komedogene Inhaltsstoffe erfasst',p.name+' enthält Inhaltsstoffe mit hohem Komedogenitäts-Index ('+highRisk+'). Das kann bei akne-anfälliger oder öliger Haut zu Porenverstopfung führen.','Vorab Verträglichkeit prüfen oder zu einer nicht-komedogenen Formulierung (Score 0–1) greifen.',[p],'comedo','Inhaltsstoff-Heuristik · Draelos 2006');
+        }
+        const tex = cAnal?.textureEval || (typeof root.classifyProductTexture === 'function' ? root.classifyProductTexture(raw) : null) ||
+          (/\b(balsam|balm|baume|cica-?balm|cica-?balsam|cold-?cream|barrier\s*balm)\b/i.test(text) ? {isContraindicatedForAcne:true, shortLabel:'Balsam (Sehr reichhaltig)'} :
+           /\b(salbe|ointment|fettsalbe|wundsalbe|paste)\b/i.test(text) ? {isContraindicatedForAcne:true, shortLabel:'Salbe (Okklusiv)'} : null);
+        if(tex && tex.isContraindicatedForAcne){
+          add('acne-occlusion-risk','eher_nicht','Textur-Warnung: '+(tex.shortLabel||'Schwere Okklusion'),p.name+' weist eine schwere, stark okklusive Textur auf. Ein dichter Fettfilm begünstigt das sauerstofffreie (anaerobe) Milieu, in dem sich Cutibacterium acnes vermehrt, und kann Follikelrupturen (Zysten) begünstigen (Kligman 1972).','Empfehlung: Für das Gesicht bei Akne und öliger Haut zu einem leichten Hydrogel oder einer ölfreien Gel-Creme wechseln.',[p],'occlusion','Dermatologischer Galenik-Grundsatz');
+        }
+      }
     }
     for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
       const a=items[i],b=items[j];const co=input.coApplication?input.coApplication(a.id,b.id):{together:true};

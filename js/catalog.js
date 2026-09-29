@@ -2244,7 +2244,155 @@ function classifyProductTexture(productOrBlob) {
   };
 }
 
-function analyzeInciComedogenicity(){return null; /* Ingredient scores cannot establish finished-product comedogenicity. */}
+function analyzeInciComedogenicity(textOrProduct) {
+  let textToScan = "";
+  let explicitNcClaim = null;
+
+  if (typeof textOrProduct === "object" && textOrProduct !== null) {
+    const p = textOrProduct;
+    explicitNcClaim = p.nc;
+    const parts = [
+      p.inci || "",
+      p.ingredients || "",
+      p.ingredients_text || "",
+      p.wirk || "",
+      p.notes || "",
+      p.truth || "",
+      p.name || "",
+      p.title || ""
+    ];
+    textToScan = parts.filter(Boolean).join(" ");
+  } else if (typeof textOrProduct === "string") {
+    textToScan = textOrProduct;
+  }
+
+  const textureEval = typeof classifyProductTexture === "function" ? classifyProductTexture(textOrProduct) : null;
+
+  if (!textToScan || !textToScan.trim()) {
+    return {
+      maxScore: explicitNcClaim === true ? 0 : (explicitNcClaim === false ? 3 : 1),
+      status: explicitNcClaim === true ? "non_comedogenic" : (explicitNcClaim === false ? "comedogenic_moderate" : "unknown"),
+      label: explicitNcClaim === true ? "✨ Nicht komedogen (Hersteller-Claim)" : (explicitNcClaim === false ? "⚠️ Nicht als komedogenarm deklariert" : "ℹ️ Komedogenität offen (keine INCI hinterlegt)"),
+      badgeColor: explicitNcClaim === true ? "#dcfce7" : (explicitNcClaim === false ? "#ffedd5" : "#f1f5f9"),
+      textColor: explicitNcClaim === true ? "#166534" : (explicitNcClaim === false ? "#9a3412" : "#475569"),
+      borderColor: explicitNcClaim === true ? "#86efac" : (explicitNcClaim === false ? "#fdba74" : "#cbd5e1"),
+      flagged: [],
+      highRisk: [],
+      moderateRisk: [],
+      lowRisk: [],
+      safe: [],
+      isClean: explicitNcClaim === true,
+      hasInci: false,
+      summary: explicitNcClaim === true 
+        ? "Hersteller deklariert 'nicht komedogen'. In der EU ist dieser Begriff rechtlich nicht standardisiert — prüfe bei starker Akne-Neigung stets die genaue INCI-Liste."
+        : "Keine detaillierte INCI-Liste hinterlegt. Bei akne-anfälliger Haut vorab Packungsaufdruck prüfen.",
+      cysticTriggers: [],
+      hasCysticTrigger: false,
+      textureEval: textureEval
+    };
+  }
+
+  const normalized = textToScan.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const matched = [];
+
+  if (typeof COMEDOGENIC_INGREDIENTS_DB === "object" && Array.isArray(COMEDOGENIC_INGREDIENTS_DB)) {
+    for (const item of COMEDOGENIC_INGREDIENTS_DB) {
+      if (item.regex.test(normalized) || item.regex.test(textToScan)) {
+        matched.push(item);
+      }
+    }
+  }
+
+  // Sort matched ingredients by score descending
+  matched.sort((a, b) => b.score - a.score);
+
+  const highRisk = matched.filter(m => m.score >= 4);
+  const moderateRisk = matched.filter(m => m.score === 3);
+  const lowRisk = matched.filter(m => m.score === 2);
+  const safe = matched.filter(m => m.score <= 1);
+  const cysticTriggers = matched.filter(m => m.cysticRisk === true || m.score === 5 || /carrageenan|chondrus|laminaria|algae|squalene\b(?!ane)|isopropyl\s*myristate|isopropyl\s*isostearate|ethylhexyl\s*palmitate|wheat\s*germ/i.test(m.name));
+
+  let maxScore = matched.length > 0 ? matched[0].score : (explicitNcClaim === true ? 0 : 1);
+
+  let status = "comedogenic_safe";
+  let label = `✨ Porenfreundlich (Score ${maxScore}/5)`;
+  let badgeColor = "#dcfce7";
+  let textColor = "#166534";
+  let borderColor = "#86efac";
+  let suitability = "Optimal für Akne, ölige Haut, Teenager und verstopfte Poren.";
+
+  if (maxScore === 5) {
+    status = "comedogenic_extreme";
+    label = `🔴 Extrem porenverstopfend (Score 5/5)`;
+    badgeColor = "#fee2e2";
+    textColor = "#991b1b";
+    borderColor = "#fca5a5";
+    suitability = "Höchstgradig komedogen! Triggert Acne cosmetica & Mikrokomedonen. Bei Akne/öliger Haut strikt kontraindiziert.";
+  } else if (maxScore === 4) {
+    status = "comedogenic_high";
+    label = `⚠️ Stark porenverstopfend (Score 4/5)`;
+    badgeColor = "#fee2e2";
+    textColor = "#991b1b";
+    borderColor = "#fca5a5";
+    suitability = "Kontraindiziert bei Akne, öliger Haut & Mitessern! Hohes Risiko für Follikelverstopfung.";
+  } else if (maxScore === 3) {
+    status = "comedogenic_moderate";
+    label = `⚠️ Mäßig komedogen (Score 3/5)`;
+    badgeColor = "#ffedd5";
+    textColor = "#9a3412";
+    borderColor = "#fdba74";
+    suitability = "Für Akne & ölige Haut ungeeignet. Gut verträglich für trockene & barriere-geschädigte Haut.";
+  } else if (maxScore === 2) {
+    status = "comedogenic_low";
+    label = `ℹ️ Geringes Risiko (Score 2/5)`;
+    badgeColor = "#fef9c3";
+    textColor = "#854d0e";
+    borderColor = "#fde047";
+    suitability = "Meist unbedenklich. Bei extremer Akne-Neigung beobachten; für normale & trockene Haut ideal.";
+  }
+
+  const isClean = maxScore <= 1;
+
+  let summary = "";
+  if (highRisk.length > 0) {
+    const names = highRisk.map(h => `${h.name} (${h.score}/5)`).join(", ");
+    summary = `Enthält stark porenverstopfende Stoffe: ${names}. Bei Akne oder Seborrhoe oleosa nicht empfohlen!`;
+  } else if (moderateRisk.length > 0) {
+    const names = moderateRisk.map(m => `${m.name} (${m.score}/5)`).join(", ");
+    summary = `Enthält mäßig komedogene Stoffe (${names}). Bei trockener Haut zur Barrierepflege geeignet, bei Akne mit Vorsicht verwenden.`;
+  } else if (lowRisk.length > 0) {
+    const names = lowRisk.map(l => `${l.name} (${l.score}/5)`).join(", ");
+    summary = `Enthält milde Lipide/Fettalkohole (${names}, Score 2/5). Für normale bis trockene Haut hervorragend geeignet.`;
+  } else {
+    summary = `Keine porenverstopfenden Inhaltsstoffe erkannt (Score 0–1). Sicher für Akne-prone, ölige und sensible Haut.`;
+  }
+
+  if (cysticTriggers.length > 0) {
+    summary += ` ⚠️ Zysten-Trigger: Enthält ${cysticTriggers.map(c => c.name).join(", ")} (Follikelschwellungs-Risiko).`;
+  }
+
+  return {
+    maxScore: maxScore,
+    status: status,
+    label: label,
+    badgeColor: badgeColor,
+    textColor: textColor,
+    borderColor: borderColor,
+    suitability: suitability,
+    flagged: matched,
+    highRisk: highRisk,
+    moderateRisk: moderateRisk,
+    lowRisk: lowRisk,
+    safe: safe,
+    isClean: isClean,
+    hasInci: true,
+    explicitNcClaim: explicitNcClaim,
+    summary: summary,
+    cysticTriggers: cysticTriggers,
+    hasCysticTrigger: cysticTriggers.length > 0,
+    textureEval: textureEval
+  };
+}
 
 const KEY_ACTIVES_DEFINITIONS = [
   { id: "panthenol", label: "Panthenol (Provitamin B5)", rx: /\b(panthenol|d-panthenol|provitamin\s*b5)\b/i, category: "barriere" },
@@ -2612,16 +2760,27 @@ function findSimilarProducts(targetProdOrId, options = {}) {
 }
 
 // Exports
-window.COMEDOGENIC_INGREDIENTS_DB = COMEDOGENIC_INGREDIENTS_DB;
-window.classifyProductTexture = classifyProductTexture;
-window.analyzeInciComedogenicity = analyzeInciComedogenicity;
-window.KEY_ACTIVES_DEFINITIONS = KEY_ACTIVES_DEFINITIONS;
-window.EFFECT_DEFINITIONS = EFFECT_DEFINITIONS;
-window.extractProductActiveProfile = extractProductActiveProfile;
-window.calculateProductSimilarity = calculateProductSimilarity;
-window.compareTwoProducts = compareTwoProducts;
-window.getCatalogCandidatesPool = getCatalogCandidatesPool;
-window.findSimilarProducts = findSimilarProducts;
+const _globalObj = typeof window !== "undefined" ? window : globalThis;
+_globalObj.COMEDOGENIC_INGREDIENTS_DB = COMEDOGENIC_INGREDIENTS_DB;
+_globalObj.classifyProductTexture = classifyProductTexture;
+_globalObj.analyzeInciComedogenicity = analyzeInciComedogenicity;
+_globalObj.KEY_ACTIVES_DEFINITIONS = KEY_ACTIVES_DEFINITIONS;
+_globalObj.EFFECT_DEFINITIONS = EFFECT_DEFINITIONS;
+_globalObj.extractProductActiveProfile = extractProductActiveProfile;
+_globalObj.calculateProductSimilarity = calculateProductSimilarity;
+_globalObj.compareTwoProducts = compareTwoProducts;
+_globalObj.getCatalogCandidatesPool = getCatalogCandidatesPool;
+_globalObj.findSimilarProducts = findSimilarProducts;
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    COMEDOGENIC_INGREDIENTS_DB,
+    classifyProductTexture,
+    analyzeInciComedogenicity,
+    compareTwoProducts,
+    findSimilarProducts
+  };
+}
 
 
 // ==========================================

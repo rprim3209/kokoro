@@ -29,9 +29,13 @@ function productIngredients(p){
 function evidenceProductModal(prodId,tab){
  const p=evidenceResolve(prodId);if(!p)return;
  const inci=productIngredients(p);const r=evidenceResult(p,tab||appState.tab);
+ const cAnal=typeof analyzeInciComedogenicity==='function'?analyzeInciComedogenicity(p):null;
+ const tex=cAnal?.textureEval||(typeof classifyProductTexture==='function'?classifyProductTexture(p):null);
+ const texHtml=tex?`<section class="detail-section"><h3>Textur & Galenik</h3><p><strong style="color:${tex.color}">${escapeHtml(tex.label)}</strong></p><p>${escapeHtml(tex.explanation||'')}</p>${tex.warning?`<p class="evidence-action" style="color:#b45309">${escapeHtml(tex.warning)}</p>`:''}${cAnal&&cAnal.hasInci?`<p style="margin-top:6px;font-size:0.86rem"><span class="tag" style="background:${cAnal.badgeColor};color:${cAnal.textColor};font-weight:600">${escapeHtml(cAnal.label)}</span></p><p style="font-size:0.82rem;color:var(--muted)">${escapeHtml(cAnal.summary)}</p>`:''}</section>`:'';
  showModalSheet(`<div class="detail-heading"><small>${escapeHtml(p.brand||'Produkt')}</small><h2>${escapeHtml(p.name)}</h2></div>
  <section class="detail-section"><h3>Inhaltsstoffe (INCI)</h3>${inci?`<p class="ingredient-list" translate="no">${escapeHtml(inci)}</p><p>Erfasste Liste. Die aktuelle Verpackung ist maßgeblich.</p>`:'<p>Keine vollständige Inhaltsstoffliste hinterlegt. Bitte die aktuelle Verpackung prüfen.</p>'}
  <h4>Erfasste Wirkstoffe</h4><p>${escapeHtml(p.wirk||'Wirkstoffangaben fehlen')}</p><p>Wirkstoffangaben ersetzen keine vollständige Inhaltsstoffliste.</p></section>
+ ${texHtml}
  ${evidenceCard(r)}<section class="detail-section"><h3>Produktangaben</h3><p>Parfümfrei: ${p.ff===true?'als Angabe erfasst':p.ff===false?'nein':'unbekannt'} · Nicht komedogen: ${p.nc===true?'Herstellerangabe, keine Verträglichkeitsgarantie':'nicht verifiziert'}</p></section>
  <div class="detail-actions"><button class="detail-secondary" id="detailAlternatives">Ähnliche Alternativen</button><button class="evidence-primary" id="detailAddProduct">Zur Routine hinzufügen</button></div>`);
  document.getElementById('detailAlternatives').onclick=()=>openEvidenceAlternatives(prodId);
