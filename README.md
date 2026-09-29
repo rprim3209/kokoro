@@ -1,6 +1,6 @@
 # KoKoRo Webapp
 
-Aktueller Einstieg: **index.html**. `demo.html` leitet dorthin weiter. Die App organisiert lokale Profile, Morgen-/Abendroutinen und regelbasierte Kombinationshinweise auf Deutsch und Englisch. Sie ist nicht klinisch validiert.
+Aktueller Einstieg: **index.html**. Die App organisiert lokale Profile, Morgen-/Abendroutinen und regelbasierte Kombinationshinweise auf Deutsch und Englisch. Sie ist nicht klinisch validiert.
 
 ## Lokal entwickeln
 
@@ -22,11 +22,7 @@ Endnutzer öffnen später eine gehostete HTTPS-Adresse und starten keinen eigene
 - `data/`: die zwei tatsächlich geladenen CSV-Kataloge. Der Hauptkatalog umfasst derzeit 1010 Zeilen; das bedeutet nicht 1010 eindeutige, verifizierte Rezepturen.
 - `api.py`, `run.py`, `requirements.txt`: unterstützter Server mit expliziter Dateifreigabe.
 - `tests/`: automatisierte Prüfungen.
-- `docs/reviews/`: aktueller Befund und offene Aufgaben.
-- `docs/legal/`: vor Veröffentlichung zu prüfende Betreiber-/Datenschutztexte.
-- `docs/archive/`: historische Konzepte und Referenzdaten; nicht öffentlich durch die API ausgeliefert.
-
-Alte Serverstarter und überholte HTML-Testkopien wurden entfernt. Es gibt nur eine vollständige Einstiegseite.
+Alte Serverstarter, historische Konzepte, doppelte Einstiegseiten und überholte Testkopien wurden entfernt. Es gibt nur eine vollständige Einstiegseite.
 
 ## Verhalten und Grenzen
 
@@ -43,4 +39,4 @@ node --test tests/*.test.cjs
 python -m pytest tests/test_api.py
 ```
 
-Für Python-Tests zusätzlich `pytest` installieren. Details: [aktueller Review](docs/reviews/LOCAL-REVIEW.md), [Quiz-Review](docs/reviews/QUIZ-REVIEW.md), [offene Probleme](docs/reviews/OPEN-ISSUES.md).
+Für Python-Tests zusätzlich `pytest` installieren.

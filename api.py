@@ -19,7 +19,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 ROOT = Path(__file__).resolve().parent
 LIVE = os.getenv('KOKORO_LIVE_SEARCH', '1') == '1'
 COUNTRIES = {'DE','AT','CH','FR','IT','ES','PT','NL','BE','SE','DK','FI','IE','GR','EE','LV','LT','LU','MT','CY','NO','IS','PL','CZ','SK','HU','SI','HR','RO','BG'}
-PUBLIC_FILES = {'demo.html','index.html','manifest.webmanifest','data/katalog-produkte.csv','data/dm-pilot-produkte.csv','docs/legal/datenschutz.md','docs/legal/impressum.md'}
+PUBLIC_FILES = {'index.html','manifest.webmanifest','data/katalog-produkte.csv','data/dm-pilot-produkte.csv'}
 PUBLIC_DIRS = {'js':{'.js'},'css':{'.css'},'icons':{'.png','.svg','.ico'}}
 LIMITERS: OrderedDict[str, deque] = OrderedDict()
 CACHE: OrderedDict[tuple, tuple] = OrderedDict()

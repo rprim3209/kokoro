@@ -12,11 +12,11 @@ def client():
 def test_public_assets_and_head(client):
     assert client.get('/',follow_redirects=False).headers['location']=='/index.html'
     assert 'js/app.js' in client.get('/index.html').text
+    assert client.get('/demo.html').status_code==404
     assert client.get('/data/katalog-produkte.csv').status_code==200
     assert client.get('/data/dm-pilot-produkte.csv').status_code==200
     assert client.get('/docs/archive/README.md').status_code==404
-    assert client.get('/demo.html').status_code==200
-    assert client.head('/demo.html').status_code==200
+    assert client.head('/index.html').status_code==200
     assert client.get('/js/evidence-engine.js').status_code==200
 
 def test_private_files_not_served(client):
