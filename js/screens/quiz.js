@@ -149,7 +149,7 @@ const QUIZ_BEGINNER = [
       { k: "Gesunderhaltung", d: "Barriere bewahren und mit täglichem UV-Schutz vorzeitiger Alterung vorbeugen", tags: { praevention: 2, normal: 2 } },
       { k: "Poren-Balance", d: "Verstopfte Poren, Mitesser oder Glanz mild regulieren", tags: { "akne-prone": 2 } },
       { k: "Beruhigung", d: "Rötungen lindern und Barriere (auch nach Rasur) reparieren", tags: { sensibel: 2, barrier: 2 } },
-      { k: "Reizarmut", d: "100% parfümfrei, ohne Alkohol denat., vegan & Cruelty-Free", tags: { duftstofffrei: 1, cruelty_free: 1 } }
+      { k: "Parfümfreie Pflege", d: "Bei neuen Vorschlägen nur Produkte mit hinterlegter Parfümfrei-Angabe berücksichtigen.", tags: { duftstofffrei: 1 } }
     ]
   },
   {
@@ -175,7 +175,7 @@ const QUIZ_PRO = [
     q: "Welche aktiven Leit-Wirkstoffe sind fester Bestandteil deiner Routine?",
     opts: [
       { k: "Barriere & LSF", d: "Täglicher Breitband-UV-Schutz, Ceramide & Feuchtigkeit (keine Reiz-Actives)", tags: { normal: 2, barrier: 2 } },
-      { k: "Retinoid (Rx)", d: "Medizinisches Retinoid oder BPO (Adapalen, Tretinoin, Epiduo, Benzaknen)", tags: { begleitpflege: 3, rx: 1 } },
+      { k: "Medizinische Aknebehandlung", d: "Zum Beispiel Adapalen, Tretinoin oder Benzoylperoxid (BPO). Trage die konkreten Produkte zusätzlich im Schrank ein.", tags: { begleitpflege: 3, rx: 1 } },
       { k: "Retinol (OTC)", d: "Freiverkäufliches kosmetisches Retinoid (Retinol, Retinal)", tags: { retinoid_cos: 1 } },
       { k: "Chemische Peelings", d: "AHA Glykolsäure, Milchsäure oder 2% BHA Salicylsäure", tags: { acids: 1 } },
       { k: "Milde Regulatoren", d: "Azelainsäure 10%, Niacinamid 5–10% oder Vitamin C", tags: { mild_actives: 1 } }
@@ -207,7 +207,7 @@ const QUIZ_PRO = [
     ]
   },
   {
-    q: "Welche Galenik bevorzugst du für deine Feuchtigkeitsstufe?",
+    q: "Welche Konsistenz magst du bei deiner Feuchtigkeitspflege?",
     opts: [
       { k: "Leichte Lotion", d: "Klassische Feuchtigkeitspflege für normale bis ausgeglichene Haut", tags: { normal: 2 } },
       { k: "Gel-Creme / Fluid", d: "Zieht matt ein, klebt nicht im Bart, neigt nicht zu Glanz", tags: { oelig: 2 } },
@@ -216,11 +216,11 @@ const QUIZ_PRO = [
     ]
   },
   {
-    q: "Welche Filter sollen bei jedem Scan sofort rot flaggen?",
+    q: "Welche Produkteigenschaften sind dir wichtig?",
     opts: [
-      { k: "Duftstoffe & Alkohol", d: "Limonene, Linalool, Parfüm & austrocknender Alkohol denat.", tags: { duftstofffrei: 1 } },
+      { k: "Parfümfrei", d: "Produkte mit hinterlegter Parfümfrei-Angabe bevorzugen. Das ist keine Allergieprüfung.", tags: { duftstofffrei: 1 } },
       { k: "Cruelty-Free", d: "Offizielle Leaping Bunny oder PETA Zertifizierung", tags: { cruelty_free: 1 } },
-      { k: "Keine Filter", d: "Hauptsache wissenschaftlich und evidenzbasiert belegt", tags: {} }
+      { k: "Keine zusätzlichen Wünsche", d: "Die Wirkstoffprüfung bleibt unabhängig von diesen Auswahlwünschen aktiv.", tags: {} }
     ]
   },
   {
@@ -357,7 +357,7 @@ function renderQuizQuestion() {
   showModalSheet(`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.2rem">
       <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">${trackTitle} (${quizIndex + 1}/${list.length})</div>
-      <div style="font-size:0.7rem;background:#ede5d7;color:#5a4f3e;padding:2px 8px;border-radius:99px;font-weight:600">Mehrfachauswahl möglich</div>
+      <div style="font-size:0.7rem;background:#ede5d7;color:#5a4f3e;padding:2px 8px;border-radius:99px;font-weight:600">${quizAllowsMultiple(q)?'Mehrfachauswahl möglich':'Eine Antwort wählen'}</div>
     </div>
     <h2 style="font-size:1.15rem;margin:0.4rem 0 1rem">${q.q}</h2>
     
@@ -389,7 +389,10 @@ function renderQuizQuestion() {
   `);
 }
 
+function quizAllowsMultiple(q){return !q.opts.some(o=>Object.keys(o.tags||{}).some(k=>k.startsWith('complexity_')||k==='baby_u6m'||k==='baby_o6m'));}
 function toggleQuizOption(optIdx) {
+  const q=getQuizList()[quizIndex];
+  if(!quizAllowsMultiple(q)){quizAnswers[quizIndex]=[optIdx];renderQuizQuestion();return;}
   if (!quizAnswers[quizIndex]) {
     quizAnswers[quizIndex] = [];
   }
@@ -717,13 +720,13 @@ function finishQuiz() {
 
   if (isBegleit) {
     pharmaTitle = "🛡️ Begleitpflege-Modus aktiv";
-    pharmaDesc = "Deine Routine schützt deine Haut während der Behandlung vor Säure-Stacking und reizenden Duftstoffen.";
+    pharmaDesc = "Du hast eine medizinische Behandlung angegeben. Trage die konkreten Präparate im Schrank ein, damit die hinterlegten Wirkstoffregeln angewendet werden können. Der verordnete Behandlungsplan hat Vorrang.";
   } else if (newTags.includes("Gesunde Haut")) {
     pharmaTitle = "✨ Gesunderhaltung & Prävention aktiv";
     pharmaDesc = "<strong>Jede Haut profitiert von täglichem Schutz:</strong> Deine Haut ist im Gleichgewicht! Die 3 wichtigsten evidenzbasierten Säulen: Sanfte Reinigung (befreit von Schweiß & Feinstaub), leichte Feuchtigkeit und täglicher Breitband-LSF (30–50) als #1 Schutz gegen vorzeitige Hautalterung und Zellschäden.";
   } else {
     pharmaTitle = "🛡️ Individueller Barriere-Filter aktiv";
-    pharmaDesc = "Produkte werden ab sofort gegen deine Feuchte- und Empfindlichkeits-Tags geprüft, um Reiz-Stacking zu verhindern.";
+    pharmaDesc = "Deine Angaben helfen bei der Auswahl eines Pflegebereichs. Parfümfrei- und Cruelty-Free-Wünsche werden im Budgetvorschlag berücksichtigt. Eine passende Textur oder individuelle Verträglichkeit kann daraus nicht sicher vorhergesagt werden.";
   }
 
   const hasAcneOrRx = newTags.some(function (t) { return /akne|unrein/i.test(String(t||"")); }) || newTags.includes("Arzt-Thema") || isBegleit;
@@ -777,7 +780,7 @@ function finishQuiz() {
 
     <div style="display:flex;flex-direction:column;gap:9px">
       <button class="primary" onclick="applyStarterRoutine()">
-        🎯 Empfohlene Starter-Routine laden (${compLabel})
+        🎯 Starter-Vorschlag ansehen (${compLabel})
       </button>
       <button class="ghost-btn" style="margin-top:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openBudgetRoutineModal()">
         💰 Routine nach Budget zusammenstellen (z. B. 20 €, 30 €, 50 €)
@@ -799,30 +802,9 @@ function finishQuiz() {
 }
 
 function applyStarterRoutine() {
-  const comp = appState.routineComplexity || "basis";
-  const routineId = typeof getSelectedIdealRoutineId === "function" ? getSelectedIdealRoutineId() : "acne_barrier";
-  if (typeof syncAdultRoutineToComplexity === "function") {
-    syncAdultRoutineToComplexity(comp, routineId, true);
-  } else {
-    appState.am = ["baleaWash", "baleaSpf"];
-    appState.pm_a = ["baleaWash", "baleaCreme"];
-    appState.pm_b = ["baleaWash", "baleaCreme"];
-    appState.pm_c = ["baleaWash", "baleaCreme"];
-  }
-
-  appState.am = sortRoutine(appState.am, true);
-  appState.pm_a = sortRoutine(appState.pm_a, false);
-  appState.pm_b = sortRoutine(appState.pm_b, false);
-  appState.pm_c = sortRoutine(appState.pm_c, false);
-
-  saveState();
-  closeModal();
-  renderMain();
-  const sub = (appState.profileSubtitles && appState.profileSubtitles.adult) || "Routine";
-  showToast(`🎯 Starter-Routine (${sub}) in den Schrank gestellt!`);
+  openBudgetRoutineModal();
 }
 
 window.openQuizModal = openQuizModal;
 window.renderQuizCountryStep = renderQuizCountryStep;
 window.proceedAfterQuizCountry = proceedAfterQuizCountry;
-

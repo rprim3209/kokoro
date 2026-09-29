@@ -1,3 +1,5 @@
+> Historischer Stand, nicht die aktuelle Implementierung. Siehe [aktuelle Anleitung](../../README.md).
+
 # INCI-Klassifikator v1
 
 **Stand:** 2026-09-08 (Europe/Vienna)  

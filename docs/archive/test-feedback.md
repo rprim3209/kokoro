@@ -8,5 +8,4 @@ Nach dem Test bitte kurz antworten (Chat, Sprachnachricht oder Zettel):
 
 Optional: Ein Satz, was dich am Layout gestört hat (zu voll, zu klein, unklar…).
 
-**Nach dem Test:** Unter Optionen → „Profil teilen“ (WhatsApp) oder „Als Datei exportieren“ die JSON an Prim schicken.
-Prim importiert unter Optionen → „Datei importieren“.
+**Nach dem Test:** Teile nur die Antworten auf diese Fragen. Einen Profil-Export enthält persönliche Routinen und wird nur dann weitergegeben, wenn du das ausdrücklich möchtest.

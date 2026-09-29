@@ -1,12 +1,12 @@
 {
   "name": "Kokoro – dein Kosmetikschrank",
   "short_name": "Kokoro",
-  "description": "Routine prüfen, Strichcodes scannen, Reiz-Stacking sehen.",
+  "description": "Pflege organisieren, Produkte scannen und Kombinationshinweise nachvollziehen.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#F7F4D5",
-  "theme_color": "#0A3323",
+  "background_color": "#F6EEEF",
+  "theme_color": "#2F5D56",
   "lang": "de",
   "icons": [
     {

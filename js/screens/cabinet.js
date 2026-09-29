@@ -203,159 +203,10 @@ function toggleProfileTagsExpanded() {
 }
 
 
-function renderCategoryPrognosisBanner(prog, opts) {
-  opts = opts || {};
-  var accent = opts.accent || "#1d4ed8";
-  var countLabel = opts.countLabel || "Produkte";
-  var totalCount = opts.totalCount !== undefined ? opts.totalCount : 0;
-  if (!prog || prog.empty || prog.status === "empty") {
-    return `
-    <div class="prognosis-card empty" style="border-left-color:${accent}">
-      <div class="prognosis-header">
-        <div class="prognosis-title">Noch leer — Produkte hinzufügen</div>
-        <span style="font-size:0.75rem;color:var(--muted);font-weight:600">0 ${countLabel}</span>
-      </div>
-      <ul class="prognosis-list">
-        <li data-i18n-full="Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.">Noch leer. Leg ein paar Produkte rein — dann prüfen wir, was zusammenpasst.</li>
-      </ul>
-    </div>`;
-  }
-
-  var statusClass = prog.status || "ok";
-  var verdict = prog.verdict || "passt";
-
-  // Short Ampel header by severity (collapsed default shows ONLY this + count + Warum)
-  var shortTitle = (typeof routineAmpelTitle === "function")
-    ? routineAmpelTitle(verdict)
-    : (verdict === "konflikt"
-      ? "🔴 Routine mit Konflikt"
-      : verdict === "eher_nicht"
-        ? "🟡 Routine mit Vorsicht"
-        : "🟢 Routine ohne Konflikt");
-
-  // Detail banner reason (shown only when expanded)
-  var bannerHtml = "";
-  var primaryAlertClean = "";
-
-  if (verdict === "konflikt" || verdict === "eher_nicht") {
-    var rawReason = "";
-    if (prog.topAlert) {
-      rawReason = prog.topAlert;
-    } else if (prog.points && prog.points.length > 0) {
-      var matchPt = prog.points.find(function (pt) {
-        return verdict === "konflikt"
-          ? (String(pt).indexOf("Konflikt") !== -1 || String(pt).toLowerCase().indexOf("passt schlecht") !== -1)
-          : (String(pt).indexOf("eher nicht") !== -1 || String(pt).indexOf("fehlt") !== -1 || String(pt).indexOf("Duft") !== -1);
-      }) || prog.points[0];
-      rawReason = matchPt;
-    }
-
-    primaryAlertClean = String(rawReason || "")
-      .replace(/^[🔴🟡🟢ℹ️]\s*(konflikt|eher\s*nicht|passt)\s*—\s*/i, "")
-      .replace(/\s*—\s*(eher\s*nicht|konflikt)\.?$/i, "")
-      .trim();
-
-    if (!primaryAlertClean) {
-      primaryAlertClean = verdict === "konflikt"
-        ? "Wirkstoffe derselben Klasse oder hartes Stacking im Schrank."
-        : "Einige Wirkstoffe passen besser im Wechsel oder erfüllen Profil-Priorität nicht.";
-    }
-
-    var bannerPrefix = verdict === "konflikt" ? "🔴 Passt schlecht zusammen:" : "🟡 Eher nicht:";
-    bannerHtml = `
-      <div class="schrank-conflict-banner ${verdict === "konflikt" ? "is-konflikt" : "is-warn"}">
-        ${bannerPrefix} ${escapeHtml(primaryAlertClean)}
-      </div>`;
-  }
-
-  // Detail bullets (expanded only)
-  var rawBullets = prog.shortPoints || (prog.points || []);
-  var displayBullets = rawBullets.filter(function (pt) {
-    var s = String(pt);
-    if (s.length > 125) return false;
-    if (/Laut gängiger Begleitpflege|Arzneimittel.*Einkaufs-Hilfe|Beim Zukauf: eher Support|Textil-Hinweis/i.test(s)) return false;
-
-    var sClean = s
-      .replace(/^[🔴🟡🟢ℹ️]\s*(konflikt|eher\s*nicht|passt)\s*—\s*/i, "")
-      .replace(/\s*—\s*(eher\s*nicht|konflikt)\.?$/i, "")
-      .trim();
-    if (primaryAlertClean && (sClean === primaryAlertClean || primaryAlertClean.indexOf(sClean) !== -1 || sClean.indexOf(primaryAlertClean) !== -1)) {
-      return false;
-    }
-    return true;
-  });
-
-  var pointsHtml = "";
-  if (displayBullets.length > 0) {
-    pointsHtml = `
-      <ul class="prognosis-list">
-        ${displayBullets.map(function (pt) { return "<li>" + pt + "</li>"; }).join("")}
-      </ul>`;
-  }
-
-  var whyItems = (prog.whyNotes && prog.whyNotes.length > 0) ? prog.whyNotes.slice() : ((prog.eduNotes && prog.eduNotes.length > 0) ? prog.eduNotes.slice() : []);
-  if (!whyItems.length && prog.points) {
-    whyItems = prog.points.filter(function (pt) {
-      return String(pt).length > 110 || /Begleitpflege|Arzneimittel|Textil-Hinweis|Warum/i.test(String(pt));
-    });
-  }
-  if (!whyItems.length) {
-    if (verdict === "passt") {
-      whyItems = ["Deine Produkte ergänzen sich ohne Reiz-Stacking oder Inaktivierung. Reinigung, Pflege und Schutz sind aufeinander abgestimmt."];
-    } else {
-      whyItems = ["Prüfe die Verträglichkeit der Produkte und passe die Reihenfolge oder Wechsel-Abende an."];
-    }
-  }
-
-  var whyListHtml = `
-        <ul class="prognosis-why-list">
-          ${whyItems.map(function (n) { return "<li>" + n + "</li>"; }).join("")}
-        </ul>`;
-
-  var countText = totalCount + " " + (totalCount === 1 ? "Produkt" : countLabel);
-
-  // Compact Layering-Check (Reiz) inside Ampel Warum — not a separate card
-  var reizHtml = "";
-  if (typeof renderReizBudgetInlineHtml === "function") {
-    reizHtml = renderReizBudgetInlineHtml() || "";
-  } else if (typeof renderReizBudgetCardHtml === "function") {
-    reizHtml = renderReizBudgetCardHtml({ compact: true }) || "";
-  }
-
-  return `
-    <div class="prognosis-card prognosis-ampel ${statusClass}">
-      <details class="prognosis-ampel-details" ontoggle="var s=this.querySelector('summary'); if(s) s.setAttribute('aria-expanded', this.open ? 'true' : 'false')">
-        <summary class="prognosis-ampel-summary" aria-expanded="false">
-          <div class="prognosis-header prognosis-ampel-header">
-            <div class="prognosis-title">${shortTitle}</div>
-            <span class="prognosis-count">${countText}</span>
-            <span class="prognosis-why-chevron">Warum?</span>
-          </div>
-        </summary>
-        <div class="prognosis-ampel-body">
-          ${bannerHtml}
-          ${reizHtml}
-          ${pointsHtml}
-          <div class="prognosis-why-content">
-            ${whyListHtml}
-          </div>
-        </div>
-      </details>
-    </div>`;
-}
+function renderCategoryPrognosisBanner(prog){return evidenceCard(prog?.evidence||evidenceResult());}
 window.renderUnifiedPrognosisCard = renderCategoryPrognosisBanner;
 
-function conflictBadgeHtml(flag) {
-  if (!flag || !flag.outcome) return "";
-  var reason = String(flag.reason || "").replace(/"/g, "&quot;");
-  if (flag.outcome === "konflikt") {
-    return `<span class="tag conflict-flag konflikt" title="${reason}">🔴 passt schlecht zusammen</span>`;
-  }
-  if (flag.outcome === "eher_nicht") {
-    return `<span class="tag conflict-flag warn" title="${reason}">🟡 eher nicht</span>`;
-  }
-  return "";
-}
+function conflictBadgeHtml(flag){return flag?'<span class="tag evidence-badge '+evidenceStatus(flag.outcome)+'">'+escapeHtml(outcomeTitle(flag.outcome))+'</span>':'';}
 
 
 // Render Baby Cabinet View
@@ -468,7 +319,7 @@ function renderBabyCabinet(container) {
               ${conflictBadgeHtml(flag)}
               ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Parfümiert</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ Duftstoffe offen</span>')}
               ${p.u3 === true ? '<span class="tag ped-blue" style="font-size:0.66rem;padding:1px 5px">👶 EU &lt;3 Jahre</span>' : (p.u3 === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Nicht U3</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ U3 offen</span>')}
-              ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ CF offen</span>')}
+              ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Tierversuchsfrei erfasst</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">Tierversuchsfrei: nicht belegt</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">Tierversuchsfrei: unbekannt</span>')}
               ${p.spfNote ? '<span class="tag ped-amber" style="font-size:0.66rem;padding:1px 5px">☀️ AAP &lt;6m</span>' : ''}
               ${(p._liveSource || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id))) ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.65rem;padding:1px 5px;font-weight:700">⚠️ Live-Katalog</span>' : ''}
             </div>
@@ -636,7 +487,7 @@ function renderChildCabinet(container) {
               ${conflictBadgeHtml(flag)}
               ${p.ff === true ? '<span class="tag ff" style="font-size:0.66rem;padding:1px 5px">🌸 Parfümfrei</span>' : (p.ff === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Parfümiert</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ Duftstoffe offen</span>')}
               ${p.u3 === true ? '<span class="tag ped-blue" style="font-size:0.66rem;padding:1px 5px">👶 EU &lt;3 Jahre</span>' : (p.u3 === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Nicht U3</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ U3 offen</span>')}
-              ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ CF offen</span>')}
+              ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Tierversuchsfrei erfasst</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">Tierversuchsfrei: nicht belegt</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">Tierversuchsfrei: unbekannt</span>')}
               ${p.spfNote ? '<span class="tag ped-amber" style="font-size:0.66rem;padding:1px 5px">☀️ AAP &lt;6m</span>' : ''}
               ${(p._liveSource || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id))) ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.65rem;padding:1px 5px;font-weight:700">⚠️ Live-Katalog</span>' : ''}
             </div>
@@ -675,7 +526,7 @@ function renderChildCabinet(container) {
               Kinder-Routine nach Budget zusammenstellen (z. B. 15 €, 25 €, 40 €)
             </div>
             <div style="font-size:0.78rem;color:#b45309;margin-top:1px">
-              Pädiatrisch geprüfte Kinderpflege für Kita & Schule — reizarm, kindergerecht & evidenzbasiert.
+              Vorschlag nach erfassten Produktangaben, Profilwünschen und Budget. Keine individuelle medizinische Freigabe.
             </div>
           </div>
         </div>
@@ -872,9 +723,9 @@ function renderTeenCabinet(container) {
                 if (ca && (ca.flagged.length > 0 || p.inci)) {
                   return `<span class="tag" style="font-size:0.65rem;padding:1px 5px;background:${ca.badgeColor};color:${ca.textColor};border:1px solid ${ca.borderColor}" title="${ca.summary}">🛡️ Score ${ca.maxScore}/5</span>`;
                 }
-                return p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px">🛡️ nicht komedogen</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ nicht komedogen offen</span>');
+                return p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px">NC: Herstellerangabe</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">Keine NC-Angabe</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px">ℹ️ nicht komedogen offen</span>');
               })()}
-              ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Cruelty-Free</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">ℹ️ CF offen</span>')}
+              ${p.cf === true ? '<span class="tag ped-purple" style="font-size:0.66rem;padding:1px 5px">🐰 Tierversuchsfrei erfasst</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px">Tierversuchsfrei: nicht belegt</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px">Tierversuchsfrei: unbekannt</span>')}
               ${p.notForMinors ? '<span class="tag" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;font-size:0.66rem;padding:1px 5px">🛑 Kein Teen-Vorschlag</span>' : ''}
               ${(p._liveSource || (p.id && /^(dm_|mueller_|live_|obf_)/.test(p.id))) ? '<span class="tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.65rem;padding:1px 5px;font-weight:700">⚠️ Live-Katalog</span>' : ''}
             </div>
@@ -1176,7 +1027,7 @@ function renderBottle(prod) {
 }
 
 
-function renderMain(autoSave = true) {
+function renderCabinetContent(autoSave = true) {
   const container = document.getElementById("appContent");
   updateCategoryNav();
 
@@ -1254,9 +1105,9 @@ function renderMain(autoSave = true) {
     <div class="scan-hero">
       <h2>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
-        Schrank befüllen & Dose prüfen
+        Produkte hinzufügen & prüfen
       </h2>
-      <p>Flaschen reinlegen oder im Laden prüfen.</p>
+      <p>Füge deine Pflegeprodukte hinzu oder scanne ein Produkt im Laden.</p>
       <div class="scan-btn-group">
         <button class="btn-scan" onclick="openAddProductModal('${appState.tab}')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1401,9 +1252,9 @@ function renderMain(autoSave = true) {
                 if (ca && (ca.flagged.length > 0 || p.inci)) {
                   return `<span class="tag" style="font-size:0.65rem;padding:1px 5px;background:${ca.badgeColor};color:${ca.textColor};border:1px solid ${ca.borderColor}" title="${ca.summary}">🛡️ Score ${ca.maxScore}/5</span>`;
                 }
-                return p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px" title="Nicht-komedogen ausgelobt">🛡️ nicht komedogen</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Nicht als komedogenarm ausgewiesen">⚠️ Komedogen</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px" title="Keine offizielle Herstellerangabe zur Komedogenität im Online-Katalog hinterlegt">ℹ️ nicht komedogen offen</span>');
+                return p.nc === true ? '<span class="tag nc" style="font-size:0.66rem;padding:1px 5px" title="Nicht-komedogen ausgelobt">NC: Herstellerangabe</span>' : (p.nc === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Nicht als komedogenarm ausgewiesen">Keine NC-Angabe</span>' : '<span class="tag" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:0.65rem;padding:1px 5px" title="Keine offizielle Herstellerangabe zur Komedogenität im Online-Katalog hinterlegt">ℹ️ nicht komedogen offen</span>');
               })()}
-              ${p.cf === true ? '<span class="tag cf" style="font-size:0.66rem;padding:1px 5px" title="Zertifiziert tierversuchsfrei (CFI/Leaping Bunny)">🐰 Cruelty-Free</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Keine Verbandszertifizierung hinterlegt">⚠️ Kein CF</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px" title="Kein Verbandssiegel (CFI/Leaping Bunny) im Online-Katalog hinterlegt">ℹ️ CF offen</span>')}
+              ${p.cf === true ? '<span class="tag cf" style="font-size:0.66rem;padding:1px 5px" title="Tierversuchsfrei im Katalog erfasst; Nachweis prüfen">🐰 Tierversuchsfrei erfasst</span>' : (p.cf === false ? '<span class="tag warn" style="font-size:0.66rem;padding:1px 5px" title="Keine Verbandszertifizierung hinterlegt">Tierversuchsfrei: nicht belegt</span>' : '<span class="tag" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:0.65rem;padding:1px 5px" title="Kein Verbandssiegel (CFI/Leaping Bunny) im Online-Katalog hinterlegt">Tierversuchsfrei: unbekannt</span>')}
               ${p.no_white_cast === true ? '<span class="tag soc-nwc" style="font-size:0.66rem;padding:1px 5px" title="Hinterlässt keinen weißen Kreideschleier">✨ Zero White-Cast</span>' : ''}
               ${p.iron_ox === true ? '<span class="tag soc-iron" style="font-size:0.66rem;padding:1px 5px" title="Enthält Eisenoxide zum Schutz vor sichtbarem Licht/HEV">🛡️ Eisenoxide</span>' : ''}
               ${p.pih === true ? '<span class="tag soc-pih" style="font-size:0.66rem;padding:1px 5px" title="Evidenzbasierter Wirkstoff gegen Pickelmale/PIH">🎯 PIH-Fokus</span>' : ''}
@@ -1447,7 +1298,7 @@ function renderMain(autoSave = true) {
               Routine nach Budget zusammenstellen (z. B. 20 €, 30 €, 50 €)
             </div>
             <div style="font-size:0.79rem;color:var(--muted);margin-top:1px">
-              Maximale Evidenz für deinen Hauttyp — strikt innerhalb deines Einkaufs-Limits.
+              Produkte passend zu deinen Auswahlkriterien — strikt innerhalb deines Einkaufs-Limits.
             </div>
           </div>
         </div>
@@ -1585,11 +1436,7 @@ function replaceCabinetProduct(oldId, newId, tabOrSlot) {
 window.replaceCabinetProduct = replaceCabinetProduct;
 
 function openSimilarProductsForCabinet(prodId) {
-  if (typeof openProductComparisonModal === "function") {
-    openProductComparisonModal(prodId);
-  } else if (typeof openProductDetail === "function") {
-    openProductDetail(prodId);
-  }
+  return openEvidenceAlternatives(prodId);
 }
 window.openSimilarProductsForCabinet = openSimilarProductsForCabinet;
 
@@ -2106,144 +1953,13 @@ window.renderCompactProfileBarHtml = renderCompactProfileBarHtml;
 }
 
 
-function openCompatibilityCheckModal(prodId, tab) {
-  if (typeof evaluateProductCompatibility !== "function") {
-    if (typeof openProductDetail === "function") return openProductDetail(prodId);
-    return;
-  }
-  const evalRes = evaluateProductCompatibility(prodId, tab);
-  const p = evalRes.product;
-  if (!p) return;
-
-  const verdictPill = evalRes.verdict === "passt"
-    ? '<span style="background:#dcfce7;color:#166534;font-size:0.74rem;font-weight:800;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em">🟢 passt</span>'
-    : (evalRes.verdict === "eher_nicht"
-        ? '<span style="background:#fef3c7;color:#92400e;font-size:0.74rem;font-weight:800;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em">🟡 Eingeschränkt</span>'
-        : '<span style="background:#fee2e2;color:#991b1b;font-size:0.74rem;font-weight:800;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em">🔴 passt schlecht zusammen</span>');
-
-  const tabLabel = (tab === "am") ? "☀️ Morgen-Routine" : ((tab === "pm") ? "🌙 Abend-Routine" : (evalRes.skinTypeFit.category ? evalRes.skinTypeFit.category.toUpperCase() : "Routine"));
-
-  const skinFitPointsHtml = evalRes.skinTypeFit.points.map(pt => `<div style="font-size:0.83rem;line-height:1.4">${pt}</div>`).join("");
-  const routineFitPointsHtml = evalRes.routineFit.points.map(pt => `<div style="font-size:0.83rem;line-height:1.4">${pt}</div>`).join("");
-
-  let missingDataBoxHtml = "";
-  if (evalRes.missingData.hasMissing || evalRes.missingData.isLive) {
-    missingDataBoxHtml = `
-      <div class="pharma-box" style="background:#fffbeb;border-color:#fde68a;margin-top:0.8rem">
-        <div class="pharma-title" style="color:#92400e">ℹ️ Hinweis zu Online-Katalog-Daten</div>
-        <div class="pharma-text" style="font-size:0.82rem;color:#78350f;line-height:1.4">
-          Dieses Produkt stammt aus dem <strong>Online-Katalog (Live-Suche / EAN)</strong>. Bei Händler- und EAN-Scans liegen oft nur Basisdaten (Name, Marke, Preis) vor.
-          ${evalRes.missingData.list.length > 0 ? `<br><br><strong>Folgende Angaben sind nicht verifiziert:</strong><br>• ${evalRes.missingData.list.join('<br>• ')}` : ''}
-          <br><br>
-          <em>Empfehlung:</em> Prüfe vor der ersten Anwendung die Inhaltsstoffliste (INCI) auf der Verpackung auf bekannte persönliche Reizstoffe.
-        </div>
-      </div>
-    `;
-  }
-
-  const cAnalysis = evalRes.comedogenicity || ((typeof analyzeInciComedogenicity === "function") ? analyzeInciComedogenicity(p) : null);
-  let comedoSectionHtml = "";
-  if (cAnalysis) {
-    const flaggedItemsHtml = (cAnalysis.flagged && cAnalysis.flagged.length > 0)
-      ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">
-          ${cAnalysis.flagged.map(f => `
-            <span style="font-size:0.72rem;background:#fff;border:1px solid ${f.score >= 4 ? '#fca5a5' : (f.score === 3 ? '#fcd34d' : '#cbd5e1')};color:${f.score >= 4 ? '#991b1b' : (f.score === 3 ? '#92400e' : '#334155')};padding:2px 6px;border-radius:4px">
-              <strong>${escapeHtml(f.name)}</strong> (Score ${f.score}/5)
-            </span>
-          `).join('')}
-        </div>`
-      : `<div style="font-size:0.78rem;color:#166534;margin-top:4px">✓ Keine porenverstopfenden Problemstoffe (Score 2–5) in der Rezeptur detektiert.</div>`;
-
-    comedoSectionHtml = `
-      <div style="background:${cAnalysis.badgeColor};border:1px solid ${cAnalysis.borderColor};border-radius:10px;padding:0.8rem 0.95rem;margin-bottom:0.75rem">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong style="color:${cAnalysis.textColor};font-size:0.86rem">🛡️ Komedogenitäts-Score: ${cAnalysis.maxScore}/5 (${cAnalysis.label})</strong>
-          <span style="font-size:0.72rem;background:#fff;color:${cAnalysis.textColor};padding:2px 6px;border-radius:4px;font-weight:700">
-            ${cAnalysis.maxScore <= 1 ? 'Porenfreundlich' : (cAnalysis.maxScore === 2 ? 'Leicht komedogen' : 'Porenverstopfend')}
-          </span>
-        </div>
-        <div style="font-size:0.8rem;color:${cAnalysis.textColor};margin-top:4px;line-height:1.4">
-          ${cAnalysis.summary}
-        </div>
-        ${flaggedItemsHtml}
-        ${cAnalysis.textureEval ? `
-          <div style="margin-top:8px;padding:6px 9px;border-radius:7px;background:${cAnalysis.textureEval.bg};border:1px solid ${cAnalysis.textureEval.border};font-size:0.78rem;color:${cAnalysis.textureEval.color}">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <strong>${escapeHtml(cAnalysis.textureEval.label)}</strong>
-              <span style="font-weight:700;font-size:0.72rem">${escapeHtml(cAnalysis.textureEval.shortLabel)}</span>
-            </div>
-            <div style="font-size:0.74rem;margin-top:2px;line-height:1.35">${escapeHtml(cAnalysis.textureEval.acneRating)}</div>
-            ${cAnalysis.textureEval.warning ? `<div style="font-size:0.73rem;color:#991b1b;font-weight:700;margin-top:3px">${escapeHtml(cAnalysis.textureEval.warning)}</div>` : `<div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${escapeHtml(cAnalysis.textureEval.explanation)}</div>`}
-          </div>
-        ` : ''}
-        ${cAnalysis.hasCysticTrigger ? `
-          <div style="margin-top:6px;padding:5px 8px;border-radius:6px;background:#fef2f2;border:1px solid #fecaca;font-size:0.76rem;color:#991b1b;line-height:1.35">
-            <strong>🔴 Zystische Akne-Warnung:</strong> Enthält Inhaltsstoffe mit hohem Risiko für zystische Follikelschwellungen &amp; Mikrokomedonen (${escapeHtml(cAnalysis.cysticTriggers.map(c => c.name).join(', '))}).
-          </div>
-        ` : ''}
-        <div style="font-size:0.68rem;color:#64748b;margin-top:6px;line-height:1.3">
-          <em>Hinweis (EU-Kosmetikverordnung VO 1223/2009):</em> Der Begriff „nicht komedogen“ ist in Europa gesetzlich nicht standardisiert. Kosmetikschrank gleicht die Rezeptur daher mit einer evidenzbasierten Substanzdatenbank (0–5 Skala) ab.
-        </div>
-      </div>
-    `;
-  }
-
-  window._compatProduct = p;
-
-  showModalSheet(`
-    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:0.6rem">
-      ${p.img ? `<img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name || '')}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;background:#fff;flex-shrink:0" onerror="this.style.display='none'">` : ''}
-      <div style="flex:1;min-width:0">
-        <div style="font-size:0.74rem;text-transform:uppercase;color:var(--muted);font-weight:700">🔬 Gegenprüfung: Routine- &amp; Hauttyp-Check</div>
-        <h2 style="margin:2px 0 0.25rem;font-size:1.25rem">${escapeHtml(p.brand || "")} ${escapeHtml(p.name || "")}</h2>
-        <div style="font-size:0.8rem;color:var(--muted)">
-          Einsatz: <strong>${tabLabel}</strong> · Kategorie: <strong>${escapeHtml(p.kat || "Pflege")}</strong>${p.price ? ` · <span style="font-weight:700;color:#16a34a">${escapeHtml(p.price)}</span>` : ''}
-        </div>
-      </div>
-    </div>
-
-    <!-- Status Banner -->
-    <div class="verdict-banner ${evalRes.status}" style="flex-direction:column;gap:6px;margin-bottom:0.9rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:6px">
-        <div class="verdict-title">${evalRes.title}</div>
-        ${verdictPill}
-      </div>
-    </div>
-
-    <!-- 1. Hauttyp-Check -->
-    <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:0.8rem 0.95rem;margin-bottom:0.75rem">
-      <div style="font-weight:700;font-size:0.86rem;color:var(--ink);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span>👤 Passt es zu deinem Hauttyp?</span>
-        <span style="font-size:0.72rem;background:#f1f5f9;color:#475569;padding:2px 6px;border-radius:4px">${evalRes.skinTypeFit.skinSub || evalRes.skinTypeFit.profileName}</span>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:5px">
-        ${skinFitPointsHtml}
-      </div>
-    </div>
-
-    <!-- 2. Routine-Check -->
-    <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:0.8rem 0.95rem;margin-bottom:0.75rem">
-      <div style="font-weight:700;font-size:0.86rem;color:var(--ink);margin-bottom:6px">
-        🔄 Passt es zu deiner aktuellen ${tabLabel}?
-      </div>
-      <div style="display:flex;flex-direction:column;gap:5px">
-        ${routineFitPointsHtml}
-      </div>
-    </div>
-
-    <!-- 3. Evidenzbasierte Komedogenitätsprüfung -->
-    ${comedoSectionHtml}
-
-    <!-- 4. Datenqualitäts-Hinweis -->
-    ${missingDataBoxHtml}
-
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:1.1rem">
-      <button type="button" class="primary" style="min-height:52px;font-size:1.08rem;font-weight:800" onclick="placeScannedProductInCabinet('${String(p.id).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}')">In meinen Schrank</button>
-      <button type="button" class="primary" style="min-height:48px;font-size:1.02rem;font-weight:800;background:#5c3e1e" onclick="closeModal();if(typeof openScanModal==='function')openScanModal();">Anderes Produkt scannen</button>
-      <button type="button" class="ghost-btn" style="color:#0284c7;border-color:#bae6fd;background:#f0f9ff;font-weight:600" onclick="openProductComparisonModal('${p.id}')">✨ Ähnliche Produkte &amp; Alternativen vergleichen</button>
-      <button type="button" class="ghost-btn" onclick="${evalRes.skinTypeFit.category === 'teen' ? `openTeenProductDetail('${p.id}')` : (evalRes.skinTypeFit.category === 'baby' || evalRes.skinTypeFit.category === 'child' ? `openBabyProductDetail('${p.id}')` : `openProductDetail('${p.id}')`)}">Vollständige Produkt-Details ansehen ➔</button>
-    </div>
-  `);
-}
+function openCompatibilityCheckModal(id,tab){evidenceProductModal(id,tab);}
 window.openCompatibilityCheckModal = openCompatibilityCheckModal;
 
+// All legacy cabinet refreshes finish synchronously, before the browser paints.
+function renderMain(autoSave=true){
+ renderCabinetContent(autoSave);
+ if(typeof applyScreenLayout==='function')applyScreenLayout();
+ if(typeof updateBottomNav==='function')updateBottomNav();
+ if(typeof applyI18n==='function')applyI18n(document.body);
+}

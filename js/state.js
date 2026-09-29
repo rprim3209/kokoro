@@ -103,10 +103,11 @@ window.sanitizeProductPriceFields = sanitizeProductPriceFields;
 
 // Laden (beim Start der App):
 function loadState() {
-  const saved = localStorage.getItem("schrank");
+  let saved;
+  try { saved = localStorage.getItem("schrank"); } catch(e) { window.kokoroStorageUnavailable=true; return; }
 if (saved) {
   try {
-    const parsed = JSON.parse(saved);
+    const parsed = KokoroData.snapshot(JSON.parse(saved));
     if (parsed && typeof parsed === "object") {
       appState = Object.assign({}, appState, parsed);
       if (appState.useSkinCycling === undefined) {
@@ -147,7 +148,7 @@ if (saved) {
       }
       if (typeof enrichAllDbProducts === "function") enrichAllDbProducts();
       // Migration / Initialisierung von profiles
-      if (!appState.profiles || !Array.isArray(appState.profiles) || appState.profiles.length === 0) {
+      if (!appState.needsProfile && (!appState.profiles || !Array.isArray(appState.profiles) || appState.profiles.length === 0)) {
         appState.profiles = [
           {
             id: "p_adult_1",
@@ -204,10 +205,10 @@ if (saved) {
 // Speichern (z. B. nach jeder Schrank-Änderung):
 function saveState() {
   try {
-    syncActiveProfileFromWorkingState();
+    if(!appState.needsProfile) syncActiveProfileFromWorkingState();
     localStorage.setItem("schrank", JSON.stringify(appState));
   } catch (e) {
-    console.warn("Fehler beim Speichern in localStorage('schrank'):", e);
+    console.warn("Lokale Speicherung nicht verfügbar"); window.kokoroStorageUnavailable=true; if(typeof showToast==="function")showToast("Änderung nicht gespeichert. Bitte exportiere dein Profil.");
   }
 }
 
@@ -346,6 +347,7 @@ function getProfileSubtitle(profile) {
 }
 
 function getActiveProfile() {
+  if(appState.needsProfile)return null;
   if (!appState.profiles || !Array.isArray(appState.profiles) || appState.profiles.length === 0) {
     appState.profiles = [
       {
@@ -506,84 +508,25 @@ function switchProfile(profileIdOrCategory) {
   }
   
   loadProfileToAppState(target);
-  appState.view = "cabinet";
+  saveState();
   updateCategoryNav();
-  renderMain();
+  updateBottomNav();
+  renderCurrentScreen();
 }
 
-function updateCategoryNav() {
-  const navBar = document.getElementById("catNavBar");
-  const activeP = getActiveProfile();
-
-  if (navBar && appState.profiles && Array.isArray(appState.profiles)) {
-    let navHtml = "";
-    
-    // We keep track of the first seen profile of each category so automated tests looking for #btnProfileAdult etc. find them!
-    const seenCat = {};
-
-    appState.profiles.forEach(p => {
-      const isActive = p.id === activeP.id;
-      const emoji = getCategoryEmoji(p.category);
-      const isFirstOfCat = !seenCat[p.category];
-      seenCat[p.category] = true;
-
-      // Category-based ID alias if first of its type, or specific ID
-      const btnId = isFirstOfCat ? `btnProfile${p.category.charAt(0).toUpperCase() + p.category.slice(1)}` : `btnProf_${p.id}`;
-      const subId = isFirstOfCat ? `subProfile${p.category.charAt(0).toUpperCase() + p.category.slice(1)}` : `subProf_${p.id}`;
-
-      navHtml += `
-        <button class="cat-nav-btn ${isActive ? 'active cat-' + p.category : ''}" id="${btnId}" onclick="${isActive ? "openRenameProfileModal('" + p.id + "')" : "switchProfile('" + p.id + "')"} " title="${isActive ? 'Klicken zum Umbenennen' : 'Zu ' + p.name + ' wechseln'}">
-          <div style="position:relative;display:inline-block">
-            <span class="c-emoji">${emoji}</span>
-            ${isActive ? `<span style="font-size:0.62rem;position:absolute;bottom:-1px;right:-5px;background:#f4ece0;border-radius:4px;padding:0 2px" title="Umbenennen">✏️</span>` : ''}
-          </div>
-          <span class="c-title">${p.name}</span>
-          <span class="c-sub" id="${subId}">${(p.subtitle && p.subtitle.trim()) ? escapeHtml(p.subtitle) : ''}</span>
-        </button>
-      `;
-    });
-
-    // Add Profile / Category Button (+)
-    navHtml += `
-      <button type="button" class="cat-nav-add-btn" onclick="openNewProfileModal()" title="Neues Profil anlegen">
-        <span style="font-size:1.15rem;line-height:1.2">➕</span>
-        <span style="font-size:0.75rem;font-weight:700;margin-top:1px">Neu</span>
-      </button>
-    `;
-
-    navBar.innerHTML = navHtml;
+function updateCategoryNav(){
+  const nav=document.getElementById('catNavBar');if(!nav)return;nav.replaceChildren();
+  const activeId=appState.activeProfileId;
+  const profiles=[...(appState.profiles||[])].sort((a,b)=>(a.id===activeId?-1:0)-(b.id===activeId?-1:0));
+  for(const p of profiles){
+    const isActive=p.id===activeId;
+    const tile=document.createElement('div');tile.className='profile-tile '+(isActive?'active-profile':'compact-profile');tile.dataset.category=p.category||'adult';
+    const button=document.createElement('button');button.className='cat-nav-btn '+(isActive?'active':'');button.id='btnProfile_'+p.id;button.dataset.initial=(p.name||'P').slice(0,1).toUpperCase();button.title='Profil '+p.name+' öffnen';button.setAttribute('aria-pressed',String(isActive));button.innerHTML='<span class="c-title">'+escapeHtml(p.name)+'</span><span class="c-sub">'+escapeHtml(({adult:'Erwachsen',teen:'Teenager',child:'Kind',baby:'Baby'})[p.category]||'Erwachsen')+'</span>';button.onclick=()=>isActive?openRenameProfileModal(p.id):switchProfile(p.id);
+    button.setAttribute('aria-label','Profil '+p.name+(isActive?' bearbeiten':' auswählen'));
+    const del=document.createElement('button');del.className='profile-delete-top';del.setAttribute('aria-label','Profil '+p.name+' löschen');del.textContent='×';del.onclick=e=>{e.stopPropagation();deleteProfile(p.id);};
+    tile.append(button);if(isActive)tile.append(del);nav.append(tile);
   }
-
-  // Update Header Guard Badge & Scan Labels
-  const guardBadge = document.getElementById("guardBadgeText");
-  const scanLabel = document.getElementById("btnScanLabel");
-  const manualBtn = document.getElementById("btnManualPaste");
-
-  if (guardBadge) {
-    guardBadge.innerHTML = "Kurzanleitung";
-  }
-
-  if (scanLabel) {
-    if (activeP.category === "teen") {
-      scanLabel.innerText = "🧑‍🦱 Teenie-Produkt prüfen";
-    } else if (activeP.category === "baby") {
-      scanLabel.innerText = "👶 Baby-Produkt prüfen";
-    } else if (activeP.category === "child") {
-      scanLabel.innerText = "🧒 Kinder-Produkt prüfen";
-    } else {
-      scanLabel.innerText = "Im dm / Laden scannen";
-    }
-  }
-
-  if (manualBtn) {
-    if (activeP.category === "teen") {
-      manualBtn.innerText = "Teenie-Leitlinie";
-    } else if (activeP.category === "baby" || activeP.category === "child") {
-      manualBtn.innerText = "Pädiatrie-Leitlinie";
-    } else {
-      manualBtn.innerText = "INCI prüfen";
-    }
-  }
+  const add=document.createElement('button');add.className='cat-nav-add-btn';add.textContent='+ Neu';add.onclick=openNewProfileModal;nav.append(add);
 }
 
 // ==========================================
@@ -758,7 +701,7 @@ function openNewProfileModal() {
       <!-- 2. Profilname -->
       <div style="margin:0.75rem 0">
         <label for="newProfileNameInput" style="display:block;font-size:0.74rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.35rem">2. Profilname (frei wählbar)</label>
-        <input type="text" id="newProfileNameInput" placeholder="z. B. Mama, Papa, Sarah, Lukas..." style="width:100%;padding:0.65rem 0.8rem;border:1.5px solid var(--line);border-radius:10px;font-size:0.92rem;font-family:inherit" value="Erwachsene" onkeydown="if(event.key==='Enter'){ submitCreateProfile(); }">
+        <input type="text" id="newProfileNameInput" placeholder="z. B. Mama, Papa, Sarah, Lukas..." style="width:100%;padding:0.65rem 0.8rem;border:1.5px solid var(--line);border-radius:10px;font-size:0.92rem;font-family:inherit" value="${localStorage.getItem('kokoro-lang')==='en'?'Adult':'Erwachsen'}" onkeydown="if(event.key==='Enter'){ submitCreateProfile(); }">
       </div>
 
       <!-- 3. Wie möchtest du starten? -->
@@ -936,7 +879,8 @@ function selectNewProfileCategory(cat) {
       baby: "Baby"
     };
     const count = appState.profiles.filter(p => p.category === cat).length + 1;
-    inp.value = count > 1 ? `${defaultNames[cat]} ${count}` : defaultNames[cat];
+    const label=localStorage.getItem('kokoro-lang')==='en'?{adult:'Adult',teen:'Teenager',child:'Child',baby:'Baby'}[cat]:defaultNames[cat];
+    inp.value = count > 1 ? `${label} ${count}` : label;
     inp.select();
   }
 }
@@ -946,7 +890,7 @@ function submitCreateProfile() {
   const rawName = inp ? inp.value.trim() : "";
   const cat = newProfileSelectedCat || "adult";
   const defaultNames = { adult: "Erwachsen", teen: "Teenie", child: "Kind", baby: "Baby" };
-  const finalName = rawName || defaultNames[cat];
+  const finalName = rawName || (localStorage.getItem('kokoro-lang')==='en'?{adult:'Adult',teen:'Teenager',child:'Child',baby:'Baby'}[cat]:defaultNames[cat]);
 
   syncActiveProfileFromWorkingState();
 
@@ -967,6 +911,7 @@ function submitCreateProfile() {
           { reiniger: [], active: [], creme: [], spf: [] }
   };
 
+  appState.needsProfile=false;
   appState.profiles.push(newP);
   loadProfileToAppState(newP);
 
@@ -1103,57 +1048,7 @@ window.applySkinTypeToActiveProfile = applySkinTypeToActiveProfile;
 window.loadStarterRoutineForActiveProfile = loadStarterRoutineForActiveProfile;
 
 // Rename Profile Modal
-function openRenameProfileModal(profileId) {
-  const p = appState.profiles.find(x => x.id === profileId) || getActiveProfile();
-  if (!p) return;
-
-  const catLabel = p.category === "adult" ? "Erwachsen"
-    : (p.category === "teen" ? "Teenie"
-    : (p.category === "child" ? "Kind" : "Baby"));
-  const canDelete = (appState.profiles || []).length > 1;
-  const safeId = String(p.id).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-  const safeName = String(p.name || "").replace(/"/g, "&quot;");
-
-  showModalSheet(`
-    <div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);font-weight:700">Profil anpassen</div>
-    <h2 style="margin:0.2rem 0 0.3rem;font-size:1.3rem">Profil bearbeiten</h2>
-    <p style="font-size:0.86rem;color:var(--muted);margin:0 0 0.9rem;line-height:1.4">
-      Kategorie: ${getCategoryEmoji(p.category)} <strong>${catLabel}</strong>
-    </p>
-
-    <div style="margin:0.9rem 0">
-      <label for="renameProfileInput" style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">Profilname</label>
-      <input type="text" id="renameProfileInput" value="${safeName}" style="width:100%;padding:0.75rem 0.85rem;border:1.5px solid var(--line);border-radius:10px;font-size:0.95rem;font-family:inherit" onkeydown="if(event.key==='Enter'){ submitRenameProfile('${safeId}'); }">
-    </div>
-
-    <div style="margin:0.7rem 0 0.2rem">
-      <label style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">Land (Produktfilter)</label>
-      <input type="hidden" id="renameCountryValue" value="${p.country || 'AT'}">
-      ${typeof renderCountryPickerHtml === "function" ? renderCountryPickerHtml(p.country || 'AT', "window._setRenameCountry", { uid: "renameCountryPicker", maxHeight: "200px" }) : ""}
-    </div>
-
-    <div style="display:flex;gap:8px;margin-top:1.1rem;flex-wrap:wrap">
-      <button type="button" class="ghost-btn" style="width:auto;margin-top:0;padding:0.75rem 1.2rem" onclick="closeModal()">Abbrechen</button>
-      <button type="button" class="primary" style="margin-top:0;flex:1;min-width:8rem" onclick="submitRenameProfile('${safeId}')">Speichern</button>
-    </div>
-
-    <div style="margin-top:1rem;padding-top:0.9rem;border-top:1px solid var(--line)">
-      ${canDelete ? `
-        <button type="button" class="ghost-btn profile-delete-btn" style="width:100%;margin-top:0;padding:0.8rem 1rem;color:#b91c1c;border-color:#fecaca;font-weight:700" onclick="deleteProfile('${safeId}')">
-          🗑️ Profil löschen
-        </button>
-        <p style="font-size:0.74rem;color:var(--muted);margin:0.45rem 0 0;line-height:1.35">Löscht dieses Profil und seinen Schrank (Erwachsener, Teenie, Kind und Baby gleich). Andere Profile bleiben.</p>
-      ` : `
-        <p style="font-size:0.8rem;color:var(--muted);margin:0;line-height:1.4">Mindestens ein Profil muss bleiben — deshalb gerade kein Löschen.</p>
-      `}
-    </div>
-  `);
-
-  setTimeout(() => {
-    const inp = document.getElementById("renameProfileInput");
-    if (inp) inp.select();
-  }, 50);
-}
+function openRenameProfileModal(id){const p=appState.profiles.find(x=>x.id===id);if(!p)return;showModalSheet('<h2>Profil bearbeiten</h2><label for="renameProfileInput">Name</label><input id="renameProfileInput" maxlength="60" value="'+escapeHtml(p.name)+'"><input type="hidden" id="renameCountryValue" value="'+escapeHtml(p.country||'AT')+'"><p class="evidence-scope">Kategorie: '+escapeHtml({adult:'Erwachsene',child:'Kind',teen:'Teen',baby:'Baby'}[p.category])+'</p>'+(p.category==='adult'?'<label class="safety-toggle"><input id="pregnancyContext" type="checkbox" '+(p.pregnancy===true?'checked':'')+'> Schwangerschaft oder Schwangerschaft geplant</label><p class="evidence-scope">Optional. Nur auf diesem Gerät. Wird für Hinweise zu medizinischen Retinoiden berücksichtigt.</p>':'')+'<button class="evidence-primary" onclick="submitRenameProfile(&quot;'+escapeHtml(id)+'&quot;)">Speichern</button>');}
 
 function submitRenameProfile(profileId) {
   const inp = document.getElementById("renameProfileInput");
@@ -1161,7 +1056,9 @@ function submitRenameProfile(profileId) {
   const cInp = document.getElementById("renameCountryValue");
   const p = appState.profiles.find(x => x.id === profileId);
   if (p && newName) {
-    p.name = newName;
+    p.name = KokoroData.plain(newName);
+    const pregnancy=document.getElementById("pregnancyContext");
+    if(pregnancy)p.pregnancy=pregnancy.checked;
     if (cInp && cInp.value && typeof setProfileCountry === "function") {
       setProfileCountry(cInp.value, profileId);
     } else {
@@ -1175,48 +1072,7 @@ function submitRenameProfile(profileId) {
 }
 
 // Delete Profile
-function deleteProfile(profileId) {
-  try {
-    if (!appState.profiles || !Array.isArray(appState.profiles)) return;
-    if (appState.profiles.length <= 1) {
-      alert("Das letzte Profil kann nicht gelöscht werden. Lege zuerst ein anderes an.");
-      return;
-    }
-    const id = String(profileId || "");
-    const p = appState.profiles.find(x => String(x.id) === id);
-    if (!p) {
-      alert("Profil wurde nicht gefunden.");
-      return;
-    }
-    // Alle Kategorien (adult/teen/child/baby) gleich — kein Sonderfall Teenie
-    const catLabel = p.category === "adult" ? "Erwachsen"
-      : (p.category === "teen" ? "Teenie"
-      : (p.category === "child" ? "Kind" : "Baby"));
-    if (!confirm("Profil \u201e" + p.name + "\u201c (" + catLabel + ") wirklich löschen?\n\nDer Schrank dieses Profils geht verloren.")) {
-      return;
-    }
-    const wasActive = appState.activeProfileId === id || (typeof getActiveProfile === "function" && getActiveProfile() && String(getActiveProfile().id) === id);
-    appState.profiles = appState.profiles.filter(x => String(x.id) !== id);
-    if (wasActive || appState.activeProfileId === id) {
-      const nextP = appState.profiles[0];
-      if (nextP) loadProfileToAppState(nextP);
-    }
-    if (typeof saveState === "function") saveState();
-    if (typeof closeModal === "function") closeModal();
-    if (typeof updateCategoryNav === "function") updateCategoryNav();
-    if (typeof showToast === "function") showToast("Profil \u201e" + p.name + "\u201c gelöscht");
-    if (appState.view === "settings" && typeof renderSettingsScreen === "function") {
-      renderSettingsScreen();
-    } else if (typeof renderCurrentScreen === "function") {
-      renderCurrentScreen();
-    } else if (typeof renderMain === "function") {
-      renderMain();
-    }
-  } catch (err) {
-    console.error("deleteProfile failed", err);
-    alert("Löschen hat nicht geklappt. Bitte nochmal versuchen.");
-  }
-}
+function deleteProfile(id){const p=appState.profiles.find(x=>x.id===id);if(!p)return;const backup=JSON.parse(JSON.stringify(appState));appState.profiles=appState.profiles.filter(x=>x.id!==id);if(!appState.profiles.length){appState.needsProfile=true;appState.activeProfileId=null;appState.am=[];appState.pm_a=[];appState.pm_b=[];appState.pm_c=[];appState.view='start';}else if(appState.activeProfileId===id)loadProfileToAppState(appState.profiles[0]);saveState();closeModal();updateCategoryNav();renderCurrentScreen();window.kokoroUndo=()=>{appState=backup;saveState();updateCategoryNav();renderCurrentScreen();};showUndoToast('Profil gelöscht');}
 
 function getProfileCountry(profileOrId) {
   if (appState && appState.country) {
@@ -1771,9 +1627,10 @@ function _kokoroReinjectCustomProducts(customs) {
 }
 
 function applyImportedKokoroAppState(snapshot) {
+  snapshot = KokoroData.snapshot(snapshot);
   if (!snapshot || typeof snapshot !== "object") return false;
   var keys = [
-    "activeProfileId", "profiles", "country", "hideUnknownCountries", "profile",
+    "needsProfile", "activeProfileId", "profiles", "country", "hideUnknownCountries", "profile",
     "view", "tab", "tags", "routineComplexity", "babyComplexity", "childComplexity",
     "teenComplexity", "profileSubtitles", "am", "pm_a", "pm_b", "pm_c", "pmMode",
     "useSkinCycling", "baby", "child", "teen", "customProducts"
@@ -1803,6 +1660,7 @@ function importKokoroExport(file) {
     if (typeof showToast === "function") showToast("Keine Datei gewählt");
     return;
   }
+  if(file.size > 2000000) { showToast("Datei zu groß — maximal 2 MB."); return; }
   var reader = new FileReader();
   reader.onload = function () {
     try {
@@ -1864,7 +1722,7 @@ function showToast(msg) {
     toast.className = "toast-container";
     document.body.appendChild(toast);
   }
-  toast.innerHTML = msg;
+  toast.textContent = String(msg).replace(/<[^>]*>/g, "");
   if (typeof applyI18n === "function") applyI18n(toast);
   toast.classList.add("show");
   if (window._toastTimer) clearTimeout(window._toastTimer);

@@ -1,3 +1,5 @@
+> Historischer Stand, nicht die aktuelle Implementierung. Siehe [aktuelle Anleitung](../../README.md).
+
 # Lokaler Server
 
 Kleiner Python-Server für die Demo. Er liefert alle Dateien aus diesem Ordner

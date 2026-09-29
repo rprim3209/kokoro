@@ -107,7 +107,7 @@ Produkt muss **mindestens eines** erfüllen:
 | yes | no | yes | 7 |
 | no | yes | yes | 1 |
 
-Vollständige Daten: [`eu-jugend-katalog.csv`](eu-jugend-katalog.csv). Quellenlog: [`eu-jugend-katalog-quellen.md`](eu-jugend-katalog-quellen.md).
+Vollständige Daten: [`eu-jugend-katalog.csv`](data/eu-jugend-katalog.csv). Quellenlog: [`eu-jugend-katalog-quellen.md`](eu-jugend-katalog-quellen.md).
 
 ---
 

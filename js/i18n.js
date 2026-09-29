@@ -859,6 +859,10 @@ function translateString(src) {
   var trail = (text.match(/\s*$/) || [""])[0];
   var core = text.trim();
   if (!core) return text;
+  if (typeof translateDynamicText === 'function') {
+    var dynamic = translateDynamicText(core);
+    if (dynamic !== null) return lead + dynamic + trail;
+  }
   if (I18N_EN[core]) return lead + I18N_EN[core] + trail;
   var bare = core.replace(/:\s*$/, "");
   if (bare !== core && I18N_EN[bare]) {
@@ -898,6 +902,7 @@ function translateString(src) {
 }
 
 var i18nOriginalText = new WeakMap();
+var i18nRenderedText = new WeakMap();
 
 function applyI18n(root) {
   if (!root) return;
@@ -909,13 +914,15 @@ function applyI18n(root) {
   nodes.forEach(function (textNode) {
     var parent = textNode.parentElement;
     if (!parent) return;
-    if (parent.closest && parent.closest("[data-i18n-skip]")) return;
+    if (parent.closest && parent.closest("[data-i18n-skip], [translate='no'], .cat-nav-btn .c-title, .step-prod-name, .catalog-product strong, .catalog-product small, .detail-heading h2, .detail-heading small, .budget-item-card strong")) return;
     if (parent.closest && parent.closest("[data-i18n-full]")) return;
     var tag = parent.tagName;
     if (tag === "SCRIPT" || tag === "STYLE") return;
-    if (!i18nOriginalText.has(textNode)) i18nOriginalText.set(textNode, textNode.nodeValue);
+    if (!i18nOriginalText.has(textNode) || (i18nRenderedText.has(textNode) && textNode.nodeValue !== i18nRenderedText.get(textNode))) i18nOriginalText.set(textNode, textNode.nodeValue);
     var src = i18nOriginalText.get(textNode);
-    textNode.nodeValue = en ? translateString(src) : src;
+    var rendered = en ? translateString(src) : src;
+    if (textNode.nodeValue !== rendered) textNode.nodeValue = rendered;
+    i18nRenderedText.set(textNode, rendered);
   });
   // Full-sentence keys on elements whose text is split by nested tags (e.g. <strong>)
   root.querySelectorAll("[data-i18n-full]").forEach(function (el) {
@@ -924,7 +931,7 @@ function applyI18n(root) {
     if (!fullKey) return;
     if (!el.dataset.i18nFullHtml) el.dataset.i18nFullHtml = el.innerHTML;
     if (!en) {
-      el.innerHTML = el.dataset.i18nFullHtml;
+      if (el.innerHTML !== el.dataset.i18nFullHtml) el.innerHTML = el.dataset.i18nFullHtml;
       return;
     }
     var translated = translateString(fullKey);
@@ -933,26 +940,28 @@ function applyI18n(root) {
     var m = el.dataset.i18nFullHtml.match(/<strong>([^<]*)<\/strong>/i);
     if (m) boldSrc = m[1];
     var boldEn = boldSrc && I18N_EN[boldSrc] ? I18N_EN[boldSrc] : boldSrc;
+    var nextHtml;
     if (boldSrc && boldEn && translated.indexOf(boldEn) !== -1) {
-      el.innerHTML = translated.replace(boldEn, "<strong>" + boldEn + "</strong>");
+      nextHtml = translated.replace(boldEn, "<strong>" + boldEn + "</strong>");
     } else if (boldSrc && translated.indexOf(boldSrc) !== -1) {
-      el.innerHTML = translated.replace(boldSrc, "<strong>" + boldSrc + "</strong>");
+      nextHtml = translated.replace(boldSrc, "<strong>" + boldSrc + "</strong>");
     } else {
-      el.innerHTML = translated;
+      nextHtml = translated;
     }
+    if (el.innerHTML !== nextHtml) el.innerHTML = nextHtml;
   });
   root.querySelectorAll("[placeholder], [title], [aria-label]").forEach(function (el) {
     if (el.closest && el.closest("[data-i18n-skip]")) return;
     ["placeholder", "title", "aria-label"].forEach(function (attr) {
       if (!el.hasAttribute(attr)) return;
-      var store = "i18n" + attr;
+      var store = "i18n" + attr.replace(/-([a-z])/g, function(_, c) { return c.toUpperCase(); });
       if (!el.dataset[store]) el.dataset[store] = el.getAttribute(attr);
       var src = el.dataset[store];
       el.setAttribute(attr, en ? translateString(src) : src);
     });
   });
-  if (en) document.title = "Cosmetic Cabinet — evidence-based routine guide";
-  else document.title = "Kosmetikschrank — Evidenzbasierter Routine-Check";
+  if (en) document.title = "KoKoRo — your skincare cabinet";
+  else document.title = "KoKoRo — dein Kosmetikschrank";
   document.documentElement.lang = en ? "en" : "de";
   updateLangButton();
 }
@@ -987,6 +996,7 @@ function toggleAppLanguage() {
   if (typeof updateBottomNav === "function") updateBottomNav();
   if (typeof renderCurrentScreen === "function") renderCurrentScreen();
   else applyI18n(document.body);
+  applyI18n(document.body);
 }
 
 var i18nApplying = false;

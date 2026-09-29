@@ -18,6 +18,7 @@ function renderCurrentScreen() {
   const container = document.getElementById("appContent");
   if (!container) return;
 
+  if(appState.needsProfile){container.innerHTML='<section class="profile-empty"><h1>Dein Kosmetikschrank</h1><p>Erstelle ein Profil, um deine Pflege zu organisieren.</p><button class="evidence-primary" onclick="openNewProfileModal()">Profil erstellen</button></section>';return;}
   const view = appState.view || "cabinet";
   const allowed = ["start", "welcome", "cabinet", "scan", "settings"];
   const safeView = allowed.includes(view) ? view : "start";
@@ -33,48 +34,12 @@ function renderCurrentScreen() {
     // Default: cabinet
     renderMain(false);
   }
+  if(typeof applyScreenLayout==='function')applyScreenLayout();
   mountPhoneLink();
   if (typeof applyI18n === "function") applyI18n(document.body);
 }
 
-function mountPhoneLink() {
-  const container = document.getElementById("appContent");
-  if (!container || location.protocol === "https:") return;
-  const draw = (info) => {
-    if (!info || typeof info.https !== "string" || info.https.indexOf("https://") !== 0) return;
-    window.phoneHttpsUrl = info.https;
-    if (container.querySelector(".phone-link-bar")) return;
-    const onThisPhone = location.hostname !== "localhost" && location.hostname !== "127.0.0.1";
-    const bar = document.createElement("div");
-    bar.className = "phone-link-bar";
-    const title = document.createElement("div");
-    title.className = "phone-link-title";
-    title.textContent = onThisPhone
-      ? "Die Kamera braucht die sichere Adresse."
-      : "Auf dem iPhone, nur in diesem WLAN:";
-    const link = document.createElement("a");
-    link.href = info.https;
-    link.textContent = info.https;
-    const note = document.createElement("div");
-    note.className = "phone-link-note";
-    note.textContent = "Erstes Mal: „Details einblenden“, dann „Website besuchen“. Danach Kamera erlauben. Nichts davon geht ins Internet.";
-    bar.appendChild(title);
-    bar.appendChild(link);
-    bar.appendChild(note);
-    container.insertBefore(bar, container.firstChild);
-  };
-  if (window.phoneLinkInfo) {
-    draw(window.phoneLinkInfo);
-    return;
-  }
-  fetch("/api/phone")
-    .then((r) => (r.ok ? r.json() : null))
-    .then((info) => {
-      window.phoneLinkInfo = info;
-      draw(info);
-    })
-    .catch(() => {});
-}
+function mountPhoneLink(){ /* Camera access uses localhost or a trusted HTTPS deployment. */ }
 
 function updateBottomNav() {
   const view = appState.view || "cabinet";

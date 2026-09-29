@@ -24,3 +24,7 @@ archiv/
 
 # Lokales HTTPS-Zertifikat, privater Schlüssel
 certs/
+.venv/
+.pytest_cache/
+node_modules/
+*.db

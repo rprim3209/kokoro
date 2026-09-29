@@ -1776,7 +1776,7 @@ function classifyProductClasses(p) {
     }
   }
   if (/\b(benzoyl|benzoylperoxid|\bbpo\b)/.test(blob)) add("bpo");
-  if (/\b(ascorb|vitamin\s*c|vit\.?\s*c|\bl-aa\b|ethyl.?ascorb|ascorbyl|c-glow)\b/.test(blob)) add("ascorbic");
+  if (/ascorbyl|ethyl.?ascorb/.test(blob)) { del("ascorbic"); add("vitamin_c_derivative"); } else if (/ascorbic acid|ascorbinsaure|l-aa|c-glow/.test(blob)) add("ascorbic"); else if (/vitamin\s*c/.test(blob)) add("vitamin_c_unspecified");
   if (/\b(azelain|azelaic|\bapad\b|azelains)/.test(blob)) add("azelaic");
   if (/\b(niacinamid)/.test(blob)) add("niacinamide");
   if (/\b(clindamycin|erythromycin|\bclinda\b)/.test(blob)) add("ab_top");
@@ -2244,152 +2244,7 @@ function classifyProductTexture(productOrBlob) {
   };
 }
 
-function analyzeInciComedogenicity(textOrProduct) {
-  let textToScan = "";
-  let explicitNcClaim = null;
-
-  if (typeof textOrProduct === "object" && textOrProduct !== null) {
-    const p = textOrProduct;
-    explicitNcClaim = p.nc;
-    const parts = [
-      p.inci || "",
-      p.ingredients || "",
-      p.wirk || "",
-      p.notes || "",
-      p.truth || "",
-      p.name || "",
-      p.title || ""
-    ];
-    textToScan = parts.filter(Boolean).join(" ");
-  } else if (typeof textOrProduct === "string") {
-    textToScan = textOrProduct;
-  }
-
-  const textureEval = classifyProductTexture(textOrProduct);
-
-  if (!textToScan || !textToScan.trim()) {
-    return {
-      maxScore: explicitNcClaim === true ? 0 : (explicitNcClaim === false ? 3 : 1),
-      status: explicitNcClaim === true ? "non_comedogenic" : (explicitNcClaim === false ? "comedogenic_moderate" : "unknown"),
-      label: explicitNcClaim === true ? "🟢 Nicht komedogen (Hersteller-Claim)" : (explicitNcClaim === false ? "⚠️ Nicht als komedogenarm deklariert" : "ℹ️ Komedogenität offen (keine INCI hinterlegt)"),
-      badgeColor: explicitNcClaim === true ? "#dcfce7" : (explicitNcClaim === false ? "#ffedd5" : "#f1f5f9"),
-      textColor: explicitNcClaim === true ? "#166534" : (explicitNcClaim === false ? "#9a3412" : "#475569"),
-      borderColor: explicitNcClaim === true ? "#86efac" : (explicitNcClaim === false ? "#fdba74" : "#cbd5e1"),
-      flagged: [],
-      highRisk: [],
-      moderateRisk: [],
-      lowRisk: [],
-      safe: [],
-      isClean: explicitNcClaim === true,
-      hasInci: false,
-      summary: explicitNcClaim === true 
-        ? "Hersteller deklariert 'nicht komedogen'. In der EU ist dieser Begriff rechtlich nicht standardisiert – prüfe bei starker Akne-Neigung stets die genaue INCI-Liste."
-        : "Keine detaillierte INCI-Liste hinterlegt. Bei akne-anfälliger Haut vorab Packungsaufdruck prüfen.",
-      cysticTriggers: [],
-      hasCysticTrigger: false,
-      textureEval: textureEval
-    };
-  }
-
-  const normalized = textToScan.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  const matched = [];
-
-  for (const item of COMEDOGENIC_INGREDIENTS_DB) {
-    if (item.regex.test(normalized) || item.regex.test(textToScan)) {
-      matched.push(item);
-    }
-  }
-
-  // Sort matched ingredients by score descending
-  matched.sort((a, b) => b.score - a.score);
-
-  const highRisk = matched.filter(m => m.score >= 4);
-  const moderateRisk = matched.filter(m => m.score === 3);
-  const lowRisk = matched.filter(m => m.score === 2);
-  const safe = matched.filter(m => m.score <= 1);
-  const cysticTriggers = matched.filter(m => m.cysticRisk === true || m.score === 5 || /carrageenan|chondrus|laminaria|algae|squalene|isopropyl myristate|isopropyl isostearate|ethylhexyl palmitate|wheat germ/i.test(m.name));
-
-  let maxScore = matched.length > 0 ? matched[0].score : (explicitNcClaim === true ? 0 : 1);
-
-  let status = "comedogenic_safe";
-  let label = `🟢 Porenfreundlich (Score ${maxScore}/5)`;
-  let badgeColor = "#dcfce7";
-  let textColor = "#166534";
-  let borderColor = "#86efac";
-  let suitability = "Optimal für Akne, ölige Haut, Teenager und verstopfte Poren.";
-
-  if (maxScore === 5) {
-    status = "comedogenic_extreme";
-    label = `🔴 Extrem porenverstopfend (Score 5/5)`;
-    badgeColor = "#fee2e2";
-    textColor = "#991b1b";
-    borderColor = "#fca5a5";
-    suitability = "Höchstgradig komedogen! Triggert Acne cosmetica & Mikrokomedonen. Bei Akne/öliger Haut strikt kontraindiziert.";
-  } else if (maxScore === 4) {
-    status = "comedogenic_high";
-    label = `🔴 Stark porenverstopfend (Score 4/5)`;
-    badgeColor = "#fee2e2";
-    textColor = "#991b1b";
-    borderColor = "#fca5a5";
-    suitability = "Kontraindiziert bei Akne, öliger Haut & Mitessern! Hohes Risiko für Follikelverstopfung.";
-  } else if (maxScore === 3) {
-    status = "comedogenic_moderate";
-    label = `🟠 Mäßig komedogen (Score 3/5)`;
-    badgeColor = "#ffedd5";
-    textColor = "#9a3412";
-    borderColor = "#fdba74";
-    suitability = "Für Akne & ölige Haut ungeeignet. Gut verträglich für trockene & barriere-geschädigte Haut.";
-  } else if (maxScore === 2) {
-    status = "comedogenic_low";
-    label = `🟡 Geringes Risiko (Score 2/5)`;
-    badgeColor = "#fef9c3";
-    textColor = "#854d0e";
-    borderColor = "#fde047";
-    suitability = "Meist unbedenklich. Bei extremer Akne-Neigung beobachten; für normale & trockene Haut ideal.";
-  }
-
-  const isClean = maxScore <= 1;
-
-  let summary = "";
-  if (highRisk.length > 0) {
-    const names = highRisk.map(h => `${h.name} (${h.score}/5)`).join(", ");
-    summary = `Enthält stark porenverstopfende Stoffe: ${names}. Bei Akne oder Seborrhoe oleosa nicht empfohlen!`;
-  } else if (moderateRisk.length > 0) {
-    const names = moderateRisk.map(m => `${m.name} (${m.score}/5)`).join(", ");
-    summary = `Enthält mäßig komedogene Stoffe (${names}). Bei trockener Haut zur Barrierepflege geeignet, bei Akne mit Vorsicht verwenden.`;
-  } else if (lowRisk.length > 0) {
-    const names = lowRisk.map(l => `${l.name} (${l.score}/5)`).join(", ");
-    summary = `Enthält milde Lipide/Fettalkohole (${names}, Score 2/5). Für normale bis trockene Haut hervorragend geeignet.`;
-  } else {
-    summary = `Keine porenverstopfenden Inhaltsstoffe erkannt (Score 0–1). Sicher für akne-neigende, ölige und sensible Haut.`;
-  }
-
-  if (cysticTriggers.length > 0) {
-    summary += ` ⚠️ Zysten-Trigger: Enthält ${cysticTriggers.map(c => c.name).join(", ")} (Follikelschwellungs-Risiko).`;
-  }
-
-  return {
-    maxScore: maxScore,
-    status: status,
-    label: label,
-    badgeColor: badgeColor,
-    textColor: textColor,
-    borderColor: borderColor,
-    suitability: suitability,
-    flagged: matched,
-    highRisk: highRisk,
-    moderateRisk: moderateRisk,
-    lowRisk: lowRisk,
-    safe: safe,
-    isClean: isClean,
-    hasInci: true,
-    explicitNcClaim: explicitNcClaim,
-    summary: summary,
-    cysticTriggers: cysticTriggers,
-    hasCysticTrigger: cysticTriggers.length > 0,
-    textureEval: textureEval
-  };
-}
+function analyzeInciComedogenicity(){return null; /* Ingredient scores cannot establish finished-product comedogenicity. */}
 
 const KEY_ACTIVES_DEFINITIONS = [
   { id: "panthenol", label: "Panthenol (Provitamin B5)", rx: /\b(panthenol|d-panthenol|provitamin\s*b5)\b/i, category: "barriere" },
@@ -2729,10 +2584,10 @@ function findSimilarProducts(targetProdOrId, options = {}) {
     // und keine porenokklusiven Balsam-/Salben-Texturen aufweisen (Slugging-Risiko)!
     if (isCriticalSkin && typeof analyzeInciComedogenicity === "function") {
       const cAnalysis = analyzeInciComedogenicity(c);
-      if (cAnalysis.maxScore > 1) {
+      if (cAnalysis && cAnalysis.maxScore > 1) {
         return false;
       }
-      if (cAnalysis.textureEval && cAnalysis.textureEval.isContraindicatedForAcne) {
+      if (cAnalysis && cAnalysis.textureEval && cAnalysis.textureEval.isContraindicatedForAcne) {
         return false;
       }
     }
@@ -2779,7 +2634,7 @@ window.currentLiveDmResults = [];
 // Pre-load dm-pilot-produkte.csv on startup
 async function loadDmPilotFromCSV() {
   try {
-    const text = await fetch("dm-pilot-produkte.csv").then(r => {
+    const text = await fetch("data/dm-pilot-produkte.csv").then(r => {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.text();
     });
@@ -3426,98 +3281,20 @@ window.katalogStatus = {
   protocol: window.location.protocol
 };
 
-function updateKatalogStatusUI() {
-  const badge = document.getElementById("katalogStatusBadge");
-  const text = document.getElementById("katalogStatusText");
-  if (!badge || !text) return;
-  const tr = function (s) {
-    if (typeof currentLang === "function" && currentLang() === "en" && typeof translateString === "function") {
-      return translateString(s);
-    }
-    return s;
-  };
+function updateKatalogStatusUI(){const badge=document.getElementById('katalogStatusBadge');if(badge){badge.textContent='Produktkatalog'+(window.fullCatalogRows?' · '+window.fullCatalogRows.length:'');badge.title='Gesamten Produktkatalog durchsuchen';badge.setAttribute('role','button');badge.tabIndex=0;badge.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openFullCatalog();}};badge.style.background='transparent';badge.style.color='var(--muted)';}}
 
-  const mode = window.katalogStatus && window.katalogStatus.mode;
+function showKatalogStatusModal(){openFullCatalog();}
 
-  if (mode === "loading") {
-    badge.style.background = "#fef3c7";
-    badge.style.color = "#92400e";
-    badge.style.borderColor = "#fde68a";
-    badge.innerHTML = `<span style="color:#d97706">●</span> <span id="katalogStatusText">${tr("Lade Katalog…")}</span>`;
-    badge.title = tr("Katalog wird geladen…");
-    return;
-  }
-
-  if (mode === "live") {
-    badge.style.background = "#dcfce7";
-    badge.style.color = "#166534";
-    badge.style.borderColor = "#bbf7d0";
-    const liveLabel = tr("Live-Katalog") + " (" + (window.katalogStatus.count || 985) + ")";
-    badge.innerHTML = `<span style="color:#16a34a">●</span> ${liveLabel}`;
-    badge.title = tr("Verbunden: 985 Produkte live aus katalog-produkte.csv geladen. Kamera-Scanner aktiv.");
-  } else {
-    // fallback / unknown → Offline
-    badge.style.background = "#fef3c7";
-    badge.style.color = "#92400e";
-    badge.style.borderColor = "#fde68a";
-    const offlineCount = (window.katalogStatus && window.katalogStatus.count) || 896;
-    const offlineLabel = tr("Katalog geladen · Live-Suche ggf. eingeschränkt") + " (" + offlineCount + ")";
-    badge.innerHTML = `<span style="color:#d97706">●</span> ${offlineLabel}`;
-    badge.title = tr("Katalog geladen · Live-Suche ggf. eingeschränkt");
-  }
-}
-
-function showKatalogStatusModal() {
-  const isLive = window.katalogStatus && window.katalogStatus.mode === "live";
-
-  showModalSheet(`
-    <div style="padding:1rem 1.1rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem">
-        <span class="tag" style="background:${isLive ? '#dcfce7' : '#fef3c7'};color:${isLive ? '#166534' : '#92400e'};font-weight:700">
-          ${isLive ? '🟢 Live-Katalog & Server aktiv' : '⚡ Offline-Fallback-Modus'}
-        </span>
-        <button class="btn-text" onclick="closeModal()" style="font-size:1.2rem;color:var(--muted);padding:0 4px">✕</button>
-      </div>
-
-      <h2 style="font-family:'Iowan Old Style', Georgia, serif;font-size:1.3rem;margin:0 0 0.5rem">
-        ${isLive ? 'Master-Katalog erfolgreich geladen' : 'Katalog- & Server-Status'}
-      </h2>
-
-      <p style="font-size:0.86rem;color:var(--ink);line-height:1.45;margin-bottom:0.9rem">
-        ${isLive
-          ? `Der Kosmetikschrank ist über <strong>${window.location.origin}</strong> verbunden. Alle <strong>${window.katalogStatus.count || 985} Produkte</strong> wurden dynamisch aus <code>katalog-produkte.csv</code> eingelesen. Der Live-Kamera-Barcode-Scanner ist im gesicherten Modus voll einsatzbereit.`
-          : `Die App läuft aktuell über das <code>file://</code>-Protokoll. Browser sperren hierbei externe Datei-Abrufe (CORS). Der Kosmetikschrank nutzt daher automatisch seinen <strong>eingebetteten Offline-Katalog (896 Produkte)</strong> – alle Routinen und Analysen funktionieren vollständig offline!`
-        }
-      </p>
-
-      ${!isLive ? `
-        <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin-bottom:0.9rem">
-          <div style="font-weight:700;font-size:0.86rem;color:#0f172a;margin-bottom:4px">🚀 Lokalen Server starten (Live-CSV & Kamera-Scanner):</div>
-          <ol style="font-size:0.82rem;color:#334155;margin:0;padding-left:1.2rem;line-height:1.5">
-            <li>Mappe auf deinem Desktop öffnen: <code>Kosmetikschrank</code></li>
-            <li>Doppelklick auf <strong><code>start-server.bat</code></strong></li>
-            <li>Der Server startet sofort auf <strong><code>http://127.0.0.1:8787</code></strong> und öffnet den Browser automatisch!</li>
-          </ol>
-        </div>
-      ` : ''}
-
-      <div style="display:flex;gap:8px;margin-top:0.8rem">
-        <button class="btn-text" style="flex:1;background:var(--ok);color:#F7F4D5;padding:9px;border-radius:8px;font-weight:700" onclick="closeModal()">
-          Verstanden
-        </button>
-      </div>
-    </div>
-  `);
-}
 
 async function loadKatalogFromCSV() {
   try {
-    const text = await fetch("katalog-produkte.csv").then(r => {
+    const text = await fetch("data/katalog-produkte.csv").then(r => {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.text();
     });
     if (text) {
       const rows = parseCSV(text);
+      window.fullCatalogRows = rows;
       applyKatalogRows(rows);
       window.katalogStatus = {
         mode: "live",

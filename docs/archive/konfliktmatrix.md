@@ -1,3 +1,5 @@
+> Historischer Stand, nicht die aktuelle Implementierung. Siehe [aktuelle Anleitung](../../README.md).
+
 # Konfliktmatrix v0.2
 
 Stand: 2026-09-04  

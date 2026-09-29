@@ -84,4 +84,4 @@ App = Einkauf + Layering-Transparenz, keine Therapieempfehlung.
 
 ---
 
-**Katalog:** Teen/YA-Produktstichprobe mit Flags → [`eu-jugend-katalog.md`](eu-jugend-katalog.md) / [`eu-jugend-katalog.csv`](eu-jugend-katalog.csv) (Stand 2026-09-04).
+**Katalog:** Teen/YA-Produktstichprobe mit Flags → [`eu-jugend-katalog.md`](eu-jugend-katalog.md) / [`eu-jugend-katalog.csv`](data/eu-jugend-katalog.csv) (Stand 2026-09-04).

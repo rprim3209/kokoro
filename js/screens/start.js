@@ -106,66 +106,30 @@ function selectQuizCountry(code) {
   if (typeof renderQuizCountryStep === "function") renderQuizCountryStep();
 }
 
+function openStartRoutine(tab){appState.tab=tab;switchScreen('cabinet');}
 function renderStartScreen(container) {
-  if (!container) container = document.getElementById("appContent");
-  if (!container) return;
-
-  const disclaimer = "Keine Therapie — nur Einkauf & Layering-Hilfe.";
-
-  container.innerHTML = `
-    <div class="welcome-box">
-      <div class="start-eyebrow">
-        <span aria-hidden="true">🌿</span> Evidenzbasierter Routine-Check · EU-27 + DACH
-      </div>
-
-      <h1 class="start-hero-title">
-        Schluss mit Fehlkäufen &amp; Reiz-Chaos.
-      </h1>
-
-      <p class="start-hero-desc">
-        Prüfe deine Kosmetik in Sekunden auf Reiz-Stacking, Lücken und echte Verträglichkeit. Neutral, unabhängig &amp; ohne Verkaufsabsicht.
-      </p>
-
-      <div class="start-disclaimer" role="note">
-        <span class="start-disclaimer-icon" aria-hidden="true">⚖️</span>
-        <span class="start-disclaimer-text">${disclaimer}</span>
-      </div>
-
-      <div class="start-actions">
-        <button type="button" class="start-action-card primary" onclick="openQuizModal()">
-          <div class="start-action-icon">🌱</div>
-          <div class="start-action-body">
-            <div class="start-action-title">
-              <span>Hautprofil-Quiz starten</span>
-              <span class="arrow">→</span>
-            </div>
-            <div class="start-action-desc">
-              Land, Hautzustand &amp; Prioritäten — dann passende Routine vorschlagen.
-            </div>
-          </div>
-        </button>
-
-        <button type="button" class="start-action-card secondary" onclick="typeof openCabinet==='function'?openCabinet():switchScreen('cabinet')">
-          <div class="start-action-icon">🧴</div>
-          <div class="start-action-body">
-            <div class="start-action-title">
-              <span>Zu meinem Schrank</span>
-              <span class="arrow">→</span>
-            </div>
-            <div class="start-action-desc">
-              Produkte eintragen, Lücken erkennen und Reiz-Konflikte auflösen.
-            </div>
-          </div>
-        </button>
-      </div>
-
-      <div class="start-secondary">
-        <button type="button" class="btn-text start-scan-link" onclick="switchScreen('scan')">
-          📷 Oder Barcode direkt im Laden scannen →
-        </button>
-      </div>
+  container=container||document.getElementById('appContent');if(!container)return;
+  const profile=getActiveProfile();const adult=(profile?.category||appState.profile)==='adult';
+  const count=ids=>new Set((ids||[]).filter(id=>id!=='wasser'&&id!=='water')).size;
+  const am=adult?count(appState.am):null,pm=adult?count(getActivePMList()):null;
+  const total=evidenceCurrentIds().length;
+  const steps=n=>n===null?'Gemeinsam geplant':n===0?'Noch offen':n+' '+(n===1?'Produkt':'Produkte');
+  const icon=(path)=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+path+'</svg>';
+  const sun=icon('<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>');
+  const moon=icon('<path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z"/>');
+  container.innerHTML=`<section class="home-hero" aria-labelledby="home-title">
+    <div class="home-copy"><p class="home-eyebrow">${profile?'PFLEGEPLAN FÜR '+escapeHtml(profile.name):'DEIN PERSÖNLICHER PFLEGEPLAN'}</p>
+      <h1 id="home-title">Deine Pflege,<br><span>klarer geplant.</span></h1>
+      <p class="home-description">Deine Haut, deine Produkte, dein Alltag. Ordne deine Pflege für morgens und abends – mit nachvollziehbaren Hinweisen zu möglichen Wirkstoffkonflikten.</p>
+      <div class="home-actions"><button class="home-button primary" onclick="openQuizModal()"><span aria-hidden="true">✧</span> Quiz starten</button><button class="home-button secondary" onclick="switchScreen('cabinet')">Direkt zum Schrank <span aria-hidden="true">↗</span></button></div>
+      <button class="home-scan" onclick="switchScreen('scan')">${icon('<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5M8 8v8m4-8v8m4-8v8"/>')} Produkt suchen / Barcode eingeben <span aria-hidden="true">→</span></button>
     </div>
-  `;
+    <aside class="home-preview" aria-label="Deine Pflegeübersicht"><p class="home-local"><span aria-hidden="true"></span> Dein Pflegeplan bleibt auf diesem Gerät</p>
+      <div class="home-day-grid"><button class="home-day" onclick="openStartRoutine('am')">${sun}<span>Morgens<strong>${steps(am)}</strong></span></button><button class="home-day" onclick="openStartRoutine('pm')">${moon}<span>Abends<strong>${steps(pm)}</strong></span></button></div>
+      <div class="home-suggestion"><p>Dein nächster Schritt</p><h2>${total?'Vorhandene Pflege.<br>Bewusst ergänzen.':'Eine Routine,<br>die zu dir passt.'}</h2><p class="home-suggestion-copy">${total?total+' '+(total===1?'Produkt ist':'Produkte sind')+' bereits in deinem Schrank. Plane Ergänzungen passend zu deinem Umfang und Budget.':'Starte mit deinem Hautprofil. Danach kannst du deine Produkte eintragen und deine Routine zusammenstellen.'}</p><button onclick="${total?'openBudgetRoutineModal()':'openQuizModal()'}">${total?'Vorschlag ansehen':'Meine Routine planen'} <span aria-hidden="true">→</span></button></div>
+      <p class="home-preview-note">Schritt für Schritt. In deinem Tempo.</p>
+    </aside>
+  </section>`;
 }
 
 function renderWelcome(container) {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0A3323">
+<meta name="theme-color" content="#2F5D56">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -13,6 +13,8 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="css/style.css?v=20260923-banner1">
 <link rel="stylesheet" href="css/screens.css?v=20260923-ideal1">
+<link rel="stylesheet" href="css/refinement.css?v=1">
+<link rel="stylesheet" href="css/header.css">
 </head>
 <body>
 
@@ -24,24 +26,22 @@
     <div class="brand" onclick="switchScreen('start')" style="cursor:pointer" title="Zurück zum Start">Kokoro
       <span>dein Kosmetikschrank</span>
     </div>
-    <div class="header-badges">
+    <div class="header-tools" style="display:flex;align-items:center;gap:8px">
       <button type="button" id="langToggle" class="lang-switch" data-i18n-skip onclick="toggleAppLanguage()" aria-pressed="false" aria-label="English off. Tap to switch the app to English.">
         <span class="lang-switch-label lang-switch-de">DE</span>
         <span class="lang-switch-track" aria-hidden="true"><span class="lang-switch-knob"></span></span>
         <span class="lang-switch-label lang-switch-en">EN</span>
       </button>
-      <div id="katalogStatusBadge" class="katalog-badge" onclick="showKatalogStatusModal()" title="Katalog-Status">
-        <span aria-hidden="true" style="font-size:0.55rem">●</span> <span id="katalogStatusText">Lade Katalog…</span>
+      <div id="katalogStatusBadge" onclick="showKatalogStatusModal()" style="font-size:0.72rem;padding:3px 9px;border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:5px;background:#fef3c7;color:#92400e;border:1px solid rgba(0,0,0,0.06)" title="Katalog-Status">
+        <span style="font-size:0.6rem">●</span> <span id="katalogStatusText">Lade Katalog…</span>
       </div>
-      <div class="guard-badge" id="btnGuardInfo" title="Begleitpflege-Info">
-        <div class="pulse-dot" aria-hidden="true"></div>
+      <div class="guard-badge" id="btnGuardInfo">
+        <div class="pulse-dot"></div>
         <span id="guardBadgeText">Kurzanleitung</span>
       </div>
     </div>
+    <nav class="cat-nav-bar" id="catNavBar" aria-label="Deine Profile"></nav>
   </div>
-  <nav class="cat-nav-bar" id="catNavBar">
-    <!-- Dynamisch generiert durch updateCategoryNav() -->
-  </nav>
 </header>
 
 <main id="appContent" class="screen-container">
@@ -79,10 +79,14 @@
 
 <!-- Modular JavaScript Files -->
 <script src="js/vendor/zxing.min.js?v=20260922-schrank1"></script>
+<script src="js/data-safety.js?v=1"></script>
 <script src="js/catalog.js?v=20260923-start2"></script>
 <script src="js/live-retail.js?v=20260922-schrank1"></script>
 <script src="js/state.js?v=20260923-share1"></script>
+<script src="js/evidence-engine.js?v=1"></script>
+<script src="js/evidence-ui.js?v=1"></script>
 <script src="js/rules.js?v=20260923-ampel2"></script>
+<script src="js/budget-planner.js?v=1"></script>
 <script src="js/ideal-routines.js?v=20260923-ideal1"></script>
 <script src="js/screens/start.js?v=20260923-start2"></script>
 <script src="js/screens/cabinet.js?v=20260923-banner1"></script>
@@ -90,7 +94,10 @@
 <script src="js/screens/settings.js?v=20260923-share1"></script>
 <script src="js/screens/quiz.js?v=20260923-share1"></script>
 <script src="js/i18n.js?v=20260923-banner1"></script>
+<script src="js/i18n-current.js?v=1"></script>
 <script src="js/app.js?v=20260923-lang5"></script>
 
+<script src="js/catalog-browser.js?v=1"></script>
+<script src="js/refinement.js?v=1"></script>
 </body>
 </html>
