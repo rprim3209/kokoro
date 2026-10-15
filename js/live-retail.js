@@ -492,15 +492,18 @@ function findLocalProductMatch(query) {
   const qLower = raw.toLowerCase();
 
   const candidates = [];
-  if (qClean) {
+  if (qClean && qClean.length >= 4) {
     candidates.push(qClean);
     if (qClean.length === 12) candidates.push("0" + qClean);
-    if (qClean.length === 13 && qClean.startsWith("0")) candidates.push(qClean.replace(/^0+/, ""));
+    if (qClean.length === 13 && qClean.startsWith("0")) {
+      const stripped = qClean.replace(/^0+/, "");
+      if (stripped.length >= 4) candidates.push(stripped);
+    }
   }
 
   // 1. Check known EAN registry
   for (const c of candidates) {
-    if (KNOWN_EAN_REGISTRY[c]) {
+    if (c && KNOWN_EAN_REGISTRY[c]) {
       const item = KNOWN_EAN_REGISTRY[c];
       return normalizeLiveApiProduct(Object.assign({
         id: "ean_" + c,
@@ -518,7 +521,7 @@ function findLocalProductMatch(query) {
       const p = DB[k];
       if (!p) continue;
       const pClean = String(p.ean || p.gtin || "").replace(/\D/g, "");
-      if (candidates.length && (candidates.includes(pClean) || candidates.some(c => p.id === "ean_" + c))) {
+      if (candidates.length && pClean && pClean.length >= 4 && (candidates.includes(pClean) || candidates.some(c => c && p.id === "ean_" + c))) {
         return normalizeLiveApiProduct(Object.assign({}, p, { deeplinkOnly: false, source: "catalog" }));
       }
       if (qLower.length >= 3) {
@@ -536,7 +539,7 @@ function findLocalProductMatch(query) {
       const p = BABY_DB[k];
       if (!p) continue;
       const pClean = String(p.ean || p.gtin || "").replace(/\D/g, "");
-      if (candidates.length && (candidates.includes(pClean) || candidates.some(c => p.id === "b_ean_" + c))) {
+      if (candidates.length && pClean && pClean.length >= 4 && (candidates.includes(pClean) || candidates.some(c => c && p.id === "b_ean_" + c))) {
         return normalizeLiveApiProduct(Object.assign({}, p, { deeplinkOnly: false, source: "baby_catalog" }));
       }
     }
@@ -548,7 +551,7 @@ function findLocalProductMatch(query) {
       const p = TEEN_DB[k];
       if (!p) continue;
       const pClean = String(p.ean || p.gtin || "").replace(/\D/g, "");
-      if (candidates.length && (candidates.includes(pClean) || candidates.some(c => p.id === "t_ean_" + c))) {
+      if (candidates.length && pClean && pClean.length >= 4 && (candidates.includes(pClean) || candidates.some(c => c && p.id === "t_ean_" + c))) {
         return normalizeLiveApiProduct(Object.assign({}, p, { deeplinkOnly: false, source: "teen_catalog" }));
       }
     }
@@ -558,7 +561,7 @@ function findLocalProductMatch(query) {
   if (window.DM_PILOT_CACHE && window.DM_PILOT_CACHE.length) {
     const hit = window.DM_PILOT_CACHE.find(r => {
       const e = String(r.ean || r.gtin || "").replace(/\D/g, "");
-      return candidates.includes(e);
+      return e && e.length >= 4 && candidates.includes(e);
     });
     if (hit && typeof normalizeDmPilotRow === "function") {
       const norm = normalizeDmPilotRow(hit);
@@ -594,8 +597,8 @@ async function searchLiveProducts(query, country) {
     products.push(localHit);
   }
 
-  // B: Lokaler Python-Proxy. Auf GitHub Pages gibt es den nicht — dann Katalog und Open Beauty Facts.
-  if (products.length === 0 && canUseLocalLiveApi()) {
+  // B: Lokaler Python-Proxy mit dm Live-Suche & Open Beauty Facts
+  if (canUseLocalLiveApi()) {
     try {
       const apiBase = (window.location.protocol === "file:") ? "http://127.0.0.1:8787" : "";
       const timeoutMs = (window.location.protocol === "file:") ? 1500 : 8000;
@@ -618,9 +621,23 @@ async function searchLiveProducts(query, country) {
             ? (typeof normalizeDmProduct === "function" ? normalizeDmProduct(row) : normalizeLiveApiProduct(row))
             : normalizeLiveApiProduct(row);
           if (norm && !products.some(x => (x.ean && norm.ean && x.ean === norm.ean) || x.id === norm.id)) {
+            if (typeof window !== "undefined") {
+              window.dmResultsMap = window.dmResultsMap || {};
+              window.dmResultsMap[norm.id] = norm;
+              if (norm.ean) window.dmResultsMap[norm.ean] = norm;
+              if (norm.gtin) window.dmResultsMap[norm.gtin] = norm;
+            }
+            if (typeof appState !== "undefined" && appState) {
+              appState.customProducts = appState.customProducts || {};
+              appState.customProducts[norm.id] = norm;
+            }
+            if (typeof DB !== "undefined" && DB && !DB[norm.id]) {
+              DB[norm.id] = norm;
+            }
             products.push(norm);
           }
         });
+        if (typeof saveState === "function") saveState();
       }
     } catch (e) {
       // Local API not running or unreachable

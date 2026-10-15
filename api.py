@@ -55,11 +55,22 @@ def load_catalog():
     return rows
 CATALOG=load_catalog()
 
+_FALLBACK_CLIENT: httpx.AsyncClient | None = None
+
+def get_client(request: Request | None = None) -> httpx.AsyncClient:
+    if request and hasattr(request.app.state, 'client') and request.app.state.client:
+        return request.app.state.client
+    global _FALLBACK_CLIENT
+    if _FALLBACK_CLIENT is None or _FALLBACK_CLIENT.is_closed:
+        _FALLBACK_CLIENT = httpx.AsyncClient(timeout=httpx.Timeout(4.0), follow_redirects=True, limits=httpx.Limits(max_connections=6), headers={'User-Agent': 'KoKoRo/1.0 (cosmetics catalog)'})
+    return _FALLBACK_CLIENT
+
 @asynccontextmanager
 async def lifespan(app):
-    async with httpx.AsyncClient(timeout=httpx.Timeout(4.0),follow_redirects=False,limits=httpx.Limits(max_connections=6),headers={'User-Agent':'KoKoRo/1.0 (cosmetics catalog)'}) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(4.0),follow_redirects=True,limits=httpx.Limits(max_connections=6),headers={'User-Agent':'KoKoRo/1.0 (cosmetics catalog)'}) as client:
         app.state.client=client
         yield
+
 
 app=FastAPI(title='KoKoRo',version='1.0.0',lifespan=lifespan,docs_url=None,redoc_url=None,openapi_url=None)
 app.add_middleware(TrustedHostMiddleware,allowed_hosts=os.getenv('KOKORO_ALLOWED_HOSTS','127.0.0.1,localhost,testserver').split(','))
@@ -82,15 +93,119 @@ async def headers(request:Request,call_next):
     response.headers['Cache-Control']='no-store' if request.url.path.startswith('/api/') else 'no-cache'
     return response
 
-async def live_barcode(client,ean):
-    response=await client.get('https://world.openbeautyfacts.org/api/v2/product/'+ean+'.json')
-    response.raise_for_status()
-    if len(response.content)>2_000_000: return []
-    data=response.json();p=data.get('product') if data.get('status')==1 else None
-    if not p:return []
-    name=text(p.get('product_name_de') or p.get('product_name'))
-    if not name:return []
-    return [{'id':'obf_'+ean,'title':name,'brandName':text(p.get('brands')),'ean':ean,'gtin':ean,'source':'obf','countries':[],'price':'','store':'Open Beauty Facts · gemeinschaftlich erfasst','url':'https://world.openbeautyfacts.org/product/'+ean,'img':url(p.get('image_front_url')),'inci':text(p.get('ingredients_text'),8000),'deeplinkOnly':False}]
+from urllib.parse import quote, urlparse
+
+async def fetch_dm_live(client: httpx.AsyncClient, query: str, country: str = 'DE', page_size: int = 12) -> list[dict]:
+    cc = country.lower() if country.lower() in ('de', 'at') else 'de'
+    url_target = f"https://product-search.services.dmtech.com/{cc}/search/crawl?query={quote(query)}&pageSize={page_size}"
+    try:
+        resp = await client.get(url_target, follow_redirects=True, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
+        if resp.status_code != 200: return []
+        data = resp.json(); out = []
+        for p in data.get('products', []):
+            tile = p.get('tileData', {})
+            imgs = tile.get('images', [])
+            img_src = imgs[0].get('tileSrc') if imgs else ''
+            price_val = tile.get('price', {}).get('price', {}).get('current', {}).get('value') or ''
+            self_path = tile.get('self') or ''
+            dan = str(p.get('dan') or tile.get('dan') or '')
+            gtin = str(p.get('gtin') or tile.get('gtin') or '')
+            brand = p.get('brandName') or (tile.get('brand') or {}).get('name') or ''
+            title = p.get('title') or (tile.get('title') or {}).get('tileHeadline') or ''
+            full_url = f"https://www.dm.{cc}{self_path}" if self_path else ''
+            safe_id = dan or gtin or f"{brand}_{title}"
+            safe_id = re.sub(r'\W+', '_', safe_id)[:32].strip('_')
+            out.append({
+                'id': f'dm_{safe_id}',
+                'title': text(title),
+                'name': text(title),
+                'brand': text(brand),
+                'brandName': text(brand),
+                'dan': dan,
+                'ean': gtin,
+                'gtin': gtin,
+                'price': text(price_val, 30),
+                'img': url(img_src),
+                'image_url': url(img_src),
+                'url': url(full_url),
+                'store': f'dm {country.upper()}',
+                'source': 'dm_live',
+                'countries': [country.upper()],
+                'deeplinkOnly': False
+            })
+        return out
+    except Exception:
+        return []
+
+async def live_barcode(client: httpx.AsyncClient, ean: str, country: str = 'DE') -> list[dict]:
+    # 1. dmtech for real Austrian/German product identity, HD images and verified pricing
+    dm_hits = await fetch_dm_live(client, ean, country, 2)
+    # 2. Open Beauty Facts for INCI ingredients
+    obf_hit = None
+    try:
+        response = await client.get('https://world.openbeautyfacts.org/api/v2/product/' + ean + '.json', timeout=3.5)
+        if response.status_code == 200 and len(response.content) <= 2_000_000:
+            data = response.json(); p = data.get('product') if data.get('status') == 1 else None
+            if p:
+                name = text(p.get('product_name_de') or p.get('product_name'))
+                if name:
+                    obf_hit = {
+                        'id': 'obf_' + ean,
+                        'title': name,
+                        'name': name,
+                        'brand': text(p.get('brands')),
+                        'brandName': text(p.get('brands')),
+                        'ean': ean,
+                        'gtin': ean,
+                        'source': 'obf',
+                        'countries': [],
+                        'price': '',
+                        'store': 'Open Beauty Facts · gemeinschaftlich erfasst',
+                        'url': 'https://world.openbeautyfacts.org/product/' + ean,
+                        'img': url(p.get('image_front_url')),
+                        'inci': text(p.get('ingredients_text'), 8000),
+                        'deeplinkOnly': False
+                    }
+    except Exception:
+        pass
+
+    if dm_hits and obf_hit:
+        best = dict(dm_hits[0])
+        best['inci'] = obf_hit.get('inci') or ''
+        if not best.get('img') and obf_hit.get('img'):
+            best['img'] = obf_hit['img']
+        return [best]
+    if dm_hits: return dm_hits
+    if obf_hit: return [obf_hit]
+
+    # 3. Open Food Facts fallback (has millions of drugstore & hygiene articles)
+    try:
+        response = await client.get('https://world.openfoodfacts.org/api/v2/product/' + ean + '.json', timeout=3.0)
+        if response.status_code == 200 and len(response.content) <= 2_000_000:
+            data = response.json(); p = data.get('product') if data.get('status') == 1 else None
+            if p:
+                name = text(p.get('product_name_de') or p.get('product_name'))
+                if name:
+                    return [{
+                        'id': 'off_' + ean,
+                        'title': name,
+                        'name': name,
+                        'brand': text(p.get('brands')),
+                        'brandName': text(p.get('brands')),
+                        'ean': ean,
+                        'gtin': ean,
+                        'source': 'off',
+                        'countries': [],
+                        'price': '',
+                        'store': 'Open Food Facts · gemeinschaftlich erfasst',
+                        'url': 'https://world.openfoodfacts.org/product/' + ean,
+                        'img': url(p.get('image_front_url')),
+                        'inci': text(p.get('ingredients_text'), 8000),
+                        'deeplinkOnly': False
+                    }]
+    except Exception:
+        pass
+    return []
 
 @app.get('/api/health')
 async def health():return {'status':'ok','rules':'evidence-1.0.0','liveSearch':LIVE,'catalog':'unverified-reference-data','publication':'local-review'}
@@ -108,20 +223,50 @@ async def search(request:Request,query:str=Query('',max_length=120),country:str=
     key=(q.casefold(),country,pageSize);now=time.monotonic()
     if key in CACHE and CACHE[key][0]>now:return CACHE[key][1]
     seen=set();hits=[]
+    clean_digits = re.sub(r'\D', '', q)
+    is_barcode = 8 <= len(clean_digits) <= 14 and len(clean_digits) == len(q.replace(' ', '').replace('-', ''))
+
+    # 1. Search existing local CATALOG
     for p in CATALOG:
-        if (q==p['ean'] or q.casefold() in (p['title']+' '+p['brand']).casefold()) and p['id'] not in seen:
+        match_ean = clean_digits and (clean_digits == p.get('ean') or clean_digits == p.get('gtin'))
+        match_text = q.casefold() in (p.get('title', '') + ' ' + p.get('brand', '')).casefold()
+        if (match_ean or match_text) and p['id'] not in seen:
             hits.append(p);seen.add(p['id'])
             if len(hits)>=pageSize:break
     note='Lokaler Katalog. Rezeptur, Preis und Verfügbarkeit nicht live geprüft.'
-    if not hits and LIVE and re.fullmatch(r'\d{8,14}',q):
-        if SEARCH_SLOTS.locked():raise HTTPException(503,'Suche ausgelastet. Bitte erneut versuchen.')
-        async with SEARCH_SLOTS:
-            try:
-                hits=await live_barcode(request.app.state.client,q)
-                note='Open Beauty Facts: Produktidentität, keine lokale Verfügbarkeitsbestätigung.'
-            except (httpx.HTTPError,ValueError,TypeError):note='Online-Suche nicht erreichbar. Barcode oder Produkt manuell erfassen.'
-    elif not hits:note='Kein Katalogtreffer. Produkt manuell erfassen oder den verlinkten Händler öffnen.'
-    result={'products':hits[:pageSize],'meta':{'country':country,'source':'catalog_or_obf','note':note,'honest':True,'notFound':not bool(hits)}}
+
+    # 2. If barcode or need more hits from live search
+    if LIVE:
+        if is_barcode:
+            if not hits:
+                if SEARCH_SLOTS.locked():raise HTTPException(503,'Suche ausgelastet. Bitte erneut versuchen.')
+                async with SEARCH_SLOTS:
+                    try:
+                        hits = await live_barcode(get_client(request), clean_digits, country)
+                        if hits:
+                            note = 'Live-Drogerie & Datenbank-Abfrage.'
+                            for h in hits:
+                                if h['id'] not in seen:
+                                    CATALOG.append(h);seen.add(h['id'])
+                        else:
+                            note = 'Online-Kataloge durchsucht, kein direkter Treffer.'
+                    except (httpx.HTTPError,ValueError,TypeError):
+                        note = 'Online-Suche nicht erreichbar. Barcode oder Produkt manuell erfassen.'
+        elif len(hits) < pageSize and len(q) >= 2:
+            if not SEARCH_SLOTS.locked():
+                async with SEARCH_SLOTS:
+                    try:
+                        live_hits = await fetch_dm_live(get_client(request), q, country, pageSize)
+                        for lh in live_hits:
+                            if lh['id'] not in seen and not any(h.get('ean') and h.get('ean') == lh.get('ean') for h in hits):
+                                hits.append(lh);seen.add(lh['id']);CATALOG.append(lh)
+                                if len(hits) >= pageSize: break
+                    except Exception:
+                        pass
+
+    if not hits:
+        note='Kein Katalogtreffer. Produkt manuell erfassen oder den verlinkten Händler öffnen.'
+    result={'products':hits[:pageSize],'meta':{'country':country,'source':'catalog_or_live','note':note,'honest':True,'notFound':not bool(hits)}}
     CACHE[key]=(now+120,result)
     while len(CACHE)>256:CACHE.popitem(last=False)
     return result

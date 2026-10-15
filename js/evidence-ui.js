@@ -32,14 +32,16 @@ function evidenceProductModal(prodId,tab){
  const cAnal=typeof analyzeInciComedogenicity==='function'?analyzeInciComedogenicity(p):null;
  const tex=cAnal?.textureEval||(typeof classifyProductTexture==='function'?classifyProductTexture(p):null);
  const texHtml=tex?`<section class="detail-section"><h3>Textur & Galenik</h3><p><strong style="color:${tex.color}">${escapeHtml(tex.label)}</strong></p><p>${escapeHtml(tex.explanation||'')}</p>${tex.warning?`<p class="evidence-action" style="color:#b45309">${escapeHtml(tex.warning)}</p>`:''}${cAnal&&cAnal.hasInci?`<p style="margin-top:6px;font-size:0.86rem"><span class="tag" style="background:${cAnal.badgeColor};color:${cAnal.textColor};font-weight:600">${escapeHtml(cAnal.label)}</span></p><p style="font-size:0.82rem;color:var(--muted)">${escapeHtml(cAnal.summary)}</p>`:''}</section>`:'';
- showModalSheet(`<div class="detail-heading"><small>${escapeHtml(p.brand||'Produkt')}</small><h2>${escapeHtml(p.name)}</h2></div>
+  const priceText = typeof formatLivePrice === 'function' ? formatLivePrice(p.price) : (typeof p.price === 'string' ? p.price : '');
+  const imgHtml = p.img ? `<img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;background:#fff;flex-shrink:0" onerror="this.style.display='none'">` : '';
+  showModalSheet(`<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">${imgHtml}<div class="detail-heading" style="min-width:0;flex:1"><small>${escapeHtml(p.brand||'Produkt')}${priceText?` · <span style="color:#16a34a;font-weight:700">${escapeHtml(priceText)}</span>`:''}</small><h2 style="margin:2px 0 0;font-size:1.15rem;line-height:1.25">${escapeHtml(p.name)}</h2></div></div>
  <section class="detail-section"><h3>Inhaltsstoffe (INCI)</h3>${inci?`<p class="ingredient-list" translate="no">${escapeHtml(inci)}</p><p>Erfasste Liste. Die aktuelle Verpackung ist maßgeblich.</p>`:'<p>Keine vollständige Inhaltsstoffliste hinterlegt. Bitte die aktuelle Verpackung prüfen.</p>'}
  <h4>Erfasste Wirkstoffe</h4><p>${escapeHtml(p.wirk||'Wirkstoffangaben fehlen')}</p><p>Wirkstoffangaben ersetzen keine vollständige Inhaltsstoffliste.</p></section>
  ${texHtml}
  ${evidenceCard(r)}<section class="detail-section"><h3>Produktangaben</h3><p>Parfümfrei: ${p.ff===true?'als Angabe erfasst':p.ff===false?'nein':'unbekannt'} · Nicht komedogen: ${p.nc===true?'Herstellerangabe, keine Verträglichkeitsgarantie':'nicht verifiziert'}</p></section>
  <div class="detail-actions"><button class="detail-secondary" id="detailAlternatives">Ähnliche Alternativen</button><button class="evidence-primary" id="detailAddProduct">Zur Routine hinzufügen</button></div>`);
  document.getElementById('detailAlternatives').onclick=()=>openEvidenceAlternatives(prodId);
- document.getElementById('detailAddProduct').onclick=()=>addCandidateToCabinet(p.id);
+ document.getElementById('detailAddProduct').onclick=()=>addCandidateToCabinet(p);
 }
 function evidenceAlternatives(id){
  const target=evidenceResolve(id);if(!target)return [];

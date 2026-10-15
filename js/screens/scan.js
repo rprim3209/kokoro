@@ -26,9 +26,19 @@ function mountProfileDmLiveSearch(opts) {
     }
     box.innerHTML = `<div style="font-size:0.8rem;color:#991b1b;padding:8px 0;font-weight:600">⏳ Frage live bei ${escapeHtml(retailer.label)} nach „${escapeHtml(query)}“…</div>`;
     const prods = await searchDmLive(query);
-    window.currentLiveDmResults = prods;
-    window.dmResultsMap = window.dmResultsMap || {};
-    prods.forEach(pr => { if (pr && pr.id) window.dmResultsMap[pr.id] = pr; });
+    prods.forEach(pr => {
+      if (pr && pr.id) {
+        window.dmResultsMap[pr.id] = pr;
+        if (typeof appState === "object") {
+          appState.customProducts = appState.customProducts || {};
+          appState.customProducts[pr.id] = pr;
+        }
+        if (typeof DB === "object" && !DB[pr.id]) {
+          DB[pr.id] = pr;
+        }
+      }
+    });
+    if (typeof saveState === "function") saveState();
     if (!prods.length) {
       const errMsg = window.lastDmError || (`Kein Live-Treffer bei ${escapeHtml(retailer.label)} für „${escapeHtml(query)}“.`);
       box.innerHTML = `<div style="font-size:0.8rem;color:var(--muted);padding:6px 0">${errMsg}</div>`;
@@ -961,8 +971,8 @@ function openTeenProductDetail(prodId) {
 
 // Modal: Educational Teenie Guide
 
-function openAddProductModal(defaultTarget = "am", initialCat = "all") {
-  let searchVal = "";
+function openAddProductModal(defaultTarget = "am", initialCat = "all", initialSearch = "") {
+  let searchVal = initialSearch ? String(initialSearch).trim() : "";
   let currentCat = (initialCat === 'active' || initialCat === 'spot') ? 'serum' : (initialCat || 'all');
   let currentFlag = "all";
   let liveDmLoading = false;
@@ -1241,7 +1251,19 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
             liveDmItems = await searchDmLive(searchVal);
             window.currentLiveDmResults = liveDmItems;
             window.dmResultsMap = window.dmResultsMap || {};
-            liveDmItems.forEach(pr => { if (pr.id) window.dmResultsMap[pr.id] = pr; });
+            liveDmItems.forEach(pr => {
+              if (pr && pr.id) {
+                window.dmResultsMap[pr.id] = pr;
+                if (typeof appState === "object") {
+                  appState.customProducts = appState.customProducts || {};
+                  appState.customProducts[pr.id] = pr;
+                }
+                if (typeof DB === "object" && !DB[pr.id]) {
+                  DB[pr.id] = pr;
+                }
+              }
+            });
+            if (typeof saveState === "function") saveState();
             liveDmLoading = false;
             if (resEl) resEl.innerHTML = renderListHtml();
           } else {
@@ -1269,6 +1291,11 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
     const dmHonesty = document.getElementById("adultDmHonesty");
     if (dmHonesty) dmHonesty.style.display = cat === "dm" ? "block" : "none";
 
+    const sInp = document.getElementById("searchProdInput");
+    if (sInp && sInp.value.trim() && !searchVal) {
+      searchVal = sInp.value.trim();
+    }
+
     if (cat === "dm") {
       if (searchVal && searchVal.trim().length >= 2) {
         liveDmLoading = true;
@@ -1277,7 +1304,19 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
         liveDmItems = await searchDmLive(searchVal);
         window.currentLiveDmResults = liveDmItems;
         window.dmResultsMap = window.dmResultsMap || {};
-        liveDmItems.forEach(pr => { if (pr.id) window.dmResultsMap[pr.id] = pr; });
+        liveDmItems.forEach(pr => {
+          if (pr && pr.id) {
+            window.dmResultsMap[pr.id] = pr;
+            if (typeof appState === "object") {
+              appState.customProducts = appState.customProducts || {};
+              appState.customProducts[pr.id] = pr;
+            }
+            if (typeof DB === "object" && !DB[pr.id]) {
+              DB[pr.id] = pr;
+            }
+          }
+        });
+        if (typeof saveState === "function") saveState();
         liveDmLoading = false;
         if (resEl) resEl.innerHTML = renderListHtml();
       } else {
@@ -1290,6 +1329,10 @@ function openAddProductModal(defaultTarget = "am", initialCat = "all") {
       if (resEl) resEl.innerHTML = renderListHtml();
     }
   };
+
+  if (currentCat === "dm" && searchVal && searchVal.trim().length >= 2) {
+    setTimeout(() => { window.setAddCat("dm"); }, 50);
+  }
 
   window._refreshOpenCountryFilteredList = () => {
     const resEl = document.getElementById("addResultsList");
@@ -1616,7 +1659,7 @@ async function startBarcodeScanner(onCode, rootNode) {
       const code = normalizeScannedCode(raw);
       if (!code || scannerAcceptLocked) return;
       stopBarcodeScanner();
-      status.textContent = "Gefunden: " + code;
+      status.textContent = "Barcode " + code + " erkannt – Produktdaten werden live gesucht…";
       if (typeof onCode === "function") onCode(code);
     };
     const onHit = watchForRepeat(accept);
@@ -1684,13 +1727,19 @@ function findProductByEan(ean) {
 }
 
 async function handleScannedBarcode(rawEan) {
-  const ean = String(rawEan || "").trim();
+  const ean = String(rawEan || "").trim().replace(/\s+/g, "").replace(/-/g, "");
   if (!ean) return;
   console.log("Barcode gescannt / eingegeben:", ean);
 
   // 1. Lokaler Match (DB, Registry, Pilot mit 12/13-Digit-Normalisierung)
   const localMatch = (typeof findLocalProductMatch === "function") ? findLocalProductMatch(ean) : null;
   if (localMatch && !localMatch._deeplinkOnly && localMatch.source !== "deeplink") {
+    if (typeof window === "object") {
+      window.dmResultsMap = window.dmResultsMap || {};
+      window.dmResultsMap[localMatch.id] = localMatch;
+      if (localMatch.ean) window.dmResultsMap[localMatch.ean] = localMatch;
+      if (localMatch.gtin) window.dmResultsMap[localMatch.gtin] = localMatch;
+    }
     if (typeof openCompatibilityCheckModal === "function") {
       openCompatibilityCheckModal(localMatch);
       return;
@@ -1699,6 +1748,11 @@ async function handleScannedBarcode(rawEan) {
 
   const found = findProductByEan(ean);
   if (found) {
+    if (typeof window === "object" && found.prod) {
+      window.dmResultsMap = window.dmResultsMap || {};
+      window.dmResultsMap[found.id] = found.prod;
+      if (found.prod.ean) window.dmResultsMap[found.prod.ean] = found.prod;
+    }
     if (found.type === "adult") {
       showVerdict(found.id);
     } else if (found.type === "teen") {
@@ -1710,7 +1764,7 @@ async function handleScannedBarcode(rawEan) {
   }
 
   // 2. Falls ein Suchfeld im aktuellen Screen/Modal aktiv ist: eintragen
-  const input = document.getElementById("scanSearchInput") || document.getElementById("searchProdInput");
+  const input = document.getElementById("scanSearchInput") || document.getElementById("searchProdInput") || document.getElementById("scanScreenEanInput");
   if (input) {
     input.value = ean;
   }
@@ -1719,39 +1773,78 @@ async function handleScannedBarcode(rawEan) {
   showModalSheet(`
     <div style="text-align:center;padding:1.6rem 0.6rem">
       <div style="font-size:2.6rem;margin-bottom:0.6rem">⏳</div>
-      <h3 style="margin:0 0 0.4rem;font-size:1.15rem">EAN ${escapeHtml(ean)} wird gesucht…</h3>
+      <h3 style="margin:0 0 0.4rem;font-size:1.15rem">Barcode ${escapeHtml(ean)} wird gesucht…</h3>
       <p style="color:var(--muted);font-size:0.86rem;max-width:340px;margin:0 auto 1rem;line-height:1.4">
-        Prüfe live im Sortiment von <strong>Müller, dm &amp; BIPA</strong> sowie Open Beauty / Food Facts…
+        Prüfe live im Sortiment von <strong>dm &amp; Drogerien</strong> sowie Kosmetik-Datenbanken…
       </p>
       <div style="font-size:0.75rem;color:#64748b">Echtzeit-Abfrage läuft…</div>
     </div>
   `);
 
   try {
-    const cc = (typeof getProfileCountry === "function" ? getProfileCountry() : "AT") || "AT";
+    const cc = (typeof getProfileCountry === "function" ? getProfileCountry() : "DE") || "DE";
     const results = (typeof searchLiveProducts === "function") ? await searchLiveProducts(ean, cc) : [];
     const realProd = results.find(p => p && !p._deeplinkOnly && p.source !== "deeplink");
 
     if (realProd) {
+      // Produkt aktiv im Katalog & Speicher registrieren (Auto-Update)
+      if (typeof window === "object") {
+        window.dmResultsMap = window.dmResultsMap || {};
+        window.dmResultsMap[realProd.id] = realProd;
+        if (realProd.ean) window.dmResultsMap[realProd.ean] = realProd;
+        if (realProd.gtin) window.dmResultsMap[realProd.gtin] = realProd;
+      }
+      if (typeof appState === "object") {
+        appState.customProducts = appState.customProducts || {};
+        appState.customProducts[realProd.id] = realProd;
+        if (typeof saveState === "function") saveState();
+      }
+      if (typeof DB === "object" && !DB[realProd.id]) {
+        DB[realProd.id] = realProd;
+      }
+
+      // Sofort das Produkt mit Name, Marke, Bild & Inhaltsstoffen anzeigen!
       if (typeof openCompatibilityCheckModal === "function") {
         openCompatibilityCheckModal(realProd);
       } else {
         showVerdict(realProd.id);
       }
     } else {
-      // Kein direkter Treffer -> In den Hinzufügen-Modal mit den Drogerie-Onlineshop-Links wechseln
-      openAddProductModal("am", "dm");
-      const sInp = document.getElementById("searchProdInput");
-      if (sInp) {
-        sInp.value = ean;
-        if (typeof window.setAddCat === "function") {
-          window.setAddCat("dm");
-        }
-      }
+      // Produkt online nicht gefunden
+      showModalSheet(`
+        <div style="text-align:center;padding:1.4rem 0.6rem">
+          <div style="font-size:2.4rem;margin-bottom:0.5rem">🔍</div>
+          <h3 style="margin:0 0 0.3rem;font-size:1.15rem">Barcode nicht im Sortiment</h3>
+          <p style="color:var(--muted);font-size:0.86rem;max-width:340px;margin:0 auto 1rem;line-height:1.4">
+            Der Barcode <strong>${escapeHtml(ean)}</strong> wurde in den Online-Katalogen von dm und Open Beauty Facts nicht gefunden.
+          </p>
+
+          <div style="display:flex;flex-direction:column;gap:8px;max-width:340px;margin:0 auto">
+            <button type="button" class="primary" style="padding:10px 14px;border-radius:8px;font-weight:700" onclick="closeModal(); if(typeof openCustomProductModal==='function') openCustomProductModal('${escapeHtml(ean)}');">
+              ✏️ Produkt manuell anlegen &amp; INCI prüfen
+            </button>
+            <a href="https://www.dm.de/search?query=${encodeURIComponent(ean)}" target="_blank" rel="noopener" class="btn-text" style="background:#f1f5f9;color:#1e293b;padding:8px 12px;border-radius:8px;font-size:0.84rem;text-decoration:none;font-weight:600">
+              🛒 Im dm Onlineshop suchen ↗
+            </a>
+            <button type="button" class="ghost-btn" onclick="closeModal()">
+              Schließen
+            </button>
+          </div>
+        </div>
+      `);
     }
   } catch (err) {
     console.error("Fehler bei Barcode-Suche:", err);
-    openAddProductModal("am", "dm");
+    showModalSheet(`
+      <div style="text-align:center;padding:1.4rem 0.6rem">
+        <div style="font-size:2.4rem;margin-bottom:0.5rem">⚠️</div>
+        <h3 style="margin:0 0 0.3rem">Verbindungsfehler</h3>
+        <p style="color:var(--muted);font-size:0.86rem;margin-bottom:1rem">Die Online-Suche konnte nicht erreicht werden.</p>
+        <button type="button" class="primary" onclick="closeModal(); if(typeof openCustomProductModal==='function') openCustomProductModal('${escapeHtml(ean)}');">
+          ✏️ Manuell anlegen
+        </button>
+      </div>
+    `);
   }
 }
 
@@ -2182,8 +2275,10 @@ function saveCustomProductAndCheck() {
 
 function showVerdict(id){evidenceProductModal(id,appState.tab);}
 
-function addCandidateToCabinet(prodId) {
-  const p = (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(prodId) : null) || (typeof DB === "object" ? DB[prodId] : null);
+function addCandidateToCabinet(prodOrId) {
+  const p = (prodOrId && typeof prodOrId === "object")
+    ? prodOrId
+    : ((typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(prodOrId) : null) || (typeof DB === "object" ? DB[prodOrId] : null));
   if (!p) return;
   const activeProfile = typeof getActiveProfile === "function" ? getActiveProfile() : null;
   const profileCat = activeProfile ? activeProfile.category : (appState.profile || "adult");
@@ -2196,6 +2291,13 @@ function addCandidateToCabinet(prodId) {
   }
 
   const id = p.id || prodId;
+  if (typeof appState === "object") {
+    appState.customProducts = appState.customProducts || {};
+    appState.customProducts[id] = p;
+  }
+  if (typeof DB === "object" && !DB[id]) {
+    DB[id] = p;
+  }
   if (!appState.am) appState.am = [];
   if (!appState.pm_a) appState.pm_a = [];
   if (!appState.pm_b) appState.pm_b = [];
@@ -2278,8 +2380,8 @@ function renderScanScreen(container) {
       <div class="scan-ean-box">
         <label for="scanScreenEanInput">EAN-Barcode manuell eingeben</label>
         <div class="scan-ean-row">
-          <input type="text" id="scanScreenEanInput" placeholder="z. B. 4058172936746..." inputmode="numeric" autocomplete="off" onkeydown="if(event.key==='Enter'){ handleScanScreenEan(); }">
-          <button type="button" class="primary" onclick="handleScanScreenEan()">Prüfen →</button>
+          <input type="text" id="scanScreenEanInput" placeholder="z. B. 4066447952971..." inputmode="numeric" autocomplete="off" onkeydown="if(event.key==='Enter'){ handleScanScreenEan(); }">
+          <button type="button" class="primary" id="btnScanScreenCheck" onclick="handleScanScreenEan()">Prüfen →</button>
         </div>
       </div>
 
@@ -2303,8 +2405,31 @@ function renderScanScreen(container) {
 
 function handleScanScreenEan() {
   const inp = document.getElementById("scanScreenEanInput");
-  if (!inp || !inp.value.trim()) return;
-  handleScannedBarcode(inp.value.trim());
+  const btn = document.getElementById("btnScanScreenCheck") || (inp ? inp.parentElement.querySelector("button") : null);
+  if (!inp) return;
+  const raw = inp.value.trim();
+  if (!raw) {
+    if (typeof showToast === "function") showToast("Bitte einen Barcode oder EAN eingeben.");
+    inp.focus();
+    return;
+  }
+  const clean = raw.replace(/\s+/g, "").replace(/-/g, "");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Prüfe… ⏳";
+  }
+  const p = handleScannedBarcode(clean);
+  if (p && typeof p.finally === "function") {
+    p.finally(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Prüfen →";
+      }
+    });
+  } else if (btn) {
+    btn.disabled = false;
+    btn.textContent = "Prüfen →";
+  }
 }
 
 function escapeHtml(str) {
