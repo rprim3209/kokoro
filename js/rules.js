@@ -438,6 +438,7 @@ function evaluateCandidate(candidate){const r=evidenceResult(candidate,appState.
 /** Resolve a cabinet product from DB / custom / Teen / Baby catalogs. */
 function resolveCabinetProduct(id) {
   if (!id) return null;
+  if (typeof id === "object" && (id.id || id.name)) return id;
   if (typeof DB !== "undefined" && DB && DB[id]) return DB[id];
   if (typeof appState !== "undefined" && appState && appState.customProducts && appState.customProducts[id]) {
     return appState.customProducts[id];

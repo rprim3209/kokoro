@@ -13,7 +13,7 @@ function polish(){
    if(!main.querySelector('.cabinet-title')){const heading=document.createElement('h1');heading.className='cabinet-title';heading.textContent='Deine Routine';main.prepend(heading);}
    const hero=main.querySelector('.scan-hero');
    if(hero&&!hero.dataset.refined){hero.dataset.refined='true';const add=hero.querySelector('button');if(add){hero.replaceChildren(add);hero.className='routine-add-row';hero.removeAttribute('style');if(tabs)tabs.after(hero);}}
-   main.querySelectorAll('button[onclick="openScanModal()"],button[onclick="switchScreen(\'scan\')"]').forEach(b=>b.remove());
+   main.querySelectorAll('.scan-hero button[onclick="openScanModal()"]').forEach(b=>b.remove());
    const bar=main.querySelector('.profile-bar');
    if(bar&&!bar.closest('.profile-details')){const details=document.createElement('details');details.className='profile-details';const summary=document.createElement('summary');summary.textContent='Hautprofil & Pflegeziele';details.append(summary);bar.before(details);details.append(bar);main.append(details);}
    if(main.querySelector('.empty-shelf'))main.querySelector('.routine-add-row')?.remove();

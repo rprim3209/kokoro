@@ -2183,30 +2183,52 @@ function saveCustomProductAndCheck() {
 function showVerdict(id){evidenceProductModal(id,appState.tab);}
 
 function addCandidateToCabinet(prodId) {
-  const p = DB[prodId];
+  const p = (typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(prodId) : null) || (typeof DB === "object" ? DB[prodId] : null);
+  if (!p) return;
+  const activeProfile = typeof getActiveProfile === "function" ? getActiveProfile() : null;
+  const profileCat = activeProfile ? activeProfile.category : (appState.profile || "adult");
+
+  if (profileCat !== "adult" && typeof adoptDmProductToSlot === "function") {
+    adoptDmProductToSlot(p);
+    closeModal();
+    renderMain();
+    return;
+  }
+
+  const id = p.id || prodId;
+  if (!appState.am) appState.am = [];
+  if (!appState.pm_a) appState.pm_a = [];
+  if (!appState.pm_b) appState.pm_b = [];
+  if (!appState.pm_c) appState.pm_c = [];
+
   if (p.kat === "spf") {
-    appState.am = appState.am.filter(x => DB[x].kat !== "spf").concat(prodId);
+    appState.am = appState.am.filter(x => {
+      const prod = typeof resolveProfileCabinetProduct === "function" ? resolveProfileCabinetProduct(x) : (typeof DB === "object" ? DB[x] : null);
+      return prod ? prod.kat !== "spf" : true;
+    }).concat(id);
     appState.tab = "am";
   } else if (p.kat === "reiniger") {
-    if (!appState.am.includes(prodId)) appState.am.push(prodId);
-    if (!appState.pm_a.includes(prodId)) appState.pm_a.push(prodId);
-    if (!appState.pm_b.includes(prodId)) appState.pm_b.push(prodId);
-    if (!appState.pm_c.includes(prodId)) appState.pm_c.push(prodId);
+    if (!appState.am.includes(id)) appState.am.push(id);
+    if (!appState.pm_a.includes(id)) appState.pm_a.push(id);
+    if (!appState.pm_b.includes(id)) appState.pm_b.push(id);
+    if (!appState.pm_c.includes(id)) appState.pm_c.push(id);
   } else {
-    // Add to PM Modus C or AM
     if (appState.tab === "am") {
-      if (!appState.am.includes(prodId)) appState.am.push(prodId);
+      if (!appState.am.includes(id)) appState.am.push(id);
     } else {
-      if (!appState.pm_c.includes(prodId)) appState.pm_c.push(prodId);
+      if (!appState.pm_c.includes(id)) appState.pm_c.push(id);
     }
   }
-  appState.am = sortRoutine(appState.am, true);
-  appState.pm_a = sortRoutine(appState.pm_a, false);
-  appState.pm_b = sortRoutine(appState.pm_b, false);
-  appState.pm_c = sortRoutine(appState.pm_c, false);
+  if (typeof sortRoutine === "function") {
+    appState.am = sortRoutine(appState.am, true);
+    appState.pm_a = sortRoutine(appState.pm_a, false);
+    appState.pm_b = sortRoutine(appState.pm_b, false);
+    appState.pm_c = sortRoutine(appState.pm_c, false);
+  }
   saveState();
   closeModal();
   renderMain();
+  if (typeof showToast === "function") showToast("Produkt zur Routine hinzugefügt");
 }
 
 function openProductDetail(id){evidenceProductModal(id,appState.tab);}

@@ -1,6 +1,6 @@
 /* Adapter keeps all existing navigation/profile/scanner flows on one assessment. */
 function evidenceProfile(){const p=typeof getActiveProfile==='function'?getActiveProfile():null;return {category:p?.category||appState.profile||'adult',pregnancy:p?.pregnancy===true};}
-function evidenceResolve(id){return typeof resolveProfileCabinetProduct==='function'?resolveProfileCabinetProduct(id):resolveCabinetProduct(id);}
+function evidenceResolve(id){if(id&&typeof id==='object'&&(id.id||id.name))return id;return typeof resolveProfileCabinetProduct==='function'?resolveProfileCabinetProduct(id):resolveCabinetProduct(id);}
 function evidenceAssess(ids,candidate,slot){
   const unique=[...new Set(ids||[])];const products=unique.map(evidenceResolve).filter(Boolean);if(candidate&&!products.some(p=>p.id===candidate.id))products.push(candidate);
   return KokoroEvidence.assess({products,profile:evidenceProfile(),unresolved:unique.filter(id=>!evidenceResolve(id)),coApplication:(a,b)=>{
@@ -67,4 +67,6 @@ function openEvidenceAlternatives(id){
 }
 
 function openSafetyContext(){const p=getActiveProfile();showModalSheet(`<h2>Persönlicher Prüfkontext</h2><p>Optional und nur auf diesem Gerät gespeichert. Unbekannte Angaben werden nicht als medizinische Freigabe gewertet.</p><label class="safety-toggle"><input type="checkbox" id="pregnancyContext" ${p?.pregnancy===true?'checked':''}> Schwangerschaft oder Schwangerschaft geplant</label><p class="evidence-scope">Diese Angabe aktiviert den Hinweis zu medizinischen Retinoiden. Die App ersetzt keine Prüfung aller Produkte durch die Praxis.</p><button class="evidence-primary" onclick="saveSafetyContext()">Speichern</button>`);}
-function saveSafetyContext(){const p=getActiveProfile();if(p)p.pregnancy=document.getElementById('pregnancyContext').checked;saveState();closeModal();renderCurrentScreen();}
+function saveSafetyContext(){const p=getActiveProfile();const el=document.getElementById('pregnancyContext');if(p&&el)p.pregnancy=el.checked;saveState();closeModal();renderCurrentScreen();}
+function openProductDetail(id){evidenceProductModal(id,typeof appState!=='undefined'?appState.tab:'am');}
+window.openProductDetail=openProductDetail;

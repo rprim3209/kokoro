@@ -521,7 +521,7 @@ function updateCategoryNav(){
   for(const p of profiles){
     const isActive=p.id===activeId;
     const tile=document.createElement('div');tile.className='profile-tile '+(isActive?'active-profile':'compact-profile');tile.dataset.category=p.category||'adult';
-    const button=document.createElement('button');button.className='cat-nav-btn '+(isActive?'active':'');button.id='btnProfile_'+p.id;button.dataset.initial=(p.name||'P').slice(0,1).toUpperCase();button.title='Profil '+p.name+' öffnen';button.setAttribute('aria-pressed',String(isActive));button.innerHTML='<span class="c-title">'+escapeHtml(p.name)+'</span><span class="c-sub">'+escapeHtml(({adult:'Erwachsen',teen:'Teenager',child:'Kind',baby:'Baby'})[p.category]||'Erwachsen')+'</span>';button.onclick=()=>isActive?openRenameProfileModal(p.id):switchProfile(p.id);
+    const button=document.createElement('button');button.className='cat-nav-btn '+(isActive?'active':'');button.id='btnProfile_'+p.id;button.dataset.initial=(p.name||'P').slice(0,1).toUpperCase();button.title='Profil '+p.name+' öffnen';button.setAttribute('aria-pressed',String(isActive));button.innerHTML='<span class="c-title">'+escapeHtml(p.name)+'</span>';button.onclick=()=>isActive?openRenameProfileModal(p.id):switchProfile(p.id);
     button.setAttribute('aria-label','Profil '+p.name+(isActive?' bearbeiten':' auswählen'));
     const del=document.createElement('button');del.className='profile-delete-top';del.setAttribute('aria-label','Profil '+p.name+' löschen');del.textContent='×';del.onclick=e=>{e.stopPropagation();deleteProfile(p.id);};
     tile.append(button);if(isActive)tile.append(del);nav.append(tile);

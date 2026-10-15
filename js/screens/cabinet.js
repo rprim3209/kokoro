@@ -5,6 +5,7 @@
 
 function resolveProfileCabinetProduct(id) {
   if (!id) return null;
+  if (typeof id === "object" && (id.id || id.name)) return id;
   if (typeof resolveCabinetProduct === "function") {
     var resolved = resolveCabinetProduct(id);
     if (resolved) return resolved;
